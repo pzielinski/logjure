@@ -3,6 +3,48 @@
   (:import logjure.utils.treeseq.TreeNodeFixed logjure.utils.treeseq.TreeNodeDynamic)
   )
 
+(defn deeply-nested [n]
+  (loop [n n result '(:bottom)]
+    (if (= n 0)
+      result
+      (recur (dec n) (list result)))))
+
+
+(defn create-tree-node-dynamic-println [child-value-seq]
+  (do
+    (println (java.util.Date.) " TreeNodeDynamic create.. " child-value-seq)
+    (TreeNodeDynamic. child-value-seq)
+    )
+  )
+
+(defn create-tree-node-dynamic-sleep-println [child-value-seq]
+  (do
+    (Thread/sleep 2000)
+    (println (java.util.Date.) " TreeNodeDynamic create.. " child-value-seq)
+    (TreeNodeDynamic. child-value-seq)
+    )
+  )
+
+(defn finalize-tree-node-dynamic [tree-node-dynamic]
+  (finalize-tree-node-dynamic-do-nothing tree-node-dynamic))
+
+(defn finalize-tree-node-dynamic-do-println [tree-node-dynamic]
+  (println (java.util.Date.) " TreeNodeDynamic finalize " (.child-value-seq tree-node-dynamic))
+  )
+
+(defn get-child-seq-log [node] 
+  (do (println (str "get-child-seq " node)) (get-child-seq node)))
+
+(defn get-child-seq-log-each-child [node] 
+  (get-child-seq node 0 clojure.inspector/is-leaf clojure.inspector/get-child-count 
+    (fn [n i] 
+      (do (println)(println (str "get-child " node " index " i )) 
+        (clojure.inspector/get-child n i)))))
+
+(defn sleep-before [time-ms]
+  (fn [f & args] (do (Thread/sleep 2000) (apply f args)))
+  )
+
 (deftest test-get-child-seq
   (is (= '() (get-child-seq :a)))
   (is (= '() (get-child-seq '())))
@@ -160,79 +202,6 @@
   (is (= '((:bottom)) (get-nodes-at-depth (deeply-nested 100) 100)))
 )
 
-(deftest test-tree-seq-breadth-by-dive
-  (binding [tree-seq-breadth tree-seq-breadth-by-dive]
-    (test-tree-seq-breadth-x)
-  ;test that no stack overflow - slow for large values
-  (is (= '(:bottom) (doall (filter is-leaf (tree-seq-breadth (deeply-nested 100))))))
-  ;test laziness
-  ;level 0 (root)
-  (is (= '[(:a ((:x) :b) :c ((:y) :d) :e) []] 
-         (perform-lazy-test-tree-seq-breadth-nth '(:a ((:x) :b) :c ((:y) :d) :e) 0)))
-  ;level 1
-  (is (= '[:a 
-           [(:a ((:x) :b) :c ((:y) :d) :e)]] 
-         (perform-lazy-test-tree-seq-breadth-nth '(:a ((:x) :b) :c ((:y) :d) :e) 1)))
-  (is (= '[((:x) :b) 
-           [(:a ((:x) :b) :c ((:y) :d) :e)]] 
-         (perform-lazy-test-tree-seq-breadth-nth '(:a ((:x) :b) :c ((:y) :d) :e) 2)))
-  (is (= '[:c 
-           [(:a ((:x) :b) :c ((:y) :d) :e)]] 
-         (perform-lazy-test-tree-seq-breadth-nth '(:a ((:x) :b) :c ((:y) :d) :e) 3)))
-  (is (= '[((:y) :d) 
-           [(:a ((:x) :b) :c ((:y) :d) :e)]] 
-         (perform-lazy-test-tree-seq-breadth-nth '(:a ((:x) :b) :c ((:y) :d) :e) 4)))
-  (is (= '[:e [(:a ((:x) :b) :c ((:y) :d) :e)]] 
-         (perform-lazy-test-tree-seq-breadth-nth '(:a ((:x) :b) :c ((:y) :d) :e) 5)))
-  ;level 2
-  (is (= '[(:x) 
-           [(:a ((:x) :b) :c ((:y) :d) :e) 
-            (:a ((:x) :b) :c ((:y) :d) :e) ((:x) :b)]] 
-         (perform-lazy-test-tree-seq-breadth-nth '(:a ((:x) :b) :c ((:y) :d) :e) 6)))
-  (is (= '[:b 
-           [(:a ((:x) :b) :c ((:y) :d) :e) 
-            (:a ((:x) :b) :c ((:y) :d) :e) ((:x) :b)]] 
-         (perform-lazy-test-tree-seq-breadth-nth '(:a ((:x) :b) :c ((:y) :d) :e) 7)))
-  (is (= '[(:y) 
-           [(:a ((:x) :b) :c ((:y) :d) :e) 
-            (:a ((:x) :b) :c ((:y) :d) :e) ((:x) :b) ((:y) :d)]] 
-         (perform-lazy-test-tree-seq-breadth-nth '(:a ((:x) :b) :c ((:y) :d) :e) 8)))
-  (is (= '[:d 
-           [(:a ((:x) :b) :c ((:y) :d) :e) 
-            (:a ((:x) :b) :c ((:y) :d) :e) ((:x) :b) ((:y) :d)]] 
-         (perform-lazy-test-tree-seq-breadth-nth '(:a ((:x) :b) :c ((:y) :d) :e) 9)))
-  ;level 3
-  (is (= '[:x 
-           [(:a ((:x) :b) :c ((:y) :d) :e) 
-            (:a ((:x) :b) :c ((:y) :d) :e) ((:x) :b) ((:y) :d) 
-            (:a ((:x) :b) :c ((:y) :d) :e) ((:x) :b) (:x)]] 
-         (perform-lazy-test-tree-seq-breadth-nth '(:a ((:x) :b) :c ((:y) :d) :e) 10)))
-  (is (= '[:y 
-           [(:a ((:x) :b) :c ((:y) :d) :e) 
-            (:a ((:x) :b) :c ((:y) :d) :e) ((:x) :b) ((:y) :d) 
-            (:a ((:x) :b) :c ((:y) :d) :e) ((:x) :b) (:x) ((:y) :d) (:y)]] 
-         (perform-lazy-test-tree-seq-breadth-nth '(:a ((:x) :b) :c ((:y) :d) :e) 11)))
-  ;not found
-  (is (= '[:not-found 
-           [(:a ((:x) :b) :c ((:y) :d) :e) 
-            (:a ((:x) :b) :c ((:y) :d) :e) ((:x) :b) ((:y) :d) 
-            (:a ((:x) :b) :c ((:y) :d) :e) ((:x) :b) (:x) ((:y) :d) (:y) 
-            (:a ((:x) :b) :c ((:y) :d) :e) ((:x) :b) (:x) ((:y) :d) (:y)]] 
-         (perform-lazy-test-tree-seq-breadth-nth '(:a ((:x) :b) :c ((:y) :d) :e) 12)))
-  ;all
-  (is (= '[(
-            (:a ((:x) :b) :c ((:y) :d) :e)
-            :a ((:x) :b) :c ((:y) :d) :e
-            (:x) :b (:y) :d
-            :x :y
-            ) 
-           [(:a ((:x) :b) :c ((:y) :d) :e) 
-            (:a ((:x) :b) :c ((:y) :d) :e) ((:x) :b) ((:y) :d) 
-            (:a ((:x) :b) :c ((:y) :d) :e) ((:x) :b) (:x) ((:y) :d) (:y) 
-            (:a ((:x) :b) :c ((:y) :d) :e) ((:x) :b) (:x) ((:y) :d) (:y)]] 
-         (perform-lazy-test-tree-seq-breadth-all '(:a ((:x) :b) :c ((:y) :d) :e))))
-    ))
-
 (deftest test-tree-seq-with-treenode-fixed
   (let [
         tn031 (TreeNodeFixed. :tn031 nil)
@@ -252,8 +221,6 @@
     (is (= [tn01 tn02 tn03] (get-children tn0)))
     (is (= [tn0 tn01 tn011 tn012 tn02 tn03 tn031] (tree-seq-depth tn0)))
     (is (= [tn0 tn01 tn02 tn03 tn011 tn012 tn031] (tree-seq-breadth tn0)))
-    (is (= (tree-seq-breadth tn0) (tree-seq-breadth-by-dive tn0)))
-    (is (= '(:root :a1 :a2 :a3 :a3_1) (map #(node-get-value %) (tree-seq-breadth-by-dive sample-tree))))
    )
   )
 

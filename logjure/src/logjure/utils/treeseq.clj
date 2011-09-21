@@ -19,14 +19,7 @@
 
 (defn finalize-tree-node-dynamic-do-nothing [tree-node-dynamic])
 
-(defn finalize-tree-node-dynamic-do-println [tree-node-dynamic]
-  (println (java.util.Date.) " TreeNodeDynamic finalize " (.child-value-seq tree-node-dynamic))
-  )
-
 (def *finalize-tree-node-dynamic-fn* (atom finalize-tree-node-dynamic-do-nothing))
-
-(defn finalize-tree-node-dynamic [tree-node-dynamic]
-  (finalize-tree-node-dynamic-do-nothing tree-node-dynamic))
 
 (deftype TreeNodeDynamic [child-value-seq]
   Cloneable
@@ -37,25 +30,6 @@
 
 (defn create-tree-node-dynamic [child-value-seq]
   (TreeNodeDynamic. child-value-seq)
-  )
-
-(defn create-tree-node-dynamic-println [child-value-seq]
-  (do
-    (println (java.util.Date.) " TreeNodeDynamic create.. " child-value-seq)
-    (TreeNodeDynamic. child-value-seq)
-    )
-  )
-
-(defn create-tree-node-dynamic-sleep-println [child-value-seq]
-  (do
-    (Thread/sleep 2000)
-    (println (java.util.Date.) " TreeNodeDynamic create.. " child-value-seq)
-    (TreeNodeDynamic. child-value-seq)
-    )
-  )
-
-(defn sleep-before [time-ms]
-  (fn [f & args] (do (Thread/sleep 2000) (apply f args)))
   )
 
 (extend-type TreeNodeDynamic 
@@ -99,15 +73,6 @@
     (get-child-seq node 0))
 )
 
-(defn get-child-seq-log [node] 
-  (do (println (str "get-child-seq " node)) (get-child-seq node)))
-
-(defn get-child-seq-log-each-child [node] 
-  (get-child-seq node 0 clojure.inspector/is-leaf clojure.inspector/get-child-count 
-    (fn [n i] 
-      (do (println)(println (str "get-child " node " index " i )) 
-        (clojure.inspector/get-child n i)))))
-
 (defmultimethod is-leaf [node] #(satisfies? TreeNode %)
   true (node-is-leaf node)
   :default (clojure.inspector/is-leaf node)
@@ -117,13 +82,6 @@
   true (node-get-children node)
   :default (get-child-seq node)
   )
-
-(defn deeply-nested [n]
-  (loop [n n result '(:bottom)]
-    (if (= n 0)
-      result
-      (recur (dec n) (list result)))))
-
 
 (defn tree-seq-depth
   "Returns a lazy sequence of the nodes in a tree, via a depth-first walk.
@@ -199,34 +157,4 @@
    ([root allowed-depth] 
      (get-nodes-at-depth #(not (is-leaf %)) get-children root allowed-depth))
 )
-
-(defn tree-seq-breadth-by-dive
-  "Returns a lazy sequence of the nodes in a tree, via a BREADTH-first walk.
-   branch? must be a fn of one arg that returns true if passed a node
-   that can have children (but may not).  children must be a fn of one
-   arg that returns a sequence of the children. Will only be called on
-   nodes for which branch? returns true. Root is the root node of the
-   tree.
-   This is a slower version of tree-seq-breadth, 
-   but it does not need to keep all parent nodes to process children.
-   It calculates nodes for each level from scratch.
-   Can keep all nodes in mem up to max depth.
-   In last search all nodes are kept in mem!!!!!!!!!!!!!!
-   "
-   ([branch? children root allowed-depth]
-     (lazy-seq
-      (let [nodes (get-nodes-at-depth branch? children root allowed-depth)]
-        (when (not (empty? nodes))
-          (cons 
-            nodes
-            ;(when (some #(not (is-leaf %)) nodes) ;ELIMINATED LAST DIVE IF ONLY LEAF PARENT NODES
-              (tree-seq-breadth-by-dive branch? children root (inc allowed-depth))
-              ;)
-            ))))
-       )
-   ([branch? children root]
-     (lazy-list-merge (tree-seq-breadth-by-dive branch? children root 0)))
-   ([root]
-     (tree-seq-breadth-by-dive #(not (is-leaf %)) get-children root))
-   )
 
