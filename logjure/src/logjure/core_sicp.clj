@@ -9,9 +9,6 @@
 (defn prompt-for-input [input-prompt]
   )
 
-(defn query-syntax-process [input-exp]
-  )
-
 (defn assertion-to-be-added? [exp]
   )
 
@@ -19,9 +16,6 @@
   )
 
 (defn add-rule-or-assertion! [x]
-  )
-
-(defn contract-question-mark [exp]
   )
 
 (defn apply-rules [query-pattern frame]
@@ -50,12 +44,32 @@
   (nil? x)
   )
 
-(defn constant-symbol? [x]
-  (symbol? x)
+(defn string-append [& strs]
+  (apply str strs)
   )
 
-(defn variable? [x]
-  (var? x)
+(defn string->symbol [str]
+  (symbol str)
+  )
+
+(defn symbol->string [symbol]
+  (str symbol)
+  )
+
+(defn number->string [n]
+  (str n)
+  )
+
+(defn substring [s start end]
+  (subs s start end)
+  )
+
+(defn string=? [str1 str2]
+  (= str1 str2)
+  )
+
+(defn string-length [str]
+  (.length str)
   )
 
 ;---------------------------------------------------------------------------------------------------
@@ -74,7 +88,19 @@
   )
 
 (defn caar [pair]
+  (car (car pair))
+  )
+
+(defn cadr [pair]
   (car (cdr pair))
+  )
+
+(defn caddr [pair]
+  (car (cdr (cdr pair)))
+  )
+
+(defn cddr [pair]
+  (cdr (cdr pair))
   )
 
 (defn pair? [exp]
@@ -88,6 +114,12 @@
 (defn set-cdr! [x pair]
   (cons-pair (car pair) x)
   );ATOM!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+
+(defn tagged-list? [exp tag]
+  (if (pair? exp)
+    (eq? (car exp) tag)
+    false)
+  )
 
 ;---------------------------------------------------------------------------------------------------
 ; MAP/TABLE EMULATION WITH PAIR
@@ -236,6 +268,14 @@
 ;---------------------------------------------------------------------------------------------------
 ; SYNTAX
 
+(defn variable? [exp]
+  (tagged-list? exp '?)
+  )
+
+(defn constant-symbol? [exp] 
+  (symbol? exp)
+  )
+
 (defn empty-conjunction? [exps] 
   (null? exps)
   )
@@ -270,6 +310,63 @@
 
 (defn args [exps] 
   (cdr exps)
+  )
+
+(defn rule? [statement]
+  (tagged-list? statement 'rule)
+  )
+
+(defn conclusion [rule] 
+  (cadr rule)
+  )
+
+(defn rule-body [rule]
+  (if (null? (cddr rule))
+    '(always-true)
+    (caddr rule))
+  )
+
+(defn expand-question-mark [symbol]
+  (let [chars (symbol->string symbol)]
+    (if (string=? (substring chars 0 1) "?")
+      (cons-pair '? (string->symbol (substring chars 1 (string-length chars))))
+      symbol))
+  )
+
+(defn map-over-symbols [proc exp]
+  (cond (pair? exp) 
+        (cons-pair 
+          (map-over-symbols proc (car exp));NEED RECUR !!!!!!!!!!!!!
+          (map-over-symbols proc (cdr exp)));NEED RECUR !!!!!!!!!!!!!
+        (constant-symbol? exp)
+        (proc exp)
+        :else 
+        exp
+        )
+  )
+
+(defn query-syntax-process [exp]
+  (map-over-symbols expand-question-mark exp)
+  )
+
+(def *rule-counter* (atom 0))
+
+(defn new-rule-application-id []
+  (swap! *rule-counter* inc)
+  )
+
+(defn make-new-variable [variable rule-application-id]
+  (cons-pair '? (cons-pair rule-application-id (cdr variable)))
+  )
+
+(defn contract-question-mark [variable]
+  (string->symbol
+    (string-append "?"
+                   (if (pair? (cdr variable));FIXED BUG !!! was: (number? (cadr variable))
+                     (string-append (symbol->string (cddr variable));FIXED BUG !!! was caddr
+                                    "-"
+                                    (number->string (cadr variable)))
+                     (symbol->string (cdr variable)))));FIXED BUG !!! was: (cadr variable)
   )
 
 ;---------------------------------------------------------------------------------------------------
@@ -338,7 +435,7 @@
 ;---------------------------------------------------------------------------------------------------
 ; SIMPLE QUERY
 
-(declare extend-if-consistent)
+(declare extend-if-consistent qeval)
 
 (defn pattern-match [pat dat frame]
   (cond (eq? frame 'failed) 'failed
