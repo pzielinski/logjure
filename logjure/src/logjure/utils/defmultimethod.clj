@@ -1,4 +1,4 @@
-(ns utils.defmultimethod)
+(ns logjure.utils.defmultimethod)
 
 (defmacro defmultimethod [fn-name vargs dispatch-fn & dispatch-pairs]
   (when dispatch-pairs

@@ -1,4 +1,4 @@
-(ns logjure.core_sicp)
+(ns logjure.core-sicp)
 
 (def input-prompt ";;; Query input:")
 (def output-prompt ";;; Query results:")
