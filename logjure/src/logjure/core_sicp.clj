@@ -97,8 +97,10 @@
   )
 
 (defn assoc- [key records]
-  (cond (null? records) false
-        (equal? key (caar records)) (car records)
+  (cond (null? records) 
+        false
+        (equal? key (caar records)) 
+        (car records)
         :else 
         (assoc- key (cdr records)));NEED RECUR !!!!!!!!!!!!!
   )
@@ -137,7 +139,7 @@
           (set-cdr! subtable (cons-pair (cons-pair key-2 value) (cdr subtable)))))
       (set-cdr! table
                 (cons-pair 
-                  (list key-1 (cons-pair key-2 value));USES LIST - FIX !!!!!!!!!!!!!!!!!!!!!!!
+                  (list key-1 (cons-pair key-2 value));USES LIST explicitely !!!!!!!!!!!!!!!!!!!!!!!
                   (cdr table)))))
   'ok
   );table has to be an ATOM!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -153,16 +155,17 @@
             (error "Unknown operation -- TABLE" m))))
   )
 
-(defn operation-table []
-  (make-table-local)
+(defn operation-table [dispatch-value]
+  ((make-table-local) dispatch-value)
   )
 
-(defn get-from-table [] 
-  (operation-table 'lookup-proc)
+(defn get-from-table [key-1 key-2] 
+  ((operation-table 'lookup-proc) key-1 key-2)
   )
 
-(defn put [] 
-  (operation-table 'insert-proc!) ;this will not work! will use new/different table!!!!!!!!!!!!!!
+;this will not work! operation-table will create new table!!!!!!!!!!!!!!
+(defn put [key-1 key-2 value] 
+  ((operation-table 'insert-proc!) key-1 key-2 value) 
   )
 
 ;---------------------------------------------------------------------------------------------------
@@ -228,6 +231,45 @@
 
 (defn display-stream [stream]
   (stream-map display stream)
+  )
+
+;---------------------------------------------------------------------------------------------------
+; SYNTAX
+
+(defn empty-conjunction? [exps] 
+  (null? exps)
+  )
+
+(defn first-conjunct [exps] 
+  (car exps)
+  )
+
+(defn rest-conjuncts [exps] 
+  (cdr exps)
+  )
+
+(defn empty-disjunction? [exps] 
+  (null? exps)
+  )
+
+(defn first-disjunct [exps] 
+  (car exps)
+  )
+
+(defn rest-disjuncts [exps] 
+  (cdr exps)
+  )
+
+(defn negated-query [exps] 
+  (car exps)
+  )
+
+(defn predicate [exps] 
+  (car exps)
+  )
+
+(defn args [exps] 
+  (cdr exps)
   )
 
 ;---------------------------------------------------------------------------------------------------
@@ -313,7 +355,7 @@
 (defn extend-if-consistent [var dat frame]
   (let [binding (binding-in-frame var frame)]
     (if binding
-      (pattern-match (binding-value binding) dat frame) ;TRAMPOLINE !!!!!!!!!!!!!!
+      (pattern-match (binding-value binding) dat frame) ;TRAMPOLINE or move to pattern-match!!!!!!!!!!!!!!
       (extend-frame var dat frame)))
   )
 
@@ -340,6 +382,20 @@
   )
 
 ;---------------------------------------------------------------------------------------------------
+; COMPOUNT QUERY
+
+;AND
+(defn conjoin [conjuncts frame-stream]
+  (if (empty-conjunction? conjuncts)
+    frame-stream
+    (conjoin (rest-conjuncts conjuncts)
+             (qeval (first-conjunct conjuncts) frame-stream)))
+  )
+
+(put 'and 'qeval conjoin)
+
+
+;---------------------------------------------------------------------------------------------------
 ; REST
 
 (defn instantiate [exp frame unbound-var-handler]
@@ -351,7 +407,7 @@
                     (copy (binding-value the-binding))
                     (unbound-var-handler exp frame)))
                 (pair? exp)
-                  (cons (copy (car exp)) (copy (cdr exp)))
+                  (cons-pair (copy (car exp)) (copy (cdr exp)))
                 :else exp))]
         (copy exp))
   )
