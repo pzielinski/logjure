@@ -1,4 +1,4 @@
-(ns logjure.core-sicp-test
+(ns logjure.sicp.pair-test
   (:use 
     logjure.sicp.base 
     logjure.sicp.pair
