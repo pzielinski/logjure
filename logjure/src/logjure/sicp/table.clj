@@ -9,15 +9,6 @@
   (list '*table*)
   )
 
-(defn assoc- [key records]
-  (cond (null? records) 
-        false
-        (equal? key (caar records)) 
-        (car records)
-        :else 
-        (assoc- key (cdr records)));NEED RECUR !!!!!!!!!!!!!
-  )
-
 (defn lookup [key-1 key-2 table]
   (let [subtable (assoc- key-1 (cdr table))]
     (if subtable

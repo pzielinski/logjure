@@ -4,95 +4,12 @@
     logjure.sicp.pair
     logjure.sicp.stream
     logjure.sicp.table
+    logjure.sicp.syntax
     )
   )
 
-(defn tagged-list? [exp tag]
-  (if (pair? exp)
-    (eq? (car exp) tag)
-    false)
-  )
-
 ;---------------------------------------------------------------------------------------------------
-; SYNTAX
-
-(defn exp-type [exp]
-  (if (pair? exp)
-    (car exp)
-    (error "Unknown expression TYPE" exp))
-  )
-
-(defn exp-contents [exp]
-  (if (pair? exp)
-    (cdr exp)
-    (error "Unknown expression CONTENTS" exp))
-  )
-
-(defn variable? [exp]
-  (tagged-list? exp '?)
-  )
-
-(defn constant-symbol? [exp] 
-  (symbol? exp)
-  )
-
-(defn assertion-to-be-added? [exp]
-  (eq? (exp-type exp) 'assert!)
-  )
-
-(defn add-assertion-body [exp]
-  (car (exp-contents exp))
-  )
-
-(defn empty-conjunction? [exps] 
-  (null? exps)
-  )
-
-(defn first-conjunct [exps] 
-  (car exps)
-  )
-
-(defn rest-conjuncts [exps] 
-  (cdr exps)
-  )
-
-(defn empty-disjunction? [exps] 
-  (null? exps)
-  )
-
-(defn first-disjunct [exps] 
-  (car exps)
-  )
-
-(defn rest-disjuncts [exps] 
-  (cdr exps)
-  )
-
-(defn negated-query [exps] 
-  (car exps)
-  )
-
-(defn predicate [exps] 
-  (car exps)
-  )
-
-(defn args [exps] 
-  (cdr exps)
-  )
-
-(defn rule? [statement]
-  (tagged-list? statement 'rule)
-  )
-
-(defn conclusion [rule] 
-  (cadr rule)
-  )
-
-(defn rule-body [rule]
-  (if (null? (cddr rule))
-    '(always-true)
-    (caddr rule))
-  )
+; OTHER
 
 (defn expand-question-mark [symbol]
   (let [chars (symbol->string symbol)]
@@ -136,32 +53,6 @@
                                     (number->string (cadr variable)))
                      (symbol->string (cdr variable)))));FIXED BUG !!! was: (cadr variable)
   )
-
-;---------------------------------------------------------------------------------------------------
-; FRAME
-
-(defn make-empty-frame []
-  '()
-  )
-
-(defn make-binding [variable value]
-  (cons-pair variable value)
-  )
-
-(defn binding-variable [binding]
-  (car binding)
-  )
-
-(defn binding-value [binding]
-  (cdr binding)
-  )
-
-(defn binding-in-frame [variable frame]
-  (assoc- variable frame)
-  )
-
-(defn extend-frame [variable value frame]
-  (cons-pair (make-binding variable value) frame))
 
 (defn instantiate
   "To instantiate an expression, we copy it, replacing any variables in the expression by their values in a given frame.

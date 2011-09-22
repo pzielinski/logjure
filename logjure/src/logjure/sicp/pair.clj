@@ -1,4 +1,6 @@
-(ns logjure.sicp.pair)
+(ns logjure.sicp.pair
+  (:use logjure.sicp.base)
+  )
 
 (defn cons-pair [a b]
   (list a b)
@@ -38,5 +40,14 @@
 
 (defn set-cdr! [x pair]
   (cons-pair (car pair) x)
+  )
+
+(defn assoc- [key records]
+  (cond (null? records) 
+        false
+        (equal? key (caar records)) 
+        (car records)
+        :else 
+        (assoc- key (cdr records)));NEED RECUR !!!!!!!!!!!!!
   )
 
