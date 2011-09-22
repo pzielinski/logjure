@@ -1,15 +1,5 @@
 (ns logjure.core-sicp)
 
-(def input-prompt ";;; Query input:")
-(def output-prompt ";;; Query results:")
-
-;---------------------------------------------------------------------------------------------------
-; NOT IMPLEMENTED
-
-(defn prompt-for-input [input-prompt]
-  (println input-prompt)
-  )
-
 ;---------------------------------------------------------------------------------------------------
 ; CLOJURE INTERFACE
 
@@ -98,11 +88,11 @@
 
 (defn set-car! [x pair]
   (cons-pair x (cdr pair))
-  );ATOM!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  )
 
 (defn set-cdr! [x pair]
   (cons-pair (car pair) x)
-  );ATOM!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  )
 
 (defn tagged-list? [exp tag]
   (if (pair? exp)
@@ -126,13 +116,6 @@
         (assoc- key (cdr records)));NEED RECUR !!!!!!!!!!!!!
   )
 
-(defn lookup [key table]
-  (let [record (assoc- key (cdr table))]
-    (if record
-      (cdr record)
-      false))
-  )
-
 (defn lookup [key-1 key-2 table]
   (let [subtable (assoc- key-1 (cdr table))]
     (if subtable
@@ -142,14 +125,6 @@
           false))
       false))
   )
-
-(defn insert! [key value table]
-  (let [record (assoc- key (cdr table))]
-    (if record
-      (set-cdr! record value)
-      (set-cdr! table (cons-pair (cons-pair key value) (cdr table)))))
-  'ok
-  );table has to be an ATOM!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 (defn insert! [key-1 key-2 value table]
   (let [subtable (assoc- key-1 (cdr table))]
@@ -632,6 +607,7 @@ matcher."
 
 (put 'and 'qeval conjoin)
 
+;OR
 (defn disjoin [disjuncts frame-stream]
   (if (empty-disjunction? disjuncts)
     the-empty-stream
@@ -642,6 +618,7 @@ matcher."
 
 (put 'or 'qeval disjoin)
 
+;NOT
 (defn negate [operands frame-stream]
   (stream-flatmap
     (fn [frame]
@@ -661,6 +638,7 @@ matcher."
     (args exp))
   )
 
+;LISP
 (defn lisp-value [call frame-stream]
   (stream-flatmap
     (fn [frame]
@@ -841,8 +819,14 @@ streams of frames."
   )
 
 (defn read-input []
-  ;(read)
-  ;(read-line)
+  (read-line)
+  )
+
+(def input-prompt ";;; Query input:")
+(def output-prompt ";;; Query results:")
+
+(defn prompt-for-input [input-prompt]
+  (println input-prompt)
   )
 
 (defn query-driver-loop []
