@@ -12,42 +12,6 @@
     )
   )
 
-;---------------------------------------------------------------------------------------------------
-; OTHER
-
-(defn expand-question-mark [symbol]
-  (let [chars (symbol->string symbol)]
-    (if (string=? (substring chars 0 1) "?")
-      (cons-pair '? (string->symbol (substring chars 1 (string-length chars))))
-      symbol))
-  )
-
-(defn map-over-symbols [proc exp]
-  (cond (pair? exp) 
-        (cons-pair 
-          (map-over-symbols proc (car exp));NEED RECUR !!!!!!!!!!!!!
-          (map-over-symbols proc (cdr exp)));NEED RECUR !!!!!!!!!!!!!
-        (constant-symbol? exp)
-        (proc exp)
-        :else 
-        exp
-        )
-  )
-
-(defn query-syntax-process [exp]
-  (map-over-symbols expand-question-mark exp)
-  )
-
-(defn contract-question-mark [variable]
-  (string->symbol
-    (string-append "?"
-                   (if (pair? (cdr variable));FIXED BUG !!! was: (number? (cadr variable))
-                     (string-append (symbol->string (cddr variable));FIXED BUG !!! was caddr
-                                    "-"
-                                    (number->string (cadr variable)))
-                     (symbol->string (cdr variable)))));FIXED BUG !!! was: (cadr variable)
-  )
-
 (defn instantiate
   "To instantiate an expression, we copy it, replacing any variables in the expression by their values in a given frame.
 The values are themselves instantiated, since they could contain variables (for example, if ?x in exp is bound to ?y
@@ -158,15 +122,18 @@ given by a procedural argument to instantiate."
       (simple-query query frame-stream)))
   )
 
-(defn read-input []
-  (read-line)
-  )
+;---------------------------------------------------------------------------------------------------
+; REPEL
 
 (def input-prompt ";;; Query input:")
 (def output-prompt ";;; Query results:")
 
 (defn prompt-for-input [input-prompt]
   (println input-prompt)
+  )
+
+(defn read-input []
+  (read-line)
   )
 
 (defn query-driver-loop []

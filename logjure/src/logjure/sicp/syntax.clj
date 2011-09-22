@@ -89,3 +89,36 @@
     (caddr rule))
   )
 
+(defn expand-question-mark [symbol]
+  (let [chars (symbol->string symbol)]
+    (if (string=? (substring chars 0 1) "?")
+      (cons-pair '? (string->symbol (substring chars 1 (string-length chars))))
+      symbol))
+  )
+
+(defn map-over-symbols [proc exp]
+  (cond (pair? exp) 
+        (cons-pair 
+          (map-over-symbols proc (car exp));NEED RECUR !!!!!!!!!!!!!
+          (map-over-symbols proc (cdr exp)));NEED RECUR !!!!!!!!!!!!!
+        (constant-symbol? exp)
+        (proc exp)
+        :else 
+        exp
+        )
+  )
+
+(defn query-syntax-process [exp]
+  (map-over-symbols expand-question-mark exp)
+  )
+
+(defn contract-question-mark [variable]
+  (string->symbol
+    (string-append "?"
+                   (if (pair? (cdr variable));FIXED BUG !!! was: (number? (cadr variable))
+                     (string-append (symbol->string (cddr variable));FIXED BUG !!! was caddr
+                                    "-"
+                                    (number->string (cadr variable)))
+                     (symbol->string (cdr variable)))));FIXED BUG !!! was: (cadr variable)
+  )
+
