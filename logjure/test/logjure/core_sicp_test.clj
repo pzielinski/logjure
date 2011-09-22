@@ -4,7 +4,6 @@
     logjure.sicp.pair
     logjure.sicp.stream
     logjure.sicp.table
-    logjure.core-sicp 
     clojure.contrib.test-is
     )
   )

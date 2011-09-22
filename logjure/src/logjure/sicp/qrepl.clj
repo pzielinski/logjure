@@ -1,4 +1,4 @@
-(ns logjure.core-sicp
+(ns logjure.sicp.qrepl
   (:use 
     logjure.sicp.base 
     logjure.sicp.pair
