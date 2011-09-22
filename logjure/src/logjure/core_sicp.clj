@@ -7,6 +7,7 @@
 ; NOT IMPLEMENTED
 
 (defn prompt-for-input [input-prompt]
+  (println input-prompt)
   )
 
 ;---------------------------------------------------------------------------------------------------
@@ -547,7 +548,7 @@ rules whose conclusions start with a variable in a separate stream in our table,
   )
 
 ;---------------------------------------------------------------------------------------------------
-; SIMPLE QUERY
+; MATCH ASSERTIONS
 
 (declare extend-if-consistent qeval)
 
@@ -618,15 +619,6 @@ matcher."
     (fetch-assertions pattern frame))
   )
 
-(defn simple-query [query-pattern frame-stream]
-  (stream-flatmap
-    (fn [frame]
-      (stream-append-delayed
-        (find-assertions query-pattern frame)
-        (delay (apply-rules query-pattern frame))))
-    frame-stream)
-  )
-
 ;---------------------------------------------------------------------------------------------------
 ; COMPOUND QUERY
 
@@ -693,7 +685,7 @@ matcher."
 (put 'always-true 'qeval always-true)
 
 ;---------------------------------------------------------------------------------------------------
-; RULES
+; MATCH RULES
 
 (defn depends-on?
   "Depends-on? is a predicate that tests whether an expression proposed to be the value of a pattern variable depends
@@ -831,22 +823,20 @@ streams of frames."
 ;---------------------------------------------------------------------------------------------------
 ; REST
 
-(defn get-type [query]
-  (car query)
-  )
-
-(defn get-contents [query]
-  (cdr query)
-  )
-
-(defn get-procedure [query-type procedure-name]
+(defn simple-query [query-pattern frame-stream]
+  (stream-flatmap
+    (fn [frame]
+      (stream-append-delayed
+        (find-assertions query-pattern frame)
+        (delay (apply-rules query-pattern frame))))
+    frame-stream)
   )
 
 (defn qeval [query frame-stream]
-  (let [query-type (get-type query)
-        qproc (get-procedure query-type 'qeval)]
+  (let [query-type (exp-type query)
+        qproc (get-from-table query-type 'qeval)]
     (if qproc
-      (qproc (get-contents query) frame-stream)
+      (qproc (exp-contents query) frame-stream)
       (simple-query query frame-stream)))
   )
 
