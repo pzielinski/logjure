@@ -5,6 +5,7 @@
     logjure.sicp.stream
     logjure.sicp.table
     logjure.sicp.syntax
+    logjure.sicp.frame
     )
   )
 
