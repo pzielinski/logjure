@@ -2,7 +2,6 @@
   (:use 
     logjure.sicp.base 
     logjure.sicp.pair
-    logjure.sicp.stream
     logjure.sicp.table
     logjure.sicp.syntax
     logjure.sicp.frame
@@ -40,8 +39,9 @@
           (do
             (newline)
             (display output-prompt)
-            (display-stream
-              (stream-map
+            (map
+              #(println %)
+              (map
                 (fn [frame]
                         (instantiate q
                                      frame

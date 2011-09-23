@@ -2,7 +2,6 @@
   (:use 
     logjure.sicp.base 
     logjure.sicp.pair
-    logjure.sicp.stream
     logjure.sicp.table
     logjure.sicp.syntax
     logjure.sicp.frame
@@ -150,7 +149,7 @@ forms a stream of extension frames by applying rules from the data base. Stream-
 down the stream of possibly applicable rules (selected by fetch-rules, section 4.4.4.5) and combines the resulting
 streams of frames."
   [pattern frame qeval]
-  (stream-flatmap 
+  (mapcat 
     (fn [rule] (apply-a-rule rule pattern frame))
     (fetch-rules pattern frame))
   )

@@ -2,7 +2,6 @@
   (:use 
     logjure.sicp.base 
     logjure.sicp.pair
-    logjure.sicp.stream
     logjure.sicp.table
     logjure.sicp.syntax
     logjure.sicp.frame
@@ -77,7 +76,7 @@ system would still work if we eliminated fetch-assertions and simply checked a s
 data base, but the computation would be less efficient because we would need to make many more calls to the
 matcher."
   [pattern frame]
-  (stream-flatmap 
+  (mapcat 
     (fn [datum] (check-an-assertion datum pattern frame))
     (fetch-assertions pattern frame))
   )

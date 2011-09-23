@@ -2,14 +2,15 @@
   (:use 
     logjure.sicp.base 
     logjure.sicp.pair
-    logjure.sicp.stream
     logjure.sicp.table
     logjure.sicp.syntax
     )
   )
 
-;---------------------------------------------------------------------------------------------------
-; ASSERTIONS & RULES DATABASE
+(def the-empty-stream '())
+
+(defn singleton-stream [x]
+  (cons x the-empty-stream))
 
 (def THE-ASSERTIONS the-empty-stream);SHOULD BE AN ATOM!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -33,7 +34,7 @@
   )
 
 (defn get-stream [key1 key2]
-  (let [s (get-from-table key1 key2)];get-from-table needs a table !!!!!!!!!!!!!!!!!!!!!!!!!!!!
+  (let [s (get-from-table key1 key2)]
     (if s s 
       the-empty-stream))
   )
@@ -65,7 +66,7 @@ constant symbols) into the program; instead we call on predicates and selectors 
   )
 
 (defn get-indexed-rules [pattern]
-  (stream-append
+  (concat
     (get-stream (index-key-of pattern) 'rule-stream)
     (get-stream '? 'rule-stream))
   )
@@ -87,10 +88,11 @@ rules whose conclusions start with a variable in a separate stream in our table,
   (if (indexable? assertion)
     (let [key (index-key-of assertion)]
       (let [current-assertion-stream (get-stream key 'assertion-stream)]
-        (put 
+        (put
+          (cons assertion current-assertion-stream)
           key 
           'assertion-stream
-          (cons-stream assertion current-assertion-stream)))))
+          ))))
   )
 
 (defn store-rule-in-index [rule]
@@ -98,23 +100,24 @@ rules whose conclusions start with a variable in a separate stream in our table,
     (if (indexable? pattern)
       (let [key (index-key-of pattern)]
         (let [current-rule-stream (get-stream key 'rule-stream)]
-          (put 
+          (put
+            (cons rule current-rule-stream)
             key
             'rule-stream
-            (cons-stream rule current-rule-stream))))))
+            )))))
   )
 
 (defn add-assertion! [assertion]
   (store-assertion-in-index assertion)
   (let [old-assertions THE-ASSERTIONS]
-    (set! THE-ASSERTIONS (cons-stream assertion old-assertions));ATOM!!!!!!!!!!!!
+    (set! THE-ASSERTIONS (cons assertion old-assertions));ATOM!!!!!!!!!!!!
     'ok)
   )
 
 (defn add-rule! [rule]
   (store-rule-in-index rule)
   (let [old-rules THE-RULES]
-    (set! THE-RULES (cons-stream rule old-rules));ATOM!!!!!!!!!!!!
+    (set! THE-RULES (cons rule old-rules));ATOM!!!!!!!!!!!!
     'ok)
   )
 

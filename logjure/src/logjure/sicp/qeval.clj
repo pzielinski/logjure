@@ -2,7 +2,6 @@
   (:use 
     logjure.sicp.base 
     logjure.sicp.pair
-    logjure.sicp.stream
     logjure.sicp.table
     logjure.sicp.syntax
     logjure.sicp.frame
@@ -35,12 +34,14 @@ given by a procedural argument to instantiate."
 
 ;SIMPLE
 (defn simple-query [query-pattern frame-stream]
-  (stream-flatmap
-    (fn [frame]
-      (stream-append-delayed
-        (find-assertions query-pattern frame)
-        (delay (apply-rules query-pattern frame qeval))))
-    frame-stream)
+  ;(lazy-seq
+    (mapcat
+      (fn [frame]
+        (concat
+          (find-assertions query-pattern frame)
+          (apply-rules query-pattern frame qeval)))
+      frame-stream)
+   ; )
   )
 
 ;AND
@@ -51,30 +52,30 @@ given by a procedural argument to instantiate."
              (qeval (first-conjunct conjuncts) frame-stream)))
   )
 
-(put 'and 'qeval conjoin)
+(put conjoin 'and 'qeval)
 
 ;OR
 (defn disjoin [disjuncts frame-stream]
   (if (empty-disjunction? disjuncts)
     the-empty-stream
-    (interleave-delayed
+    (interleave
       (qeval (first-disjunct disjuncts) frame-stream)
       (delay (disjoin (rest-disjuncts disjuncts) frame-stream))))
   )
 
-(put 'or 'qeval disjoin)
+(put disjoin 'or 'qeval)
 
 ;NOT
 (defn negate [operands frame-stream]
-  (stream-flatmap
+  (mapcat
     (fn [frame]
-      (if (stream-null? (qeval (negated-query operands) (singleton-stream frame)))
+      (if (empty? (qeval (negated-query operands) (singleton-stream frame)))
         (singleton-stream frame)
         the-empty-stream))
     frame-stream)
   )
 
-(put 'not 'qeval negate)
+(put negate 'not 'qeval)
 
 (defn execute [exp]
   (apply 
@@ -86,7 +87,7 @@ given by a procedural argument to instantiate."
 
 ;LISP
 (defn lisp-value [call frame-stream]
-  (stream-flatmap
+  (mapcat
     (fn [frame]
       (if (execute
             (instantiate
@@ -100,13 +101,13 @@ given by a procedural argument to instantiate."
     )
   )
 
-(put 'lisp-value 'qeval lisp-value)
+(put lisp-value 'lisp-value 'qeval)
 
 (defn always-true [ignore frame-stream] 
   frame-stream
   )
 
-(put 'always-true 'qeval always-true)
+(put always-true 'always-true 'qeval)
 
 (defn qeval [query frame-stream]
   (let [query-type (exp-type query)
