@@ -72,3 +72,11 @@
   (stream-map display stream)
   )
 
+(defn stream-nth [n stream]
+  (if (stream-null? stream)
+    the-empty-stream
+    (if (= n 0)
+      (stream-car stream) 
+      (stream-nth (dec n) (stream-cdr stream))));NEED RECUR !!!!!!!!!!!!!
+  )
+

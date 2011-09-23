@@ -128,4 +128,32 @@
     )
   )
 
+(deftest test-stream-nth
+  (let [s (cons-stream :a (cons-stream :b (singleton-stream :c)))] 
+    (is (= :a (stream-nth 0 s)))
+    (is (= :b (stream-nth 1 s)))
+    (is (= :c (stream-nth 2 s)))
+    (is (= the-empty-stream (stream-nth 3 s)))
+  )
+)
+
+(defn deeply-nested [n]
+  (loop [n n result '(:bottom)]
+    (if (= n 0)
+      result
+      (recur (dec n) (list result)))))
+
+(defn make-lazy-int-stream [n]
+  (cons-stream n (delay (make-lazy-int-stream (inc n))))
+  )
+
+(deftest test-stream-nth
+  (let [s (cons-stream :a (cons-stream :b (singleton-stream :c)))] 
+    (is (= :a (stream-nth 0 s)))
+    (is (= :b (stream-nth 1 s)))
+    (is (= :c (stream-nth 2 s)))
+    (is (= the-empty-stream (stream-nth 3 s)))
+  )
+)
+
 (run-tests)
