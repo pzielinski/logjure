@@ -2,8 +2,6 @@
   (:use 
     logjure.sicp.base 
     logjure.sicp.pair
-    logjure.sicp.stream
-    logjure.sicp.table
     clojure.contrib.test-is
     )
   )

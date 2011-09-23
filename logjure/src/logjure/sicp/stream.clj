@@ -2,7 +2,7 @@
   (:use logjure.sicp.base logjure.sicp.pair)
   )
 
-(def the-empty-stream '())
+(def the-empty-stream nil)
 
 (defn stream-null? [stream]
   (null? stream)
