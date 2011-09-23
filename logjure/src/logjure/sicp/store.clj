@@ -12,10 +12,14 @@
 (defn singleton-stream [x]
   (cons x the-empty-stream))
 
-(def THE-ASSERTIONS the-empty-stream);SHOULD BE AN ATOM!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+(defn get-stream [key1 key2]
+  (let [s (get-from-table key1 key2)]
+    (if s s 
+      the-empty-stream))
+  )
 
 (defn get-all-assertions [] 
-  THE-ASSERTIONS
+  (get-stream 'all-assertions 'assertion-stream)
   )
 
 (defn indexable? [pat]
@@ -31,12 +35,6 @@
     (if (variable? key) 
       '? 
       key))
-  )
-
-(defn get-stream [key1 key2]
-  (let [s (get-from-table key1 key2)]
-    (if s s 
-      the-empty-stream))
   )
 
 (defn get-indexed-assertions [pattern]
@@ -59,10 +57,35 @@ constant symbols) into the program; instead we call on predicates and selectors 
     (get-all-assertions))
   )
 
-(def THE-RULES the-empty-stream);SHOULD BE AN ATOM!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
+(defn store-assertion-in-all 
+  [assertion]
+  (put
+    (cons assertion (get-all-assertions))
+    'all-assertions
+    'assertion-stream
+    )
+  'ok
+  )
+
+(defn store-assertion-in-index [assertion]
+  (if (indexable? assertion)
+    (let [key (index-key-of assertion)]
+      (let [current-assertion-stream (get-stream key 'assertion-stream)]
+        (put
+          (cons assertion current-assertion-stream)
+          key 
+          'assertion-stream
+          ))))
+  )
+
+(defn add-assertion! [assertion]
+  (store-assertion-in-index assertion)
+  (store-assertion-in-all assertion);SHOULD NOT ADD TO ALL, if added to index!!!!!!!!!!!!!!!!!!!!!!
+  'ok
+  )
 
 (defn get-all-rules [] 
-  THE-RULES
+  (get-stream 'all-rules 'rule-stream)
   )
 
 (defn get-indexed-rules [pattern]
@@ -84,41 +107,31 @@ rules whose conclusions start with a variable in a separate stream in our table,
     (get-all-rules))
   )
 
-(defn store-assertion-in-index [assertion]
-  (if (indexable? assertion)
-    (let [key (index-key-of assertion)]
-      (let [current-assertion-stream (get-stream key 'assertion-stream)]
-        (put
-          (cons assertion current-assertion-stream)
-          key 
-          'assertion-stream
-          ))))
+(defn store-rule-in-all [rule]
+  (let [pattern (conclusion rule)]
+    (put
+      (cons rule (get-all-rules))
+      'all-rules
+      'rule-stream
+      ))
   )
 
 (defn store-rule-in-index [rule]
   (let [pattern (conclusion rule)]
     (if (indexable? pattern)
-      (let [key (index-key-of pattern)]
-        (let [current-rule-stream (get-stream key 'rule-stream)]
+      (let [the-key (index-key-of pattern)]
+        (let [current-rule-stream (get-stream the-key 'rule-stream)]
           (put
             (cons rule current-rule-stream)
-            key
+            the-key
             'rule-stream
             )))))
   )
 
-(defn add-assertion! [assertion]
-  (store-assertion-in-index assertion)
-  (let [old-assertions THE-ASSERTIONS]
-    (set! THE-ASSERTIONS (cons assertion old-assertions));ATOM!!!!!!!!!!!!
-    'ok)
-  )
-
 (defn add-rule! [rule]
+  (store-rule-in-all rule)
   (store-rule-in-index rule)
-  (let [old-rules THE-RULES]
-    (set! THE-RULES (cons rule old-rules));ATOM!!!!!!!!!!!!
-    'ok)
+  'ok
   )
 
 (defn add-rule-or-assertion! [assertion]
