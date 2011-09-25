@@ -23,12 +23,10 @@
 (deftest test-add-assertion!
   (reset! *store* {})
   (is (= '{(address assertion-stream) ((address (Bitdiddle Ben) (Slumerville (Ridge Road) 10)))
-           (all-assertions assertion-stream) ((address (Bitdiddle Ben) (Slumerville (Ridge Road) 10)))
            } 
          (do (add-assertion! '(address (Bitdiddle Ben) (Slumerville (Ridge Road) 10))) @*store*)))
   (reset! *store* {})
   (is (= '{(? assertion-stream) (((? x) (Bitdiddle Ben) (Slumerville (Ridge Road) 10)))
-           (all-assertions assertion-stream) (((? x) (Bitdiddle Ben) (Slumerville (Ridge Road) 10)))
            } 
          (do (add-assertion! '((? x) (Bitdiddle Ben) (Slumerville (Ridge Road) 10))) @*store*)))
   (reset! *store* {})

@@ -79,9 +79,9 @@ constant symbols) into the program; instead we call on predicates and selectors 
   )
 
 (defn add-assertion! [assertion]
-  (store-assertion-in-index assertion)
-  (store-assertion-in-all assertion);SHOULD NOT ADD TO ALL, if added to index!!!!!!!!!!!!!!!!!!!!!!
-  'ok
+  (if (indexable? assertion)
+    (store-assertion-in-index assertion)
+    (store-assertion-in-all assertion))
   )
 
 (defn get-all-rules [] 
@@ -129,10 +129,10 @@ rules whose conclusions start with a variable in a separate stream in our table,
   )
 
 (defn add-rule! [rule]
-  (store-rule-in-all rule)
-  (store-rule-in-index rule)
-  'ok
-  )
+  (if (indexable? (conclusion rule))
+    (store-rule-in-index rule)
+    (store-rule-in-all rule))
+)
 
 (defn add-rule-or-assertion! [assertion]
   (if (rule? assertion)
