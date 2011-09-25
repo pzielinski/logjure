@@ -1,5 +1,7 @@
 (ns logjure.sicp.store-test
   (:use 
+    logjure.sicp.pair
+    logjure.sicp.syntax
     logjure.sicp.table
     logjure.sicp.store
     clojure.contrib.test-is
@@ -53,6 +55,21 @@
   (is (= '((address (Bitdiddle Ben) (Slumerville (Ridge Road) 10))
             (address (Hacker Alyssa P) (Cambridge (Mass Ave) 78))) 
          (get-indexed-assertions '(address (? x) (? y)))))
+  (reset! *store* {})
+)
+
+
+(deftest test-store-rule-in-all
+  (reset! *store* {})
+  (is (= '{(all-rules rule-stream) ((rule (same (? x) (? x))))} 
+         (do (store-rule-in-all '(rule (same (? x) (? x)))) @*store*)))
+  (reset! *store* {})
+)
+
+(deftest test-store-rule-in-index
+  (reset! *store* {})
+  (is (= '{(same rule-stream) ((rule ((same (? x) (? x)))))} 
+         (do (store-rule-in-index '(rule ((same (? x) (? x))))) @*store*)))
   (reset! *store* {})
 )
 

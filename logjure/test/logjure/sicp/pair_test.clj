@@ -47,4 +47,8 @@
   (is (= '(nil :x) (set-cdr! :x nil)))
 )
 
+(deftest test-cadr
+  (is (= :b (cadr '(:a (:b :c)))))
+)
+
 (run-tests)
