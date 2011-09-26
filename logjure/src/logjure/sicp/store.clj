@@ -1,15 +1,21 @@
 (ns logjure.sicp.store
   (:use 
+    clojure.set
     logjure.sicp.base 
     logjure.sicp.table
     logjure.sicp.syntax
     )
   )
 
-(def the-empty-stream '())
+(def the-empty-stream #{})
 
 (defn singleton-stream [x]
-  (cons x the-empty-stream))
+  #{x}
+  )
+
+(defn- add-to-stream [x stream]
+  (union #{x} stream)
+  )
 
 (defn get-stream [key1 key2]
   (let [s (get-from-table key1 key2)]
@@ -59,7 +65,7 @@ constant symbols) into the program; instead we call on predicates and selectors 
 (defn store-assertion-in-all 
   [assertion]
   (put
-    (cons assertion (get-all-assertions))
+    (add-to-stream assertion (get-all-assertions))
     'all-assertions
     'assertion-stream
     )
@@ -71,7 +77,7 @@ constant symbols) into the program; instead we call on predicates and selectors 
     (let [key (index-key-of assertion)]
       (let [current-assertion-stream (get-stream key 'assertion-stream)]
         (put
-          (cons assertion current-assertion-stream)
+          (add-to-stream assertion current-assertion-stream)
           key 
           'assertion-stream
           ))))
@@ -88,7 +94,7 @@ constant symbols) into the program; instead we call on predicates and selectors 
   )
 
 (defn get-indexed-rules [pattern]
-  (concat
+  (union
     (get-stream (index-key-of pattern) 'rule-stream)
     (get-stream '? 'rule-stream))
   )
@@ -109,7 +115,7 @@ rules whose conclusions start with a variable in a separate stream in our table,
 (defn store-rule-in-all [rule]
   (let [pattern (conclusion rule)]
     (put
-      (cons rule (get-all-rules))
+      (add-to-stream rule (get-all-rules))
       'all-rules
       'rule-stream
       ))
@@ -121,7 +127,7 @@ rules whose conclusions start with a variable in a separate stream in our table,
       (let [the-key (index-key-of pattern)]
         (let [current-rule-stream (get-stream the-key 'rule-stream)]
           (put
-            (cons rule current-rule-stream)
+            (add-to-stream rule current-rule-stream)
             the-key
             'rule-stream
             )))))
@@ -131,7 +137,7 @@ rules whose conclusions start with a variable in a separate stream in our table,
   (if (indexable? (conclusion rule))
     (store-rule-in-index rule)
     (store-rule-in-all rule))
-)
+  )
 
 (defn add-rule-or-assertion! [assertion]
   (if (rule? assertion)
