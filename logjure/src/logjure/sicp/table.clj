@@ -1,7 +1,6 @@
 (ns logjure.sicp.table
   (:use 
     logjure.sicp.base 
-    logjure.sicp.pair
     )
   )
 

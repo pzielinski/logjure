@@ -1,7 +1,6 @@
 (ns logjure.sicp.rule
   (:use 
     logjure.sicp.base 
-    logjure.sicp.pair
     logjure.sicp.table
     logjure.sicp.syntax
     logjure.sicp.frame
@@ -18,7 +17,7 @@
   )
 
 (defn make-new-variable [variable rule-application-id]
-  (cons-pair '? (cons-pair rule-application-id (cdr variable)))
+  (cons '? (cons rule-application-id (first variable)))
   )
 
 (defn depends-on?
@@ -37,8 +36,8 @@ recursive tree walk in which we substitute for the values of variables whenever 
                 (if b
                   (tree-walk (binding-value b))
                   false)))
-            (pair? e)
-            (or (tree-walk (car e)) (tree-walk (cdr e)))
+            (seq? e)
+            (or (tree-walk (first e)) (tree-walk (second e)))
             :else false))]
          (tree-walk exp))
   )
@@ -94,11 +93,11 @@ variable."
     (extend-if-possible p1 p2 frame)
     (var? p2) 
     (extend-if-possible p2 p1 frame) ; ***
-    (and (pair? p1) (pair? p2))
-    (unify-match (cdr p1)
-                 (cdr p2)
-                 (unify-match (car p1);RECUR!!!!!!!!!!!!!!!
-                              (car p2)
+    (and (seq? p1) (seq? p2))
+    (unify-match (second p1)
+                 (second p2)
+                 (unify-match (first p1);RECUR!!!!!!!!!!!!!!!
+                              (first p2)
                               frame))
     :else 'failed
     )
@@ -122,10 +121,10 @@ id are included with the syntax procedures in section 4.4.4.7.)"
               [exp]
               (cond (variable? exp)
                     (make-new-variable exp rule-application-id)
-                    (pair? exp)
-                    (cons-pair 
-                      (tree-walk (car exp));RECUR!!!!!!!!!!!!!!!!!!!!
-                      (tree-walk (cdr exp)));RECUR!!!!!!!!!!!!!!!!!!!!
+                    (seq? exp)
+                    (cons 
+                      (tree-walk (first exp));RECUR!!!!!!!!!!!!!!!!!!!!
+                      (tree-walk (second exp)));RECUR!!!!!!!!!!!!!!!!!!!!
                     :else exp
                     ))]
     (tree-walk rule)))

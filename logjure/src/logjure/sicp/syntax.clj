@@ -1,25 +1,24 @@
 (ns logjure.sicp.syntax
   (:use 
     logjure.sicp.base 
-    logjure.sicp.pair
     )
   )
 
 (defn exp-type [exp]
-  (if (pair? exp)
-    (car exp)
+  (if (seq? exp)
+    (first exp)
     (error "Unknown expression TYPE" exp))
   )
 
 (defn exp-contents [exp]
-  (if (pair? exp)
-    (cdr exp)
+  (if (seq? exp)
+    (second exp)
     (error "Unknown expression CONTENTS" exp))
   )
 
 (defn tagged-list? [exp tag]
-  (if (pair? exp)
-    (eq? (car exp) tag)
+  (if (seq? exp)
+    (eq? (first exp) tag)
     false)
   )
 
@@ -36,7 +35,7 @@
   )
 
 (defn add-assertion-body [exp]
-  (car (exp-contents exp))
+  (first (exp-contents exp))
   )
 
 (defn empty-conjunction? [exps] 
@@ -44,11 +43,11 @@
   )
 
 (defn first-conjunct [exps] 
-  (car exps)
+  (first exps)
   )
 
 (defn rest-conjuncts [exps] 
-  (cdr exps)
+  (second exps)
   )
 
 (defn empty-disjunction? [exps] 
@@ -56,23 +55,23 @@
   )
 
 (defn first-disjunct [exps] 
-  (car exps)
+  (first exps)
   )
 
 (defn rest-disjuncts [exps] 
-  (cdr exps)
+  (second exps)
   )
 
 (defn negated-query [exps] 
-  (car exps)
+  (first exps)
   )
 
 (defn predicate [exps] 
-  (car exps)
+  (first exps)
   )
 
 (defn args [exps] 
-  (cdr exps)
+  (second exps)
   )
 
 (defn rule? [statement]
@@ -80,27 +79,27 @@
   )
 
 (defn conclusion [rule] 
-  (cadr rule)
+  (second rule)
   )
 
 (defn rule-body [rule]
-  (if (null? (cddr rule))
+  (if (null? (nth rule 2 nil))
     '(always-true)
-    (caddr rule))
+    (nth rule 2))
   )
 
 (defn expand-question-mark [symbol]
   (let [chars (symbol->string symbol)]
     (if (string=? (substring chars 0 1) "?")
-      (cons-pair '? (string->symbol (substring chars 1 (string-length chars))))
+      (cons '? (string->symbol (substring chars 1 (string-length chars))))
       symbol))
   )
 
 (defn map-over-symbols [proc exp]
-  (cond (pair? exp) 
-        (cons-pair 
-          (map-over-symbols proc (car exp));NEED RECUR !!!!!!!!!!!!!
-          (map-over-symbols proc (cdr exp)));NEED RECUR !!!!!!!!!!!!!
+  (cond (seq? exp) 
+        (cons 
+          (map-over-symbols proc (first exp));NEED RECUR !!!!!!!!!!!!!
+          (map-over-symbols proc (second exp)));NEED RECUR !!!!!!!!!!!!!
         (constant-symbol? exp)
         (proc exp)
         :else 
@@ -113,12 +112,13 @@
   )
 
 (defn contract-question-mark [variable]
-  (string->symbol
-    (string-append "?"
-                   (if (pair? (cdr variable));FIXED BUG !!! was: (number? (cadr variable))
-                     (string-append (symbol->string (cddr variable));FIXED BUG !!! was caddr
-                                    "-"
-                                    (number->string (cadr variable)))
-                     (symbol->string (cdr variable)))));FIXED BUG !!! was: (cadr variable)
+  (let [var-symbol-or-num-symbol-seq (second variable)]
+    (string->symbol
+      (string-append "?"
+                     (if (seq? var-symbol-or-num-symbol-seq)
+                       (string-append (symbol->string (first var-symbol-or-num-symbol-seq))
+                                      "-"
+                                      (number->string (second var-symbol-or-num-symbol-seq)))
+                       (symbol->string var-symbol-or-num-symbol-seq)))))
   )
 

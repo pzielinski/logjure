@@ -1,7 +1,6 @@
 (ns logjure.sicp.assertion
   (:use 
     logjure.sicp.base 
-    logjure.sicp.pair
     logjure.sicp.table
     logjure.sicp.syntax
     logjure.sicp.frame
@@ -27,10 +26,10 @@ return the symbol failed."
   (cond (eq? frame 'failed) 'failed
         (equal? pat dat) frame
         (variable? pat) (extend-if-consistent pat dat frame)
-        (and (pair? pat) (pair? dat)) (pattern-match (cdr pat)
-                                                     (cdr dat)
-                                                     (pattern-match (car pat);NEED RECUR !!!!!!!!!!!!!
-                                                                    (car dat)
+        (and (seq? pat) (seq? dat)) (pattern-match (second pat)
+                                                     (second dat)
+                                                     (pattern-match (first pat);NEED RECUR !!!!!!!!!!!!!
+                                                                    (first dat)
                                                                     frame))
         :else 'failed)
   )

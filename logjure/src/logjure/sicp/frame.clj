@@ -1,30 +1,29 @@
 (ns logjure.sicp.frame
   (:use 
     logjure.sicp.base 
-    logjure.sicp.pair
     )
   )
 
 (defn make-empty-frame []
-  '()
+  {}
   )
 
 (defn make-binding [variable value]
-  (cons-pair variable value)
+  (cons variable value)
   )
 
 (defn binding-variable [binding]
-  (car binding)
+  (first binding)
   )
 
 (defn binding-value [binding]
-  (cdr binding)
+  (second binding)
   )
 
 (defn binding-in-frame [variable frame]
-  (assoc- variable frame)
+  (get frame variable)
   )
 
 (defn extend-frame [variable value frame]
-  (cons-pair (make-binding variable value) frame))
+  (assoc frame variable (make-binding variable value)))
 

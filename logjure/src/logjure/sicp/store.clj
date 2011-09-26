@@ -1,7 +1,6 @@
 (ns logjure.sicp.store
   (:use 
     logjure.sicp.base 
-    logjure.sicp.pair
     logjure.sicp.table
     logjure.sicp.syntax
     )
@@ -23,15 +22,15 @@
   )
 
 (defn indexable? [pat]
-  (or (constant-symbol? (car pat)) (variable? (car pat)))
+  (or (constant-symbol? (first pat)) (variable? (first pat)))
   )
 
 (defn use-index? [pat]
-  (constant-symbol? (car pat))
+  (constant-symbol? (first pat))
   )
 
 (defn index-key-of [pat]
-  (let [key (car pat)]
+  (let [key (first pat)]
     (if (variable? key) 
       '? 
       key))

@@ -1,6 +1,5 @@
 (ns logjure.sicp.store-test
   (:use 
-    logjure.sicp.pair
     logjure.sicp.syntax
     logjure.sicp.table
     logjure.sicp.store

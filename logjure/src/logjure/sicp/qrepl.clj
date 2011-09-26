@@ -1,7 +1,6 @@
 (ns logjure.sicp.qrepl
   (:use 
     logjure.sicp.base 
-    logjure.sicp.pair
     logjure.sicp.table
     logjure.sicp.syntax
     logjure.sicp.frame

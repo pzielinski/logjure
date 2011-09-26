@@ -1,7 +1,6 @@
 (ns logjure.sicp.qeval
   (:use 
     logjure.sicp.base 
-    logjure.sicp.pair
     logjure.sicp.table
     logjure.sicp.syntax
     logjure.sicp.frame
@@ -26,8 +25,8 @@ given by a procedural argument to instantiate."
                   (if the-binding
                     (copy (binding-value the-binding))
                     (unbound-var-handler exp frame)))
-                (pair? exp)
-                  (cons-pair (copy (car exp)) (copy (cdr exp)))
+                (first exp)
+                  (cons (copy (first exp)) (copy (second exp)))
                 :else exp))]
         (copy exp))
   )
