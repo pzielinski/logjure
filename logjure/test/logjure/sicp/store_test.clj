@@ -22,14 +22,17 @@
 )
 
 (deftest test-add-assertion!
+  ;indexed by constant symbol
   (reset! *store* {})
   (is (= '{(address assertion-stream) ((address (Bitdiddle Ben) (Slumerville (Ridge Road) 10)))
            } 
          (do (add-assertion! '(address (Bitdiddle Ben) (Slumerville (Ridge Road) 10))) @*store*)))
+  ;indexed by ?
   (reset! *store* {})
   (is (= '{(? assertion-stream) (((? x) (Bitdiddle Ben) (Slumerville (Ridge Road) 10)))
            } 
          (do (add-assertion! '((? x) (Bitdiddle Ben) (Slumerville (Ridge Road) 10))) @*store*)))
+  ;not indexed, stored in all
   (reset! *store* {})
   (is (= '{(all-assertions assertion-stream) ((((? x) (? y)) (Bitdiddle Ben) (Slumerville (Ridge Road) 10)))} 
          (do (add-assertion! '(((? x) (? y)) (Bitdiddle Ben) (Slumerville (Ridge Road) 10))) @*store*)))
@@ -67,9 +70,46 @@
 
 (deftest test-store-rule-in-index
   (reset! *store* {})
-  (is (= '{(same rule-stream) ((rule ((same (? x) (? x)))))} 
-         (do (store-rule-in-index '(rule ((same (? x) (? x))))) @*store*)))
+  (is (= '{(same rule-stream) ((rule (same (? x) (? x))))} 
+         (do (store-rule-in-index '(rule (same (? x) (? x)))) @*store*)))
   (reset! *store* {})
 )
+
+(deftest test-add-rule!
+  ;indexed by constant symbol
+  (reset! *store* {})
+  (is (= '{(same rule-stream) ((rule (same (? x) (? x))))} 
+         (do (add-rule! '(rule (same (? x) (? x)))) @*store*)))
+  ;indexed by constant symbol - multiple
+  (reset! *store* {})
+  (is (= '{(append-to-form rule-stream) 
+           ((rule (append-to-form () ?y ?y))
+             (rule (append-to-form (?u . ?v) ?y (?u . ?z)) (append-to-form ?v ?y ?z))
+             )} 
+         (do 
+           (add-rule! '(rule (append-to-form () ?y ?y))) 
+           (add-rule! '(rule (append-to-form (?u . ?v) ?y (?u . ?z)) (append-to-form ?v ?y ?z))) 
+           @*store*)))
+  ;indexed by ?
+  (reset! *store* {})
+  (is (= '{(? rule-stream) ((rule ((? y) (? x) (? x))))} 
+         (do (add-rule! '(rule ((? y) (? x) (? x)))) @*store*)))
+  ;not indexed, stored in all
+  (reset! *store* {})
+  (is (= '{(all-rules rule-stream) ((rule (((? y) (? y)) (? x) (? x))))} 
+         (do (add-rule! '(rule (((? y) (? y)) (? x) (? x)))) @*store*)))
+  (reset! *store* {})
+)
+
+(deftest test-get-all-rules
+  (reset! *store* '{(all-rules rule-stream) ((rule (same (? x) (? x))))})
+  (is (= '((rule (same (? x) (? x)))) (get-all-rules)))
+  (reset! *store* {})
+)
+
+(deftest test-get-indexed-rules
+  (reset! *store* {})
+)
+
 
 (run-tests)
