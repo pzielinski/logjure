@@ -47,16 +47,13 @@
 )
 
 (deftest test-get-indexed-assertions
-  (reset! *store* '{(address assertion-stream) ((address (Bitdiddle Ben) (Slumerville (Ridge Road) 10)))})
-  (is (= '((address (Bitdiddle Ben) (Slumerville (Ridge Road) 10))) (get-indexed-assertions '(address (? x) (? y)))))
+  (reset! *store* '{(address assertion-stream) #{(address (Bitdiddle Ben) (Slumerville (Ridge Road) 10))}})
+  (is (= '#{(address (Bitdiddle Ben) (Slumerville (Ridge Road) 10))} (get-indexed-assertions '(address (? x) (? y)))))
   (reset! *store* '{(address assertion-stream) 
-                    (
-                      (address (Bitdiddle Ben) (Slumerville (Ridge Road) 10))
-                      (address (Hacker Alyssa P) (Cambridge (Mass Ave) 78))
-                      )
-                    })
-  (is (= '((address (Bitdiddle Ben) (Slumerville (Ridge Road) 10))
-            (address (Hacker Alyssa P) (Cambridge (Mass Ave) 78))) 
+                    #{(address (Bitdiddle Ben) (Slumerville (Ridge Road) 10))
+                      (address (Hacker Alyssa P) (Cambridge (Mass Ave) 78))}})
+  (is (= '#{(address (Bitdiddle Ben) (Slumerville (Ridge Road) 10))
+            (address (Hacker Alyssa P) (Cambridge (Mass Ave) 78))} 
          (get-indexed-assertions '(address (? x) (? y)))))
   (reset! *store* {})
 )
@@ -102,12 +99,18 @@
 )
 
 (deftest test-get-all-rules
-  (reset! *store* '{(all-rules rule-stream) ((rule (same (? x) (? x))))})
-  (is (= '((rule (same (? x) (? x)))) (get-all-rules)))
+  (reset! *store* '{(all-rules rule-stream) #{(rule (same (? x) (? x)))}})
+  (is (= '#{(rule (same (? x) (? x)))} (get-all-rules)))
   (reset! *store* {})
 )
 
 (deftest test-get-indexed-rules
+  (reset! *store* '{(append-to-form rule-stream) 
+           #{(rule (append-to-form () ?y ?y))
+             (rule (append-to-form (?u . ?v) ?y (?u . ?z)) (append-to-form ?v ?y ?z))}})
+  (is (= '#{(rule (append-to-form () ?y ?y))
+            (rule (append-to-form (?u . ?v) ?y (?u . ?z)) (append-to-form ?v ?y ?z))}
+         (get-indexed-rules '(append-to-form (? a) (? b) (? c)))))
   (reset! *store* {})
 )
 
@@ -115,5 +118,16 @@
   (is (= '#{:x} (add-to-stream :x #{})))
   (is (= '#{:x :y} (add-to-stream :y #{:x})))
   )
+
+(deftest test-use-index?
+  (is (= true (use-index? '(same (? x) (? y)))))
+  (is (= false (use-index? '((? x) (? y)))))
+  )
+
+(deftest test-indexable?
+  (is (= true (indexable? '(same (? x) (? y)))))
+  (is (= true (indexable? '((? x) (? y)))))
+  )
+
 
 (run-tests)

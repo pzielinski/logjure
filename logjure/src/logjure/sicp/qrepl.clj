@@ -46,7 +46,7 @@
                                      frame
                                      (fn [v f]
                                              (contract-question-mark v))))
-                (qeval q (singleton-stream (make-empty-frame)))))
+                (qeval q (list (make-empty-frame)))))
             (query-driver-loop))
           )))
 

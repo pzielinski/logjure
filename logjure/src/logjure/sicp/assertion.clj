@@ -60,9 +60,8 @@ and we never store more than one binding for a given variable."
 stream containing the extended frame or the-empty-stream if the match fails."
   [assertion query-pat query-frame]
   (let [match-result (pattern-match query-pat assertion query-frame)]
-    (if (eq? match-result 'failed)
-      the-empty-stream
-      (singleton-stream match-result)))
+    (when (not (eq? match-result 'failed))
+      (list match-result)))
   )
 
 (defn find-assertions
@@ -77,6 +76,6 @@ matcher."
   [pattern frame]
   (mapcat 
     (fn [datum] (check-an-assertion datum pattern frame))
-    (fetch-assertions pattern frame))
+    (get-assertions pattern frame))
   )
 

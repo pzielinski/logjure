@@ -55,8 +55,7 @@ given by a procedural argument to instantiate."
 
 ;OR
 (defn disjoin [disjuncts frame-stream]
-  (if (empty-disjunction? disjuncts)
-    the-empty-stream
+  (when (not (empty-disjunction? disjuncts))
     (interleave
       (qeval (first-disjunct disjuncts) frame-stream)
       (delay (disjoin (rest-disjuncts disjuncts) frame-stream))))
@@ -68,9 +67,8 @@ given by a procedural argument to instantiate."
 (defn negate [operands frame-stream]
   (mapcat
     (fn [frame]
-      (if (empty? (qeval (negated-query operands) (singleton-stream frame)))
-        (singleton-stream frame)
-        the-empty-stream))
+      (when (empty? (qeval (negated-query operands) (list frame)))
+        (list frame)))
     frame-stream)
   )
 
@@ -88,14 +86,13 @@ given by a procedural argument to instantiate."
 (defn lisp-value [call frame-stream]
   (mapcat
     (fn [frame]
-      (if (execute
+      (when (execute
             (instantiate
               call
               frame
               (fn [v f]
                 (error "Unknown pat var -- LISP-VALUE" v))))
-        (singleton-stream frame)
-        the-empty-stream))
+        (list frame)))
     frame-stream
     )
   )

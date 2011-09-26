@@ -137,9 +137,8 @@ new frame."
   [rule query-pattern query-frame qeval]
   (let [clean-rule (rename-variables-in rule)]
     (let [unify-result (unify-match query-pattern (conclusion clean-rule) query-frame)]
-      (if (eq? unify-result 'failed)
-        the-empty-stream
-        (qeval (rule-body clean-rule) (singleton-stream unify-result)))))
+      (when (not (eq? unify-result 'failed))
+        (qeval (rule-body clean-rule) (list unify-result)))))
   )
 
 (defn apply-rules
@@ -150,5 +149,5 @@ streams of frames."
   [pattern frame qeval]
   (mapcat 
     (fn [rule] (apply-a-rule rule pattern frame))
-    (fetch-rules pattern frame))
+    (get-rules pattern frame))
   )
