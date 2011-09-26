@@ -3,9 +3,12 @@
     logjure.sicp.syntax
     logjure.sicp.table
     logjure.sicp.store
+    logjure.utils.testing
     clojure.contrib.test-is
     )
   )
+
+(refer-private 'logjure.sicp.store)
 
 (deftest test-store-assertion-in-all
   (reset! *store* {})
@@ -108,5 +111,9 @@
   (reset! *store* {})
 )
 
+(deftest test-add-to-stream
+  (is (= '#{:x} (add-to-stream :x #{})))
+  (is (= '#{:x :y} (add-to-stream :y #{:x})))
+  )
 
 (run-tests)
