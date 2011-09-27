@@ -1,7 +1,4 @@
 (ns logjure.sicp.frame
-  (:use 
-    logjure.sicp.base 
-    )
   )
 
 (defn make-empty-frame []

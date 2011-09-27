@@ -1,7 +1,4 @@
 (ns logjure.sicp.table
-  (:use 
-    logjure.sicp.base 
-    )
   )
 
 (def *store* (atom {}))

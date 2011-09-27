@@ -1,7 +1,24 @@
 (ns logjure.sicp.syntax
-  (:use 
-    logjure.sicp.base 
-    )
+  )
+
+(defn display [& more]
+  (println more)
+  )
+
+(defn error [& more]
+  (display more)
+  )
+
+(defn eq? [s1 s2]
+  (= s1 s2)
+  )
+
+(defn equal? [list1 list2]
+  (= list1 list2)
+  )
+
+(defn null? [x]
+  (nil? x)
   )
 
 (defn exp-type [exp]

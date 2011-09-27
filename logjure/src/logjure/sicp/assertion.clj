@@ -1,6 +1,5 @@
 (ns logjure.sicp.assertion
   (:use 
-    logjure.sicp.base 
     logjure.sicp.table
     logjure.sicp.syntax
     logjure.sicp.frame

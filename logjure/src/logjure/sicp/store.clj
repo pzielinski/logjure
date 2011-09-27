@@ -1,7 +1,6 @@
 (ns logjure.sicp.store
   (:use 
     clojure.set
-    logjure.sicp.base 
     logjure.sicp.table
     logjure.sicp.syntax
     )
