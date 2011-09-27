@@ -16,7 +16,7 @@
   )
 
 (defn make-new-variable [variable rule-application-id]
-  (cons '? (cons rule-application-id (first variable)))
+  (symbol (str variable rule-application-id))
   )
 
 (defn depends-on?
