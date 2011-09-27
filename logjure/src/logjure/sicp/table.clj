@@ -13,3 +13,7 @@
   (swap! *store* assoc the-keys value)
   )
 
+(defn clear-table
+  []
+  (reset! *store* {})
+  )

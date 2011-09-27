@@ -11,39 +11,39 @@
 (refer-private 'logjure.sicp.store)
 
 (deftest test-store-assertion-in-all
-  (reset! *store* {})
+  (clear-table)
   (is (= '{(all-assertions assertion-stream) #{(address (Bitdiddle Ben) (Slumerville (Ridge Road) 10))}} 
          (do (store-assertion-in-all '(address (Bitdiddle Ben) (Slumerville (Ridge Road) 10))) @*store*)))
-  (reset! *store* {})
+  (clear-table)
 )
 
 (deftest test-store-assertion-in-index
-  (reset! *store* {})
+  (clear-table)
   (is (= '{(address assertion-stream) #{(address (Bitdiddle Ben) (Slumerville (Ridge Road) 10))}} 
          (do (store-assertion-in-index '(address (Bitdiddle Ben) (Slumerville (Ridge Road) 10))) @*store*)))
-  (reset! *store* {})
+  (clear-table)
 )
 
 (deftest test-add-assertion!
   ;indexed by constant symbol
-  (reset! *store* {})
+  (clear-table)
   (is (= '{(address assertion-stream) #{(address (Bitdiddle Ben) (Slumerville (Ridge Road) 10))}} 
          (do (add-assertion! '(address (Bitdiddle Ben) (Slumerville (Ridge Road) 10))) @*store*)))
   ;indexed by ?
-  (reset! *store* {})
+  (clear-table)
   (is (= '{(? assertion-stream) #{(?x (Bitdiddle Ben) (Slumerville (Ridge Road) 10))}} 
          (do (add-assertion! '(?x (Bitdiddle Ben) (Slumerville (Ridge Road) 10))) @*store*)))
   ;not indexed, stored in all
-  (reset! *store* {})
+  (clear-table)
   (is (= '{(all-assertions assertion-stream) #{((?x ?y) (Bitdiddle Ben) (Slumerville (Ridge Road) 10))}} 
          (do (add-assertion! '((?x ?y) (Bitdiddle Ben) (Slumerville (Ridge Road) 10))) @*store*)))
-  (reset! *store* {})
+  (clear-table)
 )
 
 (deftest test-get-all-assertions
   (reset! *store* '{(all-assertions assertion-stream) #{(address (Bitdiddle Ben) (Slumerville (Ridge Road) 10))}})
   (is (= '#{(address (Bitdiddle Ben) (Slumerville (Ridge Road) 10))} (get-all-assertions)))
-  (reset! *store* {})
+  (clear-table)
 )
 
 (deftest test-get-indexed-assertions
@@ -55,31 +55,31 @@
   (is (= '#{(address (Bitdiddle Ben) (Slumerville (Ridge Road) 10))
             (address (Hacker Alyssa P) (Cambridge (Mass Ave) 78))} 
          (get-indexed-assertions '(address ?x ?y))))
-  (reset! *store* {})
+  (clear-table)
 )
 
 
 (deftest test-store-rule-in-all
-  (reset! *store* {})
+  (clear-table)
   (is (= '{(all-rules rule-stream) #{(rule (same ?x ?x))}} 
          (do (store-rule-in-all '(rule (same ?x ?x))) @*store*)))
-  (reset! *store* {})
+  (clear-table)
 )
 
 (deftest test-store-rule-in-index
-  (reset! *store* {})
+  (clear-table)
   (is (= '{(same rule-stream) #{(rule (same ?x ?x))}} 
          (do (store-rule-in-index '(rule (same ?x ?x))) @*store*)))
-  (reset! *store* {})
+  (clear-table)
 )
 
 (deftest test-add-rule!
   ;indexed by constant symbol
-  (reset! *store* {})
+  (clear-table)
   (is (= '{(same rule-stream) #{(rule (same ?x ?x))}} 
          (do (add-rule! '(rule (same ?x ?x))) @*store*)))
   ;indexed by constant symbol - multiple
-  (reset! *store* {})
+  (clear-table)
   (is (= '{(append-to-form rule-stream) 
            #{(rule (append-to-form () ?y ?y))
              (rule (append-to-form (?u . ?v) ?y (?u . ?z)) (append-to-form ?v ?y ?z))}} 
@@ -88,20 +88,20 @@
            (add-rule! '(rule (append-to-form (?u . ?v) ?y (?u . ?z)) (append-to-form ?v ?y ?z))) 
            @*store*)))
   ;indexed by ?
-  (reset! *store* {})
+  (clear-table)
   (is (= '{(? rule-stream) #{(rule (?y ?x ?x))}} 
          (do (add-rule! '(rule (?y ?x ?x))) @*store*)))
   ;not indexed, stored in all
-  (reset! *store* {})
+  (clear-table)
   (is (= '{(all-rules rule-stream) #{(rule ((?y ?y) ?x ?x))}} 
          (do (add-rule! '(rule ((?y ?y) ?x ?x))) @*store*)))
-  (reset! *store* {})
+  (clear-table)
 )
 
 (deftest test-get-all-rules
   (reset! *store* '{(all-rules rule-stream) #{(rule (same ?x ?x))}})
   (is (= '#{(rule (same ?x ?x))} (get-all-rules)))
-  (reset! *store* {})
+  (clear-table)
 )
 
 (deftest test-get-indexed-rules
@@ -111,7 +111,7 @@
   (is (= '#{(rule (append-to-form () ?y ?y))
             (rule (append-to-form (?u . ?v) ?y (?u . ?z)) (append-to-form ?v ?y ?z))}
          (get-indexed-rules '(append-to-form (? a) (? b) (? c)))))
-  (reset! *store* {})
+  (clear-table)
 )
 
 (deftest test-add-to-stream

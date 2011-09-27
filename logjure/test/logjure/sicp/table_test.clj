@@ -5,6 +5,11 @@
     )
   )
 
+(deftest test-clear-table
+  (reset! *store* {'(1 2) "x"})
+  (is (= {} (do (clear-table) @*store*)))
+)
+
 (deftest test-put
   (reset! *store* {})
   (is (= {'(1 2) "x"} (do (put "x" 1 2) @*store*)))
