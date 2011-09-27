@@ -49,9 +49,9 @@ This leads us to match (f ?y) against the proposed new value (f b) in the same f
 extends the frame by adding a binding of ?y to b. ?X remains bound to (f ?y). We never modify a stored binding
 and we never store more than one binding for a given variable."
   [variable dat frame]
-  (let [binding (binding-in-frame variable frame)]
-    (if binding
-      (pattern-match (binding-value binding) dat frame) ;TRAMPOLINE or move to pattern-match!!!!!!!!!!!!!!
+  (let [value (get-value-in-frame variable frame)]
+    (if value
+      (pattern-match value dat frame) ;TRAMPOLINE or move to pattern-match!!!!!!!!!!!!!!
       (extend-frame variable dat frame)))
   )
 

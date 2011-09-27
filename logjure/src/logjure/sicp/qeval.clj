@@ -21,9 +21,9 @@ given by a procedural argument to instantiate."
   (let [copy 
         (fn copy [exp]
           (cond (variable? exp)
-                (let [the-binding (binding-in-frame exp frame)]
-                  (if the-binding
-                    (copy (binding-value the-binding))
+                (let [value (get-value-in-frame exp frame)]
+                  (if value
+                    (copy value)
                     (unbound-var-handler exp frame)))
                 (first exp)
                   (cons (copy (first exp)) (copy (second exp)))

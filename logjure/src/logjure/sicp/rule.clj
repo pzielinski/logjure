@@ -32,9 +32,9 @@ recursive tree walk in which we substitute for the values of variables whenever 
             (variable? e)
             (if (equal? var e)
               true
-              (let [b (binding-in-frame e frame)]
-                (if b
-                  (tree-walk (binding-value b))
+              (let [value (get-value-in-frame e frame)]
+                (if value
+                  (tree-walk value)
                   false)))
             (seq? e)
             (or (tree-walk (first e)) (tree-walk (second e)))
@@ -62,19 +62,20 @@ reject such bindings; these cases are recognized by the predicate depends-on?.80
 to reject attempts to bind a variable to itself. For example, consider unifying (?x ?x) and (?y ?y). The second
 attempt to bind ?x to ?y matches ?y (the stored value of ?x) against ?y (the new value of ?x). This is taken care of
 by the equal? clause of unify-match."
-  [var val frame]
-  (let [binding (binding-in-frame var frame)]
+  [the-var the-val frame]
+  (let [var-value (get-value-in-frame the-var frame)]
     (cond 
-      binding
-      (unify-match (binding-value binding) val frame);TRAMPOLINE/RECUR!!!!!!!!!!!!!!!
-      (variable? val) ; ***
-      (let [binding (binding-in-frame val frame)]
-        (if binding
-          (unify-match var (binding-value binding) frame);TRAMPOLINE/RECUR!!!!!!!!!!!!!!!
-          (extend-frame var val frame)))
-      (depends-on? val var frame) ; ***
+      var-value
+      (unify-match var-value the-val frame);TRAMPOLINE/RECUR!!!!!!!!!!!!!!!
+      (variable? the-val) ; ***
+      (let [val-value (get-value-in-frame the-val frame)]
+        (if val-value
+          (unify-match the-var val-value frame);TRAMPOLINE/RECUR!!!!!!!!!!!!!!!
+          (extend-frame the-var the-val frame)))
+      (depends-on? the-val the-var frame) ; ***
       'failed
-      :else (extend-frame var val frame)))
+      :else 
+      (extend-frame the-var the-val frame)))
   )
 
 (defn unify-match
