@@ -10,8 +10,6 @@
 ;---------------------------------------------------------------------------------------------------
 ; MATCH ASSERTIONS
 
-(declare extend-if-consistent)
-
 (defn pattern-match
   "The basic pattern matcher returns either the symbol failed or an extension of the given frame. The basic idea of
 the matcher is to check the pattern against the data, element by element, accumulating bindings for the pattern
@@ -20,21 +18,10 @@ accumulated so far. Otherwise, if the pattern is a variable we extend the curren
 data, so long as this is consistent with the bindings already in the frame. If the pattern and the data are both pairs,
 we (recursively) match the car of the pattern against the car of the data to produce a frame; in this frame we then
 match the cdr of the pattern against the cdr of the data. If none of these cases are applicable, the match fails and we
-return the symbol failed."
-  [pat dat frame]
-  (cond (eq? frame 'failed) 'failed
-        (equal? pat dat) frame
-        (variable? pat) (extend-if-consistent pat dat frame)
-        (and (seq? pat) (seq? dat)) (pattern-match (second pat)
-                                                     (second dat)
-                                                     (pattern-match (first pat);NEED RECUR !!!!!!!!!!!!!
-                                                                    (first dat)
-                                                                    frame))
-        :else 'failed)
-  )
+return the symbol failed.
 
-(defn extend-if-consistent
-  "Here is the procedure that extends a frame by adding a new binding, if this is consistent with the bindings already in
+extend-if-consistent:
+Here is the procedure that extends a frame by adding a new binding, if this is consistent with the bindings already in
 the frame.
 If there is no binding for the variable in the frame, we simply add the binding of the variable to the data. Otherwise
 we match, in the frame, the data against the value of the variable in the frame. If the stored value contains only
@@ -47,11 +34,27 @@ and we wish to augment this frame by a binding of ?x to (f b). We look up ?x and
 This leads us to match (f ?y) against the proposed new value (f b) in the same frame. Eventually this match
 extends the frame by adding a binding of ?y to b. ?X remains bound to (f ?y). We never modify a stored binding
 and we never store more than one binding for a given variable."
-  [variable dat frame]
-  (let [value (get-value-in-frame variable frame)]
-    (if value
-      (pattern-match value dat frame) ;TRAMPOLINE or move to pattern-match!!!!!!!!!!!!!!
-      (extend-frame variable dat frame)))
+  [pat dat frame]
+  (cond (eq? frame 'failed) 
+        'failed
+        (equal? pat dat) 
+        frame
+        (variable? pat) 
+        (let [variable pat
+              value (get-value-in-frame variable frame)]
+          (if value
+            (pattern-match value dat frame);NEED RECUR !!!!!!!!!!!!!
+            (extend-frame variable dat frame)))
+        (and (seq? pat) (seq? dat)) 
+        (pattern-match (second pat)
+                       (second dat)
+                       (pattern-match (first pat);NEED RECUR !!!!!!!!!!!!! will not work
+                                      (first dat)
+                                      frame))
+        :else 
+        'failed)
+  ;DOES NOT COVER CASE WHEN DAT IS VARIABLE
+  ;what about the case when dat is variable and pat is datum? is it possible?
   )
 
 (defn check-an-assertion
