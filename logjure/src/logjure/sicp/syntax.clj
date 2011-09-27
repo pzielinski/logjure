@@ -23,11 +23,11 @@
   )
 
 (defn variable? [exp]
-  (tagged-list? exp '?)
+  (= \? (first (str exp)))
   )
 
 (defn constant-symbol? [exp] 
-  (symbol? exp)
+  (and (symbol? exp) (not (variable? exp)))
   )
 
 (defn assertion-to-be-added? [exp]
@@ -86,39 +86,5 @@
   (if (null? (nth rule 2 nil))
     '(always-true)
     (nth rule 2))
-  )
-
-(defn expand-question-mark [symbol]
-  (let [chars (symbol->string symbol)]
-    (if (string=? (substring chars 0 1) "?")
-      (cons '? (string->symbol (substring chars 1 (string-length chars))))
-      symbol))
-  )
-
-(defn map-over-symbols [proc exp]
-  (cond (seq? exp) 
-        (cons 
-          (map-over-symbols proc (first exp));NEED RECUR !!!!!!!!!!!!!
-          (map-over-symbols proc (second exp)));NEED RECUR !!!!!!!!!!!!!
-        (constant-symbol? exp)
-        (proc exp)
-        :else 
-        exp
-        )
-  )
-
-(defn query-syntax-process [exp]
-  (map-over-symbols expand-question-mark exp)
-  )
-
-(defn contract-question-mark [variable]
-  (let [var-symbol-or-num-symbol-seq (second variable)]
-    (string->symbol
-      (string-append "?"
-                     (if (seq? var-symbol-or-num-symbol-seq)
-                       (string-append (symbol->string (first var-symbol-or-num-symbol-seq))
-                                      "-"
-                                      (number->string (second var-symbol-or-num-symbol-seq)))
-                       (symbol->string var-symbol-or-num-symbol-seq)))))
   )
 

@@ -11,9 +11,6 @@
     )
   )
 
-;---------------------------------------------------------------------------------------------------
-; REPEL
-
 (def input-prompt ";;; Query input:")
 (def output-prompt ";;; Query results:")
 
@@ -27,7 +24,7 @@
 
 (defn query-driver-loop []
   (prompt-for-input input-prompt)
-  (let [q (query-syntax-process (read-input))]
+  (let [q (read-input)]
     (cond (assertion-to-be-added? q)
           (do
             (add-rule-or-assertion! (add-assertion-body q))
@@ -41,11 +38,7 @@
             (map
               #(println %)
               (map
-                (fn [frame]
-                        (instantiate q
-                                     frame
-                                     (fn [v f]
-                                             (contract-question-mark v))))
+                (fn [frame] (instantiate q frame))
                 (qeval q (list (make-empty-frame)))))
             (query-driver-loop))
           )))

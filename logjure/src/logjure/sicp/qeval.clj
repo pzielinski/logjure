@@ -24,7 +24,7 @@ given by a procedural argument to instantiate."
                 (let [value (get-value-in-frame exp frame)]
                   (if value
                     (copy value)
-                    (unbound-var-handler exp frame)))
+                    exp))
                 (first exp)
                   (cons (copy (first exp)) (copy (second exp)))
                 :else exp))]
