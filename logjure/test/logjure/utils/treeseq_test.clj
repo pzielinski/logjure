@@ -1,14 +1,10 @@
 (ns logjure.utils.treeseq-test
-  (:use logjure.utils.treeseq clojure.contrib.test-is)
+  (:use 
+    logjure.utils.treeseq
+    logjure.utils.testing 
+    clojure.contrib.test-is)
   (:import logjure.utils.treeseq.TreeNodeFixed logjure.utils.treeseq.TreeNodeDynamic)
   )
-
-(defn deeply-nested [n]
-  (loop [n n result '(:bottom)]
-    (if (= n 0)
-      result
-      (recur (dec n) (list result)))))
-
 
 (defn create-tree-node-dynamic-println [child-value-seq]
   (do

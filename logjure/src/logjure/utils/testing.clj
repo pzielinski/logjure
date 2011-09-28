@@ -5,3 +5,8 @@
     (when (:private (meta var)) 
       (intern *ns* symbol var)))) 
 
+(defn deeply-nested [n]
+  (loop [n n result '(:bottom)]
+    (if (= n 0)
+      result
+      (recur (dec n) (list result)))))
