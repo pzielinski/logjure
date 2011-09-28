@@ -75,4 +75,10 @@
   (is (= 'failed (pattern-match '?x '(f b) (extend-frame '?x '(f ?y) (extend-frame '?y 'c (make-empty-frame))))))
 )
 
+;test deep nested
+(deftest test-pattern-match-when-deep-nested
+  ;initial frame is not empty, value is a list, match
+  (is (= 'b (get-value-in-frame '?x (pattern-match (deeply-nested 100 '?x) (deeply-nested 100 'b) (make-empty-frame)))))
+)
+
 (run-tests)
