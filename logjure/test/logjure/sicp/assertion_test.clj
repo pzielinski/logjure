@@ -57,6 +57,10 @@
   (is (= 'failed (pattern-match '((:a ?x) :b) '((:W :c) :b) (make-empty-frame))))
   ;initial frame is empty, 2 level nested, no match, variable on second pos
   (is (= 'failed (pattern-match '((:a ?x) :b) '((:c :a) :W) (make-empty-frame))))
+  ;initial frame is empty, 2 level nested, successful match, multiple vars
+  (is (= :x (get-value-in-frame '?x (pattern-match '((:a ?x ?y ?z) :b) '((:a :x :y :z) :b) (make-empty-frame)))))
+  (is (= :y (get-value-in-frame '?y (pattern-match '((:a ?x ?y ?z) :b) '((:a :x :y :z) :b) (make-empty-frame)))))
+  (is (= :z (get-value-in-frame '?z (pattern-match '((:a ?x ?y ?z) :b) '((:a :x :y :z) :b) (make-empty-frame)))))
 )
 
 (run-tests)
