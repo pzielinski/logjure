@@ -45,9 +45,9 @@ and we never store more than one binding for a given variable."
           (if value
             (pattern-match value dat frame);NEED RECUR !!!!!!!!!!!!!
             (extend-frame variable dat frame)))
-        (and (seq? pat) (seq? dat)) 
-        (pattern-match (second pat)
-                       (second dat)
+        (and (seq? pat) (seq? dat))
+        (pattern-match (rest pat)
+                       (rest dat)
                        (pattern-match (first pat);NEED RECUR !!!!!!!!!!!!! will not work
                                       (first dat)
                                       frame))
