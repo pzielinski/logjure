@@ -35,6 +35,8 @@
   ;initial frame is not empty, datum is variable with value in frame
   ;CASE WHEN DAT IS VARIABLE - fails!!!!!!!!!!!!!!!!!!!!!
   ;(is (= :z (get-value-in-frame '?x (pattern-match '?x '?v (extend-frame '?v :z (make-empty-frame))))))
+  ;initial frame is not empty, value is a list
+  (is (= '(:x :y) (get-value-in-frame '?x (pattern-match '?x '(:x :y) (extend-frame '?v :z (make-empty-frame))))))
 )
 
 ;frame-not-failed-and-
@@ -61,6 +63,16 @@
   (is (= :x (get-value-in-frame '?x (pattern-match '((:a ?x ?y ?z) :b) '((:a :x :y :z) :b) (make-empty-frame)))))
   (is (= :y (get-value-in-frame '?y (pattern-match '((:a ?x ?y ?z) :b) '((:a :x :y :z) :b) (make-empty-frame)))))
   (is (= :z (get-value-in-frame '?z (pattern-match '((:a ?x ?y ?z) :b) '((:a :x :y :z) :b) (make-empty-frame)))))
+)
+
+;test with not empty frame
+(deftest test-pattern-match-when-frame-has-binding-for-another-variable
+  ;initial frame is not empty, value is a list, match
+  (is (= '(f ?y) (get-value-in-frame '?x (pattern-match '?x '(f b) (extend-frame '?x '(f ?y) (make-empty-frame))))))
+  (is (= 'b (get-value-in-frame '?y (pattern-match '?x '(f b) (extend-frame '?x '(f ?y) (make-empty-frame))))))
+  ;initial frame is not empty, value is a list, no match, 
+  ;because ?y is already bound to 'c and can not be bound to 'b
+  (is (= 'failed (pattern-match '?x '(f b) (extend-frame '?x '(f ?y) (extend-frame '?y 'c (make-empty-frame))))))
 )
 
 (run-tests)
