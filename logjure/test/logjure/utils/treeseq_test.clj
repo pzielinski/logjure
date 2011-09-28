@@ -139,6 +139,20 @@
          (doall (tree-seq-multi-depth '(:a (:b) :c) '(:A (:B) :C)))))
   )
 
+(deftest test-tree-seq-multi-depth-ok-leafs
+  (is (= '([() ()]) (doall (tree-seq-multi-depth-ok-leafs '() '()))))
+  (is (= '([:a :A]) (doall (tree-seq-multi-depth-ok-leafs :a :A))))
+  (is (= '([(:a) (:A)] [:a :A]) (doall (tree-seq-multi-depth-ok-leafs '(:a) '(:A)))))
+  (is (= '() (doall (tree-seq-multi-depth-ok-leafs '(:a (:b) :c) '(:A :B :C)))))
+  (is (= '([(:a (:b) :c) (:A (:B) :C)] 
+            [:a :A]
+            [(:b) (:B)]
+            [:b :B]
+            [:c :C]
+            ) 
+         (doall (tree-seq-multi-depth-ok-leafs '(:a (:b) :c) '(:A (:B) :C)))))
+  )
+
 (deftest test-tree-seq-breadth
   (test-tree-seq-breadth-x)
   ;test that no stack overflow
