@@ -120,39 +120,6 @@
   (is (= '(:a :c :e :b :d :x :y) (doall (filter is-leaf (tree-seq-breadth '(:a ((:x) :b) :c ((:y) :d) :e))))))
   )
 
-(deftest test-tree-seq-multi-depth
-  (is (= '([() () true]) (doall (tree-seq-multi-depth '() '()))))
-  (is (= '([:a :A true]) (doall (tree-seq-multi-depth :a :A))))
-  (is (= '([(:a) (:A) true] [:a :A true]) (doall (tree-seq-multi-depth '(:a) '(:A)))))
-  (is (= '([(:a (:b) :c) (:A :B :C) true] 
-            [:a :A true]
-            [(:b) :B false]
-            [:c :C true]
-            ) 
-         (doall (tree-seq-multi-depth '(:a (:b) :c) '(:A :B :C)))))
-  (is (= '([(:a (:b) :c) (:A (:B) :C) true] 
-            [:a :A true]
-            [(:b) (:B) true]
-            [:b :B true]
-            [:c :C true]
-            ) 
-         (doall (tree-seq-multi-depth '(:a (:b) :c) '(:A (:B) :C)))))
-  )
-
-(deftest test-tree-seq-multi-depth-ok-leafs
-  (is (= '([() ()]) (doall (tree-seq-multi-depth-ok-leafs '() '()))))
-  (is (= '([:a :A]) (doall (tree-seq-multi-depth-ok-leafs :a :A))))
-  (is (= '([(:a) (:A)] [:a :A]) (doall (tree-seq-multi-depth-ok-leafs '(:a) '(:A)))))
-  (is (= '() (doall (tree-seq-multi-depth-ok-leafs '(:a (:b) :c) '(:A :B :C)))))
-  (is (= '([(:a (:b) :c) (:A (:B) :C)] 
-            [:a :A]
-            [(:b) (:B)]
-            [:b :B]
-            [:c :C]
-            ) 
-         (doall (tree-seq-multi-depth-ok-leafs '(:a (:b) :c) '(:A (:B) :C)))))
-  )
-
 (deftest test-tree-seq-breadth
   (test-tree-seq-breadth-x)
   ;test that no stack overflow
@@ -429,5 +396,47 @@
 (deftest test-finalize-tree-seq-breadth
   ;(perform-test-finalize-tree-seq-breadth)
 )
+
+(deftest test-tree-seq-multi-depth
+  (is (= '([() () true]) (doall (tree-seq-multi-depth '() '()))))
+  (is (= '([:a :A true]) (doall (tree-seq-multi-depth :a :A))))
+  (is (= '([(:a) (:A) true] [:a :A true]) (doall (tree-seq-multi-depth '(:a) '(:A)))))
+  (is (= '([(:a (:b) :c) (:A :B :C) true] 
+            [:a :A true]
+            [(:b) :B false]
+            [:c :C true]
+            ) 
+         (doall (tree-seq-multi-depth '(:a (:b) :c) '(:A :B :C)))))
+  (is (= '([(:a (:b) :c) (:A (:B) :C) true] 
+            [:a :A true]
+            [(:b) (:B) true]
+            [:b :B true]
+            [:c :C true]
+            ) 
+         (doall (tree-seq-multi-depth '(:a (:b) :c) '(:A (:B) :C)))))
+  )
+
+(deftest test-tree-seq-multi-depth-ok
+  (is (= '([() ()]) (doall (tree-seq-multi-depth-ok '() '()))))
+  (is (= '([:a :A]) (doall (tree-seq-multi-depth-ok :a :A))))
+  (is (= '([(:a) (:A)] [:a :A]) (doall (tree-seq-multi-depth-ok '(:a) '(:A)))))
+  (is (= '() (doall (tree-seq-multi-depth-ok '(:a (:b) :c) '(:A :B :C)))))
+  (is (= '([(:a (:b) :c) (:A (:B) :C)] 
+            [:a :A]
+            [(:b) (:B)]
+            [:b :B]
+            [:c :C]
+            ) 
+         (doall (tree-seq-multi-depth-ok '(:a (:b) :c) '(:A (:B) :C)))))
+  )
+
+(deftest test-tree-seq-multi-depth-ok-leafs
+  (is (= '() (doall (tree-seq-multi-depth-ok-leafs '() '()))))
+  (is (= '([:a :A]) (doall (tree-seq-multi-depth-ok-leafs :a :A))))
+  (is (= '([:a :A]) (doall (tree-seq-multi-depth-ok-leafs '(:a) '(:A)))))
+  (is (= '() (doall (tree-seq-multi-depth-ok-leafs '(:a (:b) :c) '(:A :B :C)))))
+  (is (= '([:a :A] [:b :B] [:c :C]) 
+         (doall (tree-seq-multi-depth-ok-leafs '(:a (:b) :c) '(:A (:B) :C)))))
+  )
 
 (run-tests)

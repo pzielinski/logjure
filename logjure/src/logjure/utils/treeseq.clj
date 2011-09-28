@@ -179,12 +179,20 @@
             (walk root1 root2)))
    )
 
-(defn tree-seq-multi-depth-ok-leafs
-  "Walks two trees in lockstep. Filters leafes. Returns empty sequence if any errors."
+(defn tree-seq-multi-depth-ok
+  "Walks two trees in lockstep. Returns empty sequence if any errors."
    [root1 root2]
    (let [s (tree-seq-multi-depth root1 root2)]
      (if (every? (fn [[_ _ ok?]] ok?) s)
        (map (fn [[node1 node2 _]] [node1 node2]) s)
        '())
      )
-)
+   )
+
+(defn tree-seq-multi-depth-ok-leafs
+  "Walks two trees in lockstep. Returns empty sequence if any errors. Filters leafes."
+   [root1 root2]
+   (filter 
+     (fn [[node1 node2 _]] (and (is-leaf node1) (is-leaf  node2))) 
+     (tree-seq-multi-depth-ok root1 root2))
+   )
