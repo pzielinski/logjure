@@ -120,6 +120,25 @@
   (is (= '(:a :c :e :b :d :x :y) (doall (filter is-leaf (tree-seq-breadth '(:a ((:x) :b) :c ((:y) :d) :e))))))
   )
 
+(deftest test-tree-seq-multi-depth
+  (is (= '([() () true]) (doall (tree-seq-multi-depth '() '()))))
+  (is (= '([:a :A true]) (doall (tree-seq-multi-depth :a :A))))
+  (is (= '([(:a) (:A) true] [:a :A true]) (doall (tree-seq-multi-depth '(:a) '(:A)))))
+  (is (= '([(:a (:b) :c) (:A :B :C) true] 
+            [:a :A true]
+            [(:b) :B false]
+            [:c :C true]
+            ) 
+         (doall (tree-seq-multi-depth '(:a (:b) :c) '(:A :B :C)))))
+  (is (= '([(:a (:b) :c) (:A (:B) :C) true] 
+            [:a :A true]
+            [(:b) (:B) true]
+            [:b :B true]
+            [:c :C true]
+            ) 
+         (doall (tree-seq-multi-depth '(:a (:b) :c) '(:A (:B) :C)))))
+  )
+
 (deftest test-tree-seq-breadth
   (test-tree-seq-breadth-x)
   ;test that no stack overflow

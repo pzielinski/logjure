@@ -158,22 +158,24 @@
      (get-nodes-at-depth #(not (is-leaf %)) get-children root allowed-depth))
 )
 
-(defn tree-s-seq-depth
+(defn tree-seq-multi-depth
   "Walks two trees in lockstep."
    ([root1 root2]
-     (tree-s-seq-depth #(not (is-leaf %)) get-children root1 root2))
+     (tree-seq-multi-depth #(not (is-leaf %)) get-children root1 root2))
    ([is-branch? get-children root1 root2]
      (letfn [(walk [node1 node2]
                (lazy-seq
-                 (cons [node1 node2 true]
-                       (cond 
-                         (and (is-branch? node1) (is-branch? node2))
-                         (lazy-list-merge (map walk (get-children node1) (get-children node2)))
-                         (and (is-branch? node1) (not (is-branch? node2)))
-                         (list [node1 node2 false])
-                         (and (is-branch? node2) (not (is-branch? node1)))
-                         (list [node1 node2 false])
-                         ))))]
+                 (cond 
+                   (and (not (is-branch? node1)) (not (is-branch? node2)))
+                   (list [node1 node2 true])
+                   (and (is-branch? node1) (is-branch? node2))
+                   (cons [node1 node2 true]
+                         (lazy-list-merge (map walk (get-children node1) (get-children node2))))
+                   (and (is-branch? node1) (not (is-branch? node2)))
+                   (list [node1 node2 false])
+                   (and (is-branch? node2) (not (is-branch? node1)))
+                   (list [node1 node2 false])
+                   )))]
             (walk root1 root2)))
    )
 
