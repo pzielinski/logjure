@@ -163,36 +163,33 @@
    ([root1 root2]
      (tree-seq-multi-depth #(not (is-leaf %)) get-children root1 root2))
    ([is-branch? get-children root1 root2]
-     (letfn [(walk [node1 node2]
+     (tree-seq-multi-depth is-branch? get-children root1 root2 identity identity))
+   ([is-branch? get-children root1 root2 transform1 transform2]
+     (letfn [(walk [n1 n2]
                (lazy-seq
-                 (cond 
-                   (and (not (is-branch? node1)) (not (is-branch? node2)))
-                   (list [node1 node2 true])
-                   (and (is-branch? node1) (is-branch? node2))
-                   (cons [node1 node2 true]
-                         (lazy-list-merge (map walk (get-children node1) (get-children node2))))
-                   (and (is-branch? node1) (not (is-branch? node2)))
-                   (list [node1 node2 false])
-                   (and (is-branch? node2) (not (is-branch? node1)))
-                   (list [node1 node2 false])
-                   )))]
+                 (let [node1 (transform1 n1) node2 (transform2 n2)]
+                   (if
+                     (and (is-branch? node1) (is-branch? node2))
+                     (cons [node1 node2]
+                           (lazy-list-merge (map walk (get-children node1) (get-children node2))))
+                     (list [node1 node2])
+                     ))))]
             (walk root1 root2)))
    )
 
 (defn tree-seq-multi-depth-ok
-  "Walks two trees in lockstep. Returns empty sequence if any errors."
-   [root1 root2]
+  "Walks two trees in lockstep. Returns empty sequence if predicate? fails for any."
+   ([root1 root2]
+   (tree-seq-multi-depth-ok root1 root2 (fn [[node1 node2]] (= node1 node2))))
+   ([root1 root2 predicate?]
    (let [s (tree-seq-multi-depth root1 root2)]
-     (if (every? (fn [[_ _ ok?]] ok?) s)
-       (map (fn [[node1 node2 _]] [node1 node2]) s)
-       '())
-     )
+     (if (every? predicate? s) s '())))
    )
 
 (defn tree-seq-multi-depth-ok-leafs
   "Walks two trees in lockstep. Returns empty sequence if any errors. Filters leafes."
    [root1 root2]
    (filter 
-     (fn [[node1 node2 _]] (and (is-leaf node1) (is-leaf  node2))) 
+     (fn [[node1 node2]] (and (is-leaf node1) (is-leaf  node2))) 
      (tree-seq-multi-depth-ok root1 root2))
    )
