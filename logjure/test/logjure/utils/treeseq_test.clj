@@ -72,6 +72,8 @@
   (is (= '((:a :b (:c)) :a :b (:c) :c) (doall (lazy-list-merge '(((:a :b (:c))) (:a :b (:c)) (:c) ())))))
   (is (= '(:a) (doall (lazy-list-merge '(() (:a))))))
   (is (= '(:a) (doall (lazy-list-merge '(() () (:a))))))
+  ;fails - because vector is stripped
+  ;(is (= '([:y :y {?x :x, ?y :y}]) (doall (lazy-list-merge '() '([:y :y {?x :x, ?y :y}])))))
 )
 
 (defn perform-lazy-test-tree-seq-breadth-all [root]
@@ -410,29 +412,6 @@
             [:c :C]
             ) 
          (doall (tree-seq-multi-depth '(:a (:b) :c) '(:A (:B) :C)))))
-  )
-
-(deftest test-tree-seq-multi-depth-ok
-  (is (= '([() ()]) (doall (tree-seq-multi-depth-ok '() '()))))
-  (is (= '([:a :a]) (doall (tree-seq-multi-depth-ok :a :a))))
-  (is (= '([(:a) (:a)] [:a :a]) (doall (tree-seq-multi-depth-ok '(:a) '(:a)))))
-  (is (= '() (doall (tree-seq-multi-depth-ok '(:a (:b) :c) '(:a :b :c)))))
-  (is (= '([(:a (:b) :c) (:a (:b) :c)] 
-            [:a :a]
-            [(:b) (:b)]
-            [:b :b]
-            [:c :c]
-            ) 
-         (doall (tree-seq-multi-depth-ok '(:a (:b) :c) '(:a (:b) :c)))))
-  )
-
-(deftest test-tree-seq-multi-depth-ok-leafs
-  (is (= '() (doall (tree-seq-multi-depth-ok-leafs '() '()))))
-  (is (= '([:a :a]) (doall (tree-seq-multi-depth-ok-leafs :a :a))))
-  (is (= '([:a :a]) (doall (tree-seq-multi-depth-ok-leafs '(:a) '(:a)))))
-  (is (= '() (doall (tree-seq-multi-depth-ok-leafs '(:a (:b) :c) '(:a :b :c)))))
-  (is (= '([:a :a] [:b :b] [:c :c]) 
-         (doall (tree-seq-multi-depth-ok-leafs '(:a (:b) :c) '(:a (:b) :c)))))
   )
 
 (run-tests)
