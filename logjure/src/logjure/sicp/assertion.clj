@@ -1,5 +1,6 @@
 (ns logjure.sicp.assertion
   (:use 
+    logjure.utils.treeseq
     logjure.sicp.table
     logjure.sicp.syntax
     logjure.sicp.frame
@@ -10,7 +11,7 @@
 ;---------------------------------------------------------------------------------------------------
 ; MATCH ASSERTIONS
 
-(defn pattern-match
+(defn pattern-match-1
   "The basic pattern matcher returns either the symbol failed or an extension of the given frame. The basic idea of
 the matcher is to check the pattern against the data, element by element, accumulating bindings for the pattern
 variables. If the pattern and the data object are the same, the match succeeds and we return the frame of bindings
@@ -43,18 +44,78 @@ and we never store more than one binding for a given variable."
         (let [variable pat
               value (get-value-in-frame variable frame)]
           (if value
-            (pattern-match value dat frame);NEED RECUR !!!!!!!!!!!!!
+            (pattern-match-1 value dat frame);NEED RECUR !!!!!!!!!!!!!
             (extend-frame variable dat frame)))
         (and (seq? pat) (seq? dat))
-        (pattern-match (rest pat)
+        (pattern-match-1 (rest pat)
                        (rest dat)
-                       (pattern-match (first pat);NEED RECUR !!!!!!!!!!!!! will not work
+                       (pattern-match-1 (first pat);NEED RECUR !!!!!!!!!!!!! will not work
                                       (first dat)
                                       frame))
         :else 
         'failed)
   ;DOES NOT COVER CASE WHEN DAT IS VARIABLE
   ;what about the case when dat is variable and pat is datum? is it possible?
+  )
+
+(defn pattern-match-2-walker
+  ([pat dat frame]
+    (let [tree-seq-multi-sequence (tree-seq-multi-depth pat dat)]
+      (pattern-match-2-walker frame tree-seq-multi-sequence)))
+  ([frame tree-seq-multi-sequence]
+    (lazy-seq
+      (let [first-tree-seq-multi-sequence (first tree-seq-multi-sequence)
+            rest-tree-seq-multi-sequence (rest tree-seq-multi-sequence)]
+      (when first-tree-seq-multi-sequence
+          (let [[n1 n2] first-tree-seq-multi-sequence]
+            (if (variable? n1)
+              ;n1 is variable
+              (let [n1-variable-value (get-value-in-frame n1 frame)]
+                (if n1-variable-value
+                  ;there is a value for n1 variable in frame
+                  (let [seqx (pattern-match-2-walker n1-variable-value n2 frame)
+                        firstx (first seqx)
+                        restx (rest seqx)
+                        lastx (last seqx)
+                        [_ _ framex] lastx ;GOES TO LAST!!! not lazy!!!
+                        ]
+                    (cons 
+                      firstx 
+                      (concat 
+                        restx
+                        (when (seq rest-tree-seq-multi-sequence)
+                          (pattern-match-2-walker framex rest-tree-seq-multi-sequence)))))
+                  ;NO value for n1 variable in frame
+                  (let [new-frame (extend-frame n1 n2 frame)]
+                    (cons
+                      [n1 n2 new-frame]
+                      (when (seq rest-tree-seq-multi-sequence)
+                        (pattern-match-2-walker new-frame rest-tree-seq-multi-sequence)
+                        )))))
+              ;n1 is not a variable
+              (cons
+                [n1 n2 frame]
+                (when (seq rest-tree-seq-multi-sequence)
+                  (pattern-match-2-walker frame rest-tree-seq-multi-sequence)
+                  ))))))))
+  )
+
+(defn pattern-match-2
+  ([pat dat frame]
+  (pattern-match-2 frame (pattern-match-2-walker pat dat frame)))
+  ([frame pattern-match-2-walker-seq]
+    (let [first-pattern-match-2-walker-seq (first pattern-match-2-walker-seq)]
+      (if first-pattern-match-2-walker-seq
+        (let [[n1 n2 fr] first-pattern-match-2-walker-seq]
+          (if (and (is-leaf n1) (not (variable? n1)) (not (equal? n1 n2)))
+            'failed
+            (recur fr (rest pattern-match-2-walker-seq))))
+        frame)))
+  )
+
+(defn pattern-match
+  [pat dat frame]
+  (pattern-match-1 pat dat frame)
   )
 
 (defn check-an-assertion

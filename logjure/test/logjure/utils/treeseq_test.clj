@@ -412,6 +412,7 @@
             [:c :C]
             ) 
          (doall (tree-seq-multi-depth '(:a (:b) :c) '(:A (:B) :C)))))
+  (is (= ['?x :x] (nth (tree-seq-multi-depth (deeply-nested 2000 '?x) (deeply-nested 2000 :x)) 2000)))
   )
 
 (run-tests)

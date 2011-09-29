@@ -10,39 +10,38 @@
     )
   )
 
-(deftest test-pattern-match-when-failed-frame
+;initial frame is 'failed
+(deftest test-pattern-match-when-frame-failed
   (is (= 'failed (pattern-match nil nil 'failed) ))
   (is (= 'failed (pattern-match nil :x 'failed) ))
   (is (= 'failed (pattern-match :x nil 'failed) ))
 )
 
-;frame-not-failed-and-
-(deftest test-pattern-match-when-equal-pattern-datum
+;initial frame is empty
+(deftest test-pattern-match-when-frame-empty
   (is (= (make-empty-frame) (pattern-match nil nil (make-empty-frame)) ))
   (is (= (make-empty-frame) (pattern-match :x :x (make-empty-frame)) ))
-  (is (= (make-empty-frame) (pattern-match '?x '?x (make-empty-frame)) ))
+  (is (= :x (get-value-in-frame '?x (pattern-match '?x :x (make-empty-frame)))))
 )
 
-;frame-not-failed-and-
-;not-equal-pattern-datum-and-
-(deftest test-pattern-match-when-variable-pattern
-  ;initial frame is empty
-  (is (= :y (get-value-in-frame '?x (pattern-match '?x :y (make-empty-frame)))))
-  ;initial frame is not empty
-  (is (= :y (get-value-in-frame '?x (pattern-match '?x :y (extend-frame '?v :z (make-empty-frame))))))
-  ;initial frame already contains variable value
-  (is (= 'failed (pattern-match '?x :y (extend-frame '?x :z (make-empty-frame)))))
-  ;initial frame is not empty, datum is variable with value in frame
-  ;CASE WHEN DAT IS VARIABLE - fails!!!!!!!!!!!!!!!!!!!!!
-  ;(is (= :z (get-value-in-frame '?x (pattern-match '?x '?v (extend-frame '?v :z (make-empty-frame))))))
-  ;initial frame is not empty, value is a list
-  (is (= '(:x :y) (get-value-in-frame '?x (pattern-match '?x '(:x :y) (extend-frame '?v :z (make-empty-frame))))))
+;initial frame is not empty
+;CASE WHEN DATUM IS VARIABLE - fails! this is implemented by unify-match in rule!
+(deftest test-pattern-match-when-frame-not-empty
+  ;no value for ?x in initial frame
+  (is (= :x (get-value-in-frame '?x (pattern-match '?x :x (extend-frame '?v :v (make-empty-frame))))))
+  ;initial frame already contains variable value, and it is different, no match
+  (is (= 'failed (pattern-match '?x :X (extend-frame '?x :x (make-empty-frame)))))
+  ;initial frame already contains variable value, and it is the same, match
+  (is (= :x (get-value-in-frame '?x (pattern-match '?x :x (extend-frame '?x :x (make-empty-frame))))))
+  ;no value for ?x in initial frame, value is a list
+  (is (= '(:x1 :x2) (get-value-in-frame '?x (pattern-match '?x '(:x1 :x2) (extend-frame '?v :v (make-empty-frame))))))
+  ;initial frame already contains variable value, and it is the same, both values are lists, match
+  (is (= '(:x1 :x2) (get-value-in-frame '?x (pattern-match '?x '(:x1 :x2) (extend-frame '?x '(:x1 :x2) (make-empty-frame))))))
 )
 
-;frame-not-failed-and-
-;not-equal-pattern-datum-and-
-;not-variable-pattern
-(deftest test-pattern-match-when-pattern-and-datum-are-both-sequences
+;initial frame is empty
+;pattern-and-datum-are-both-sequences
+(deftest test-pattern-match-when-frame-empty-and-pattern-and-datum-are-both-sequences
   ;initial frame is empty, successful match
   (is (= :b (get-value-in-frame '?x (pattern-match '(?x :a) '(:b :a) (make-empty-frame)))))
   ;initial frame is empty, no match
@@ -65,6 +64,17 @@
   (is (= :z (get-value-in-frame '?z (pattern-match '((:a ?x ?y ?z) :b) '((:a :x :y :z) :b) (make-empty-frame)))))
 )
 
+;initial frame is not empty
+;pattern-and-datum-are-both-sequences
+(deftest test-pattern-match-when-frame-not-empty-and-pattern-and-datum-are-both-sequences
+  ;two variables, initial frame has value for one variable, value in frame is the same as the one being matched, match
+  (is (= :x (get-value-in-frame '?x (pattern-match '(?x ?y) '(:x :y) (extend-frame '?y :y (make-empty-frame))))))
+  (is (= :y (get-value-in-frame '?y (pattern-match '(?x ?y) '(:x :y) (extend-frame '?y :y (make-empty-frame))))))
+  ;two variables, initial frame has value for both variables, values in frame are the same as the ones being matched, match
+  (is (= :x (get-value-in-frame '?x (pattern-match '(?x ?y) '(:x :y) (extend-frame '?x :x (extend-frame '?y :y (make-empty-frame)))))))
+  (is (= :y (get-value-in-frame '?y (pattern-match '(?x ?y) '(:x :y) (extend-frame '?x :x (extend-frame '?y :y (make-empty-frame)))))))
+)
+
 ;test with not empty frame
 (deftest test-pattern-match-when-frame-has-binding-for-another-variable
   ;initial frame is not empty, value is a list, match
@@ -80,5 +90,33 @@
   ;initial frame is not empty, value is a list, match
   (is (= 'b (get-value-in-frame '?x (pattern-match (deeply-nested 100 '?x) (deeply-nested 100 'b) (make-empty-frame)))))
 )
+
+(deftest test-pattern-match-2-walker
+  (is (= '([() () {}]) (doall (pattern-match-2-walker '() '() (make-empty-frame)))))
+  (is (= '([:a :A {}]) (doall (pattern-match-2-walker :a :A (make-empty-frame)))))
+  (is (= '([(:a) (:A) {}] [:a :A {}]) (doall (pattern-match-2-walker '(:a) '(:A) (make-empty-frame)))))
+  (is (= '([(:a (:b) :c) (:A :B :C) {}] 
+            [:a :A {}]
+            [(:b) :B {}]
+            [:c :C {}]
+            ) 
+         (doall (pattern-match-2-walker '(:a (:b) :c) '(:A :B :C) (make-empty-frame)))))
+  (is (= '([(:a (:b) :c) (:A (:B) :C) {}] 
+            [:a :A {}]
+            [(:b) (:B) {}]
+            [:b :B {}]
+            [:c :C {}]
+            ) 
+         (doall (pattern-match-2-walker '(:a (:b) :c) '(:A (:B) :C) (make-empty-frame)))))
+  )
+
+(deftest test-pattern-match-2-walker-variable
+  (is (= '([?x :a {?x :a}]) 
+         (doall (pattern-match-2-walker '?x :a (make-empty-frame)))))
+  (is (= '([(?x :a) (:b :a) {}] [?x :b {?x :b}] [:a :a {?x :b}]) 
+         (doall (pattern-match-2-walker '(?x :a) '(:b :a) (make-empty-frame)))))
+  (is (= '([(?x ?y) (:x :y) {?x :x, ?y :y}] [:x :x {?x :x, ?y :y}] [:y :y {?x :x, ?y :y}]) 
+         (doall (pattern-match-2-walker '(?x ?y) '(:x :y) (extend-frame '?x :x (extend-frame '?y :y (make-empty-frame)))))))
+  )
 
 (run-tests)
