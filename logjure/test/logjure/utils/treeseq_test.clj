@@ -76,22 +76,17 @@
   ;(is (= '([:y :y {?x :x, ?y :y}]) (doall (lazy-list-merge '() '([:y :y {?x :x, ?y :y}])))))
 )
 
-(defn perform-lazy-test-tree-seq-breadth-all [root]
+(defn perform-laziness-test [test-fn]
   (let [records (atom [])
         record-fn (fn [record] (swap! records conj record))
-        get-child-seq-recording (fn [node] (do (record-fn node)) (get-child-seq node))] 
-    [(doall (tree-seq-breadth #(not (is-leaf %)) get-child-seq-recording root))
-     @records]
-    )
+        get-child-seq-recording (fn [node] (do (record-fn node)) (get-child-seq node))]
+    (binding [get-children get-child-seq-recording]
+      [(test-fn) @records]
+    ))
   )
 
 (defn perform-lazy-test-tree-seq-breadth-nth [root n]
-  (let [records (atom [])
-        record-fn (fn [record] (swap! records conj record))
-        get-child-seq-recording (fn [node] (do (record-fn node)) (get-child-seq node))] 
-    [(nth (tree-seq-breadth #(not (is-leaf %)) get-child-seq-recording root) n :not-found)
-     @records]
-    )
+    (perform-laziness-test #(nth (tree-seq-breadth root) n :not-found))
   )
 
 ;CHECK WHY THE GET-CHILD-SEQ IS CALLED ON NODES THAT ARE NOT BRANCH NODES !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
@@ -120,51 +115,51 @@
 
 (deftest test-tree-seq-breadth
   (test-tree-seq-breadth-x)
-  ;test that no stack overflow
-  (is (= '(:bottom) (doall (filter is-leaf (tree-seq-breadth (deeply-nested 1000))))))
+  ;test that no stack overflow; passes 100000
+  (is (= '(:bottom) (doall (filter is-leaf (tree-seq-breadth (deeply-nested 100))))))
   ;test laziness
   ;level 0 (root)
   (is (= '[(:a ((:x) :b) :c ((:y) :d) :e) []] 
-         (perform-lazy-test-tree-seq-breadth-nth '(:a ((:x) :b) :c ((:y) :d) :e) 0)))
+         (perform-laziness-test #(nth (tree-seq-breadth '(:a ((:x) :b) :c ((:y) :d) :e)) 0 :not-found))))
   ;level 1
   (is (= '[:a 
            [(:a ((:x) :b) :c ((:y) :d) :e)]] 
-         (perform-lazy-test-tree-seq-breadth-nth '(:a ((:x) :b) :c ((:y) :d) :e) 1)))
+         (perform-laziness-test #(nth (tree-seq-breadth '(:a ((:x) :b) :c ((:y) :d) :e)) 1 :not-found))))
   (is (= '[((:x) :b) 
            [(:a ((:x) :b) :c ((:y) :d) :e)]] 
-         (perform-lazy-test-tree-seq-breadth-nth '(:a ((:x) :b) :c ((:y) :d) :e) 2)))
+         (perform-laziness-test #(nth (tree-seq-breadth '(:a ((:x) :b) :c ((:y) :d) :e)) 2 :not-found))))
   (is (= '[:c 
            [(:a ((:x) :b) :c ((:y) :d) :e)]] 
-         (perform-lazy-test-tree-seq-breadth-nth '(:a ((:x) :b) :c ((:y) :d) :e) 3)))
+         (perform-laziness-test #(nth (tree-seq-breadth '(:a ((:x) :b) :c ((:y) :d) :e)) 3 :not-found))))
   (is (= '[((:y) :d) 
            [(:a ((:x) :b) :c ((:y) :d) :e)]] 
-         (perform-lazy-test-tree-seq-breadth-nth '(:a ((:x) :b) :c ((:y) :d) :e) 4)))
+         (perform-laziness-test #(nth (tree-seq-breadth '(:a ((:x) :b) :c ((:y) :d) :e)) 4 :not-found))))
   (is (= '[:e [(:a ((:x) :b) :c ((:y) :d) :e)]] 
-         (perform-lazy-test-tree-seq-breadth-nth '(:a ((:x) :b) :c ((:y) :d) :e) 5)))
+         (perform-laziness-test #(nth (tree-seq-breadth '(:a ((:x) :b) :c ((:y) :d) :e)) 5 :not-found))))
   ;level 2
   (is (= '[(:x) 
            [(:a ((:x) :b) :c ((:y) :d) :e) :a ((:x) :b)]] 
-         (perform-lazy-test-tree-seq-breadth-nth '(:a ((:x) :b) :c ((:y) :d) :e) 6)))
+         (perform-laziness-test #(nth (tree-seq-breadth '(:a ((:x) :b) :c ((:y) :d) :e)) 6 :not-found))))
   (is (= '[:b 
            [(:a ((:x) :b) :c ((:y) :d) :e) :a ((:x) :b)]] 
-         (perform-lazy-test-tree-seq-breadth-nth '(:a ((:x) :b) :c ((:y) :d) :e) 7)))
+         (perform-laziness-test #(nth (tree-seq-breadth '(:a ((:x) :b) :c ((:y) :d) :e)) 7 :not-found))))
   (is (= '[(:y) 
            [(:a ((:x) :b) :c ((:y) :d) :e) :a ((:x) :b) :c ((:y) :d)]] 
-         (perform-lazy-test-tree-seq-breadth-nth '(:a ((:x) :b) :c ((:y) :d) :e) 8)))
+         (perform-laziness-test #(nth (tree-seq-breadth '(:a ((:x) :b) :c ((:y) :d) :e)) 8 :not-found))))
   (is (= '[:d 
            [(:a ((:x) :b) :c ((:y) :d) :e) :a ((:x) :b) :c ((:y) :d)]] 
-         (perform-lazy-test-tree-seq-breadth-nth '(:a ((:x) :b) :c ((:y) :d) :e) 9)))
+         (perform-laziness-test #(nth (tree-seq-breadth '(:a ((:x) :b) :c ((:y) :d) :e)) 9 :not-found))))
   ;level 3
   (is (= '[:x 
            [(:a ((:x) :b) :c ((:y) :d) :e) :a ((:x) :b) :c ((:y) :d) :e (:x)]] 
-         (perform-lazy-test-tree-seq-breadth-nth '(:a ((:x) :b) :c ((:y) :d) :e) 10)))
+         (perform-laziness-test #(nth (tree-seq-breadth '(:a ((:x) :b) :c ((:y) :d) :e)) 10 :not-found))))
   (is (= '[:y 
            [(:a ((:x) :b) :c ((:y) :d) :e) :a ((:x) :b) :c ((:y) :d) :e (:x) :b (:y)]] 
-         (perform-lazy-test-tree-seq-breadth-nth '(:a ((:x) :b) :c ((:y) :d) :e) 11)))
+         (perform-laziness-test #(nth (tree-seq-breadth '(:a ((:x) :b) :c ((:y) :d) :e)) 11 :not-found))))
   ;not found
   (is (= '[:not-found 
            [(:a ((:x) :b) :c ((:y) :d) :e) :a ((:x) :b) :c ((:y) :d) :e (:x) :b (:y) :d :x :y]] 
-         (perform-lazy-test-tree-seq-breadth-nth '(:a ((:x) :b) :c ((:y) :d) :e) 12)))
+         (perform-laziness-test #(nth (tree-seq-breadth '(:a ((:x) :b) :c ((:y) :d) :e)) 12 :not-found))))
   ;all
   (is (= '[(
             (:a ((:x) :b) :c ((:y) :d) :e)
@@ -173,7 +168,7 @@
             :x :y
             ) 
            [(:a ((:x) :b) :c ((:y) :d) :e) :a ((:x) :b) :c ((:y) :d) :e (:x) :b (:y) :d :x :y]] 
-         (perform-lazy-test-tree-seq-breadth-all '(:a ((:x) :b) :c ((:y) :d) :e))))
+         (perform-laziness-test #(doall (tree-seq-breadth '(:a ((:x) :b) :c ((:y) :d) :e))))))
   )
 
 (deftest test-get-nodes-at-depth
@@ -196,8 +191,13 @@
   (is (= '((:x) :b (:y) :d) (doall (get-nodes-at-depth '(:a ((:x) :b) :c ((:y) :d) :e) 2))))
   (is (= '(:x :y) (doall (get-nodes-at-depth '(:a ((:x) :b) :c ((:y) :d) :e) 3))))
   (is (= '() (doall (get-nodes-at-depth '(:a ((:x) :b) :c ((:y) :d) :e) 4))))
-
+  ;passes 10000
   (is (= '((:bottom)) (get-nodes-at-depth (deeply-nested 100) 100)))
+)
+
+(deftest test-get-nodes-at-depth-series
+  ;fails - Stack Overflow at 10000
+  (is (= '((:bottom)) (nth (get-nodes-at-depth-series (deeply-nested 100)) 100)))
 )
 
 (deftest test-tree-seq-with-treenode-fixed
