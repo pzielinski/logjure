@@ -150,7 +150,7 @@
            (lazy-seq
              (if (< depth allowed-depth)
                (when (branch? node)
-                 (lazy-list-merge (map #(walk % (inc depth)) (children node))))
+                 (mapcat #(walk % (inc depth)) (children node)))
                (list node))
              ))]
      (walk root 0)))

@@ -85,10 +85,6 @@
     ))
   )
 
-(defn perform-lazy-test-tree-seq-breadth-nth [root n]
-    (perform-laziness-test #(nth (tree-seq-breadth root) n :not-found))
-  )
-
 ;CHECK WHY THE GET-CHILD-SEQ IS CALLED ON NODES THAT ARE NOT BRANCH NODES !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
 (defn test-tree-seq-breadth-x []
@@ -193,6 +189,55 @@
   (is (= '() (doall (get-nodes-at-depth '(:a ((:x) :b) :c ((:y) :d) :e) 4))))
   ;passes 10000
   (is (= '((:bottom)) (get-nodes-at-depth (deeply-nested 100) 100)))
+  ;TEST LAZINESS FOR doall
+  ;level 0 (root)
+  (is (= '[((:a ((:x) :b) :c ((:y) :d) :e)) 
+           []] 
+         (perform-laziness-test #(doall (get-nodes-at-depth '(:a ((:x) :b) :c ((:y) :d) :e) 0)))))
+  ;level 1
+  (is (= '[(:a ((:x) :b) :c ((:y) :d) :e) 
+           [(:a ((:x) :b) :c ((:y) :d) :e)]] 
+         (perform-laziness-test #(doall (get-nodes-at-depth '(:a ((:x) :b) :c ((:y) :d) :e) 1)))))
+  ;level 2
+  (is (= '[((:x) :b (:y) :d) 
+           [(:a ((:x) :b) :c ((:y) :d) :e) ((:x) :b) ((:y) :d)]] 
+         (perform-laziness-test #(doall (get-nodes-at-depth '(:a ((:x) :b) :c ((:y) :d) :e) 2)))))
+  ;level 3
+  (is (= '[(:x :y) 
+           [(:a ((:x) :b) :c ((:y) :d) :e) ((:x) :b) (:x) ((:y) :d) (:y)]] 
+         (perform-laziness-test #(doall (get-nodes-at-depth '(:a ((:x) :b) :c ((:y) :d) :e) 3)))))
+  ;level 4
+  (is (= '[() 
+           [(:a ((:x) :b) :c ((:y) :d) :e) ((:x) :b) (:x) ((:y) :d) (:y)]] 
+         (perform-laziness-test #(doall (get-nodes-at-depth '(:a ((:x) :b) :c ((:y) :d) :e) 4)))))
+  ;TEST LAZINESS FOR nth
+  ;level 1
+  (is (= '[:a 
+           [(:a ((:x) :b) :c ((:y) :d) :e)]] 
+         (perform-laziness-test #(nth (get-nodes-at-depth '(:a ((:x) :b) :c ((:y) :d) :e) 1) 0))))
+  (is (= '[:e 
+           [(:a ((:x) :b) :c ((:y) :d) :e)]] 
+         (perform-laziness-test #(nth (get-nodes-at-depth '(:a ((:x) :b) :c ((:y) :d) :e) 1) 4))))
+  ;level 2
+  (is (= '[(:x) 
+           [(:a ((:x) :b) :c ((:y) :d) :e) ((:x) :b)]] 
+         (perform-laziness-test #(nth (get-nodes-at-depth '(:a ((:x) :b) :c ((:y) :d) :e) 2) 0))))
+  (is (= '[:b 
+           [(:a ((:x) :b) :c ((:y) :d) :e) ((:x) :b)]] 
+         (perform-laziness-test #(nth (get-nodes-at-depth '(:a ((:x) :b) :c ((:y) :d) :e) 2) 1))))
+  (is (= '[(:y) 
+           [(:a ((:x) :b) :c ((:y) :d) :e) ((:x) :b) ((:y) :d)]] 
+         (perform-laziness-test #(nth (get-nodes-at-depth '(:a ((:x) :b) :c ((:y) :d) :e) 2) 2))))
+  (is (= '[:d  
+           [(:a ((:x) :b) :c ((:y) :d) :e) ((:x) :b) ((:y) :d)]] 
+         (perform-laziness-test #(nth (get-nodes-at-depth '(:a ((:x) :b) :c ((:y) :d) :e) 2) 3))))
+  ;level 3
+  (is (= '[:x 
+           [(:a ((:x) :b) :c ((:y) :d) :e) ((:x) :b) (:x)]] 
+         (perform-laziness-test #(nth (get-nodes-at-depth '(:a ((:x) :b) :c ((:y) :d) :e) 3) 0))))
+  (is (= '[:y 
+           [(:a ((:x) :b) :c ((:y) :d) :e) ((:x) :b) (:x) ((:y) :d) (:y)]] 
+         (perform-laziness-test #(nth (get-nodes-at-depth '(:a ((:x) :b) :c ((:y) :d) :e) 3) 1))))
 )
 
 (deftest test-get-nodes-at-depth-series
