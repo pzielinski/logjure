@@ -103,7 +103,8 @@
           (if (not (empty? cols))
             (lazy-list-merge (first cols) (rest cols)))))))
   ([cols]
-       (lazy-list-merge (first cols) (rest cols)))
+       (lazy-seq 
+         (lazy-list-merge (first cols) (rest cols))))
 )
 
 (defn get-nodes-at-depth-series
@@ -113,14 +114,12 @@
      (let [walk 
            (fn walk [branch? children parent-nodes]
              (lazy-seq
-               (let [nodes (lazy-list-merge (map #(children %) parent-nodes))]
-                 (when (not (empty? nodes))
-                   (cons nodes
-                         (walk branch? children nodes))))))]
+               (when (not (empty? parent-nodes))
+                 (cons parent-nodes
+                       (walk branch? children (lazy-list-merge (map #(children %) parent-nodes)))))))]
        (lazy-seq
          (let [root-list (list root)]
-           (cons root-list 
-                 (walk branch? children root-list)))))
+           (walk branch? children root-list))))
      )
    ([root] 
      (get-nodes-at-depth-series #(not (is-leaf %)) get-children root)
@@ -150,6 +149,7 @@
            (lazy-seq
              (if (< depth allowed-depth)
                (when (branch? node)
+                 ;(lazy-list-merge (map #(walk % (inc depth)) (children node)))) ;StackOverflow error on 10000
                  (mapcat #(walk % (inc depth)) (children node)))
                (list node))
              ))]
