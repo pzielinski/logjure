@@ -110,16 +110,16 @@
 (defn get-nodes-at-depth-series
   "Returns a lazy sequence of lazy sequences. 
    Eeach child sequence contains all nodes at corresponding depth."
-   ([branch? children root]
+   ([branch? get-children root]
      (let [walk 
-           (fn walk [branch? children parent-nodes]
-             (lazy-seq
-               (when (not (empty? parent-nodes))
-                 (cons parent-nodes
-                       (walk branch? children (lazy-list-merge (map #(children %) parent-nodes)))))))]
+           (fn walk 
+             [branch? get-children parent-nodes]
+               (cons parent-nodes
+                     (when (seq parent-nodes)
+                       (lazy-seq 
+                         (walk branch? get-children (lazy-list-merge (map get-children parent-nodes)))))))]
        (lazy-seq
-         (let [root-list (list root)]
-           (walk branch? children root-list))))
+           (walk branch? get-children (list root))))
      )
    ([root] 
      (get-nodes-at-depth-series #(not (is-leaf %)) get-children root)
