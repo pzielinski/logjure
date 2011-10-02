@@ -14,3 +14,13 @@
       result
       (recur (dec n) (list result)))))
   )
+
+(defmacro recorder [original-fn replacement-fn & test-fn]
+  `(let [records# (atom #{})
+        record-fn# (fn [record#] (swap! records# conj record#))
+        f-recording# (fn [x#] (do (record-fn# x#)) (~replacement-fn x#))
+        ]
+    (binding [~original-fn f-recording#]
+      [~@test-fn @records#]
+    ))
+  )
