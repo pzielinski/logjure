@@ -76,14 +76,12 @@
   ;(is (= '([:y :y {?x :x, ?y :y}]) (doall (lazy-list-merge '() '([:y :y {?x :x, ?y :y}])))))
 )
 
-(defn perform-laziness-test [test-fn]
-  (let [records (atom [])
-        record-fn (fn [record] (swap! records conj record))
-        get-child-seq-recording (fn [node] (do (record-fn node)) (get-child-seq node))]
-    (binding [get-children get-child-seq-recording]
-      [(test-fn) @records]
-    ))
-  )
+(deftest test-lazy-list-merge-vs-apply-concat
+  ;notice that "apply concat" greedily evaluates first three items in the result seqence
+  (is (= [1 [1 2 3]] (recorder inc #(+ % 1) (nth (apply concat (map list (iterate inc 1))) 0))))
+  ;notice that "lazy-list-merge" does not
+  (is (= [1 []] (recorder inc #(+ % 1) (nth (lazy-list-merge (map list (iterate inc 1))) 0))))
+)
 
 ;CHECK WHY THE GET-CHILD-SEQ IS CALLED ON NODES THAT ARE NOT BRANCH NODES !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
@@ -116,46 +114,46 @@
   ;test laziness
   ;level 0 (root)
   (is (= '[(:a ((:x) :b) :c ((:y) :d) :e) []] 
-         (perform-laziness-test #(nth (tree-seq-breadth '(:a ((:x) :b) :c ((:y) :d) :e)) 0 :not-found))))
+         (recorder get-children get-child-seq (nth (tree-seq-breadth '(:a ((:x) :b) :c ((:y) :d) :e)) 0 :not-found))))
   ;level 1
   (is (= '[:a 
            [(:a ((:x) :b) :c ((:y) :d) :e)]] 
-         (perform-laziness-test #(nth (tree-seq-breadth '(:a ((:x) :b) :c ((:y) :d) :e)) 1 :not-found))))
+         (recorder get-children get-child-seq (nth (tree-seq-breadth '(:a ((:x) :b) :c ((:y) :d) :e)) 1 :not-found))))
   (is (= '[((:x) :b) 
            [(:a ((:x) :b) :c ((:y) :d) :e)]] 
-         (perform-laziness-test #(nth (tree-seq-breadth '(:a ((:x) :b) :c ((:y) :d) :e)) 2 :not-found))))
+         (recorder get-children get-child-seq (nth (tree-seq-breadth '(:a ((:x) :b) :c ((:y) :d) :e)) 2 :not-found))))
   (is (= '[:c 
            [(:a ((:x) :b) :c ((:y) :d) :e)]] 
-         (perform-laziness-test #(nth (tree-seq-breadth '(:a ((:x) :b) :c ((:y) :d) :e)) 3 :not-found))))
+         (recorder get-children get-child-seq (nth (tree-seq-breadth '(:a ((:x) :b) :c ((:y) :d) :e)) 3 :not-found))))
   (is (= '[((:y) :d) 
            [(:a ((:x) :b) :c ((:y) :d) :e)]] 
-         (perform-laziness-test #(nth (tree-seq-breadth '(:a ((:x) :b) :c ((:y) :d) :e)) 4 :not-found))))
+         (recorder get-children get-child-seq (nth (tree-seq-breadth '(:a ((:x) :b) :c ((:y) :d) :e)) 4 :not-found))))
   (is (= '[:e [(:a ((:x) :b) :c ((:y) :d) :e)]] 
-         (perform-laziness-test #(nth (tree-seq-breadth '(:a ((:x) :b) :c ((:y) :d) :e)) 5 :not-found))))
+         (recorder get-children get-child-seq (nth (tree-seq-breadth '(:a ((:x) :b) :c ((:y) :d) :e)) 5 :not-found))))
   ;level 2
   (is (= '[(:x) 
            [(:a ((:x) :b) :c ((:y) :d) :e) :a ((:x) :b)]] 
-         (perform-laziness-test #(nth (tree-seq-breadth '(:a ((:x) :b) :c ((:y) :d) :e)) 6 :not-found))))
+         (recorder get-children get-child-seq (nth (tree-seq-breadth '(:a ((:x) :b) :c ((:y) :d) :e)) 6 :not-found))))
   (is (= '[:b 
            [(:a ((:x) :b) :c ((:y) :d) :e) :a ((:x) :b)]] 
-         (perform-laziness-test #(nth (tree-seq-breadth '(:a ((:x) :b) :c ((:y) :d) :e)) 7 :not-found))))
+         (recorder get-children get-child-seq (nth (tree-seq-breadth '(:a ((:x) :b) :c ((:y) :d) :e)) 7 :not-found))))
   (is (= '[(:y) 
            [(:a ((:x) :b) :c ((:y) :d) :e) :a ((:x) :b) :c ((:y) :d)]] 
-         (perform-laziness-test #(nth (tree-seq-breadth '(:a ((:x) :b) :c ((:y) :d) :e)) 8 :not-found))))
+         (recorder get-children get-child-seq (nth (tree-seq-breadth '(:a ((:x) :b) :c ((:y) :d) :e)) 8 :not-found))))
   (is (= '[:d 
            [(:a ((:x) :b) :c ((:y) :d) :e) :a ((:x) :b) :c ((:y) :d)]] 
-         (perform-laziness-test #(nth (tree-seq-breadth '(:a ((:x) :b) :c ((:y) :d) :e)) 9 :not-found))))
+         (recorder get-children get-child-seq (nth (tree-seq-breadth '(:a ((:x) :b) :c ((:y) :d) :e)) 9 :not-found))))
   ;level 3
   (is (= '[:x 
            [(:a ((:x) :b) :c ((:y) :d) :e) :a ((:x) :b) :c ((:y) :d) :e (:x)]] 
-         (perform-laziness-test #(nth (tree-seq-breadth '(:a ((:x) :b) :c ((:y) :d) :e)) 10 :not-found))))
+         (recorder get-children get-child-seq (nth (tree-seq-breadth '(:a ((:x) :b) :c ((:y) :d) :e)) 10 :not-found))))
   (is (= '[:y 
            [(:a ((:x) :b) :c ((:y) :d) :e) :a ((:x) :b) :c ((:y) :d) :e (:x) :b (:y)]] 
-         (perform-laziness-test #(nth (tree-seq-breadth '(:a ((:x) :b) :c ((:y) :d) :e)) 11 :not-found))))
+         (recorder get-children get-child-seq (nth (tree-seq-breadth '(:a ((:x) :b) :c ((:y) :d) :e)) 11 :not-found))))
   ;not found
   (is (= '[:not-found 
            [(:a ((:x) :b) :c ((:y) :d) :e) :a ((:x) :b) :c ((:y) :d) :e (:x) :b (:y) :d :x :y]] 
-         (perform-laziness-test #(nth (tree-seq-breadth '(:a ((:x) :b) :c ((:y) :d) :e)) 12 :not-found))))
+         (recorder get-children get-child-seq (nth (tree-seq-breadth '(:a ((:x) :b) :c ((:y) :d) :e)) 12 :not-found))))
   ;all
   (is (= '[(
             (:a ((:x) :b) :c ((:y) :d) :e)
@@ -164,7 +162,7 @@
             :x :y
             ) 
            [(:a ((:x) :b) :c ((:y) :d) :e) :a ((:x) :b) :c ((:y) :d) :e (:x) :b (:y) :d :x :y]] 
-         (perform-laziness-test #(doall (tree-seq-breadth '(:a ((:x) :b) :c ((:y) :d) :e))))))
+         (recorder get-children get-child-seq (doall (tree-seq-breadth '(:a ((:x) :b) :c ((:y) :d) :e))))))
   )
 
 (deftest test-get-nodes-at-depth
@@ -193,51 +191,51 @@
   ;level 0 (root)
   (is (= '[((:a ((:x) :b) :c ((:y) :d) :e)) 
            []] 
-         (perform-laziness-test #(doall (get-nodes-at-depth '(:a ((:x) :b) :c ((:y) :d) :e) 0)))))
+         (recorder get-children get-child-seq (doall (get-nodes-at-depth '(:a ((:x) :b) :c ((:y) :d) :e) 0)))))
   ;level 1
   (is (= '[(:a ((:x) :b) :c ((:y) :d) :e) 
            [(:a ((:x) :b) :c ((:y) :d) :e)]] 
-         (perform-laziness-test #(doall (get-nodes-at-depth '(:a ((:x) :b) :c ((:y) :d) :e) 1)))))
+         (recorder get-children get-child-seq (doall (get-nodes-at-depth '(:a ((:x) :b) :c ((:y) :d) :e) 1)))))
   ;level 2
   (is (= '[((:x) :b (:y) :d) 
            [(:a ((:x) :b) :c ((:y) :d) :e) ((:x) :b) ((:y) :d)]] 
-         (perform-laziness-test #(doall (get-nodes-at-depth '(:a ((:x) :b) :c ((:y) :d) :e) 2)))))
+         (recorder get-children get-child-seq (doall (get-nodes-at-depth '(:a ((:x) :b) :c ((:y) :d) :e) 2)))))
   ;level 3
   (is (= '[(:x :y) 
            [(:a ((:x) :b) :c ((:y) :d) :e) ((:x) :b) (:x) ((:y) :d) (:y)]] 
-         (perform-laziness-test #(doall (get-nodes-at-depth '(:a ((:x) :b) :c ((:y) :d) :e) 3)))))
+         (recorder get-children get-child-seq (doall (get-nodes-at-depth '(:a ((:x) :b) :c ((:y) :d) :e) 3)))))
   ;level 4
   (is (= '[() 
            [(:a ((:x) :b) :c ((:y) :d) :e) ((:x) :b) (:x) ((:y) :d) (:y)]] 
-         (perform-laziness-test #(doall (get-nodes-at-depth '(:a ((:x) :b) :c ((:y) :d) :e) 4)))))
+         (recorder get-children get-child-seq (doall (get-nodes-at-depth '(:a ((:x) :b) :c ((:y) :d) :e) 4)))))
   ;TEST LAZINESS FOR nth
   ;level 1
   (is (= '[:a 
            [(:a ((:x) :b) :c ((:y) :d) :e)]] 
-         (perform-laziness-test #(nth (get-nodes-at-depth '(:a ((:x) :b) :c ((:y) :d) :e) 1) 0))))
+         (recorder get-children get-child-seq (nth (get-nodes-at-depth '(:a ((:x) :b) :c ((:y) :d) :e) 1) 0))))
   (is (= '[:e 
            [(:a ((:x) :b) :c ((:y) :d) :e)]] 
-         (perform-laziness-test #(nth (get-nodes-at-depth '(:a ((:x) :b) :c ((:y) :d) :e) 1) 4))))
+         (recorder get-children get-child-seq (nth (get-nodes-at-depth '(:a ((:x) :b) :c ((:y) :d) :e) 1) 4))))
   ;level 2
   (is (= '[(:x) 
            [(:a ((:x) :b) :c ((:y) :d) :e) ((:x) :b)]] 
-         (perform-laziness-test #(nth (get-nodes-at-depth '(:a ((:x) :b) :c ((:y) :d) :e) 2) 0))))
+         (recorder get-children get-child-seq (nth (get-nodes-at-depth '(:a ((:x) :b) :c ((:y) :d) :e) 2) 0))))
   (is (= '[:b 
            [(:a ((:x) :b) :c ((:y) :d) :e) ((:x) :b)]] 
-         (perform-laziness-test #(nth (get-nodes-at-depth '(:a ((:x) :b) :c ((:y) :d) :e) 2) 1))))
+         (recorder get-children get-child-seq (nth (get-nodes-at-depth '(:a ((:x) :b) :c ((:y) :d) :e) 2) 1))))
   (is (= '[(:y) 
            [(:a ((:x) :b) :c ((:y) :d) :e) ((:x) :b) ((:y) :d)]] 
-         (perform-laziness-test #(nth (get-nodes-at-depth '(:a ((:x) :b) :c ((:y) :d) :e) 2) 2))))
+         (recorder get-children get-child-seq (nth (get-nodes-at-depth '(:a ((:x) :b) :c ((:y) :d) :e) 2) 2))))
   (is (= '[:d  
            [(:a ((:x) :b) :c ((:y) :d) :e) ((:x) :b) ((:y) :d)]] 
-         (perform-laziness-test #(nth (get-nodes-at-depth '(:a ((:x) :b) :c ((:y) :d) :e) 2) 3))))
+         (recorder get-children get-child-seq (nth (get-nodes-at-depth '(:a ((:x) :b) :c ((:y) :d) :e) 2) 3))))
   ;level 3
   (is (= '[:x 
            [(:a ((:x) :b) :c ((:y) :d) :e) ((:x) :b) (:x)]] 
-         (perform-laziness-test #(nth (get-nodes-at-depth '(:a ((:x) :b) :c ((:y) :d) :e) 3) 0))))
+         (recorder get-children get-child-seq (nth (get-nodes-at-depth '(:a ((:x) :b) :c ((:y) :d) :e) 3) 0))))
   (is (= '[:y 
            [(:a ((:x) :b) :c ((:y) :d) :e) ((:x) :b) (:x) ((:y) :d) (:y)]] 
-         (perform-laziness-test #(nth (get-nodes-at-depth '(:a ((:x) :b) :c ((:y) :d) :e) 3) 1))))
+         (recorder get-children get-child-seq (nth (get-nodes-at-depth '(:a ((:x) :b) :c ((:y) :d) :e) 3) 1))))
 )
 
 (deftest test-get-nodes-at-depth-series
