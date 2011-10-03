@@ -63,7 +63,6 @@
   )
 
 (deftest test-lazy-list-merge
-  (is (= '() (doall (lazy-list-merge))))
   (is (= '() (doall (lazy-list-merge '()))))
   (is (= '(:a) (doall (lazy-list-merge '((:a))))))
   (is (= '(:a :b) (doall (lazy-list-merge '((:a) (:b))))))
@@ -85,11 +84,11 @@
   (is (= [4 [1 2 3 4]] (recorder inc #(+ % 1) (nth (apply concat (map list (iterate inc 1))) 3))))
   (is (= [5 [1 2 3 4 5]] (recorder inc #(+ % 1) (nth (apply concat (map list (iterate inc 1))) 4))))
   ;notice that "lazy-list-merge" does not
-  (is (= [1 []] (recorder inc #(+ % 1) (nth (lazy-list-merge (map list (iterate inc 1))) 0))))
-  (is (= [2 [1]] (recorder inc #(+ % 1) (nth (lazy-list-merge (map list (iterate inc 1))) 1))))
-  (is (= [3 [1 2]] (recorder inc #(+ % 1) (nth (lazy-list-merge (map list (iterate inc 1))) 2))))
-  (is (= [4 [1 2 3]] (recorder inc #(+ % 1) (nth (lazy-list-merge (map list (iterate inc 1))) 3))))
-  (is (= [5 [1 2 3 4]] (recorder inc #(+ % 1) (nth (lazy-list-merge (map list (iterate inc 1))) 4))))
+  (is (= [1 [1]] (recorder inc #(+ % 1) (nth (lazy-list-merge (map list (iterate inc 1))) 0))))
+  (is (= [2 [1 2]] (recorder inc #(+ % 1) (nth (lazy-list-merge (map list (iterate inc 1))) 1))))
+  (is (= [3 [1 2 3]] (recorder inc #(+ % 1) (nth (lazy-list-merge (map list (iterate inc 1))) 2))))
+  (is (= [4 [1 2 3 4]] (recorder inc #(+ % 1) (nth (lazy-list-merge (map list (iterate inc 1))) 3))))
+  (is (= [5 [1 2 3 4 5]] (recorder inc #(+ % 1) (nth (lazy-list-merge (map list (iterate inc 1))) 4))))
   ;TEST StackOverflow
   (is (= 10001 (nth (apply concat (map list (iterate inc 1))) 10000)))
   (is (= 10001 (nth (lazy-list-merge (map list (iterate inc 1))) 10000)))
@@ -125,46 +124,47 @@
   (is (= '(:bottom) (doall (filter is-leaf (tree-seq-breadth (deeply-nested 100))))))
   ;test laziness
   ;level 0 (root)
-  (is (= '[(:a ((:x) :b) :c ((:y) :d) :e) []] 
+  (is (= '[(:a ((:x) :b) :c ((:y) :d) :e) [(:a ((:x) :b) :c ((:y) :d) :e) :a ((:x) :b)]] 
          (recorder get-children get-child-seq (nth (tree-seq-breadth '(:a ((:x) :b) :c ((:y) :d) :e)) 0 :not-found))))
   ;level 1
   (is (= '[:a 
-           [(:a ((:x) :b) :c ((:y) :d) :e)]] 
+           [(:a ((:x) :b) :c ((:y) :d) :e) :a ((:x) :b) :c (:x) :b]] 
          (recorder get-children get-child-seq (nth (tree-seq-breadth '(:a ((:x) :b) :c ((:y) :d) :e)) 1 :not-found))))
   (is (= '[((:x) :b) 
-           [(:a ((:x) :b) :c ((:y) :d) :e)]] 
+           [(:a ((:x) :b) :c ((:y) :d) :e) :a ((:x) :b) :c (:x) :b]] 
          (recorder get-children get-child-seq (nth (tree-seq-breadth '(:a ((:x) :b) :c ((:y) :d) :e)) 2 :not-found))))
   (is (= '[:c 
-           [(:a ((:x) :b) :c ((:y) :d) :e)]] 
+           [(:a ((:x) :b) :c ((:y) :d) :e) :a ((:x) :b) :c (:x) :b]] 
          (recorder get-children get-child-seq (nth (tree-seq-breadth '(:a ((:x) :b) :c ((:y) :d) :e)) 3 :not-found))))
   (is (= '[((:y) :d) 
-           [(:a ((:x) :b) :c ((:y) :d) :e)]] 
+           [(:a ((:x) :b) :c ((:y) :d) :e) :a ((:x) :b) :c (:x) :b]] 
          (recorder get-children get-child-seq (nth (tree-seq-breadth '(:a ((:x) :b) :c ((:y) :d) :e)) 4 :not-found))))
-  (is (= '[:e [(:a ((:x) :b) :c ((:y) :d) :e)]] 
+  (is (= '[:e 
+           [(:a ((:x) :b) :c ((:y) :d) :e) :a ((:x) :b) :c (:x) :b]] 
          (recorder get-children get-child-seq (nth (tree-seq-breadth '(:a ((:x) :b) :c ((:y) :d) :e)) 5 :not-found))))
   ;level 2
   (is (= '[(:x) 
-           [(:a ((:x) :b) :c ((:y) :d) :e) :a ((:x) :b)]] 
+           [(:a ((:x) :b) :c ((:y) :d) :e) :a ((:x) :b) :c (:x) :b :x ((:y) :d) :e (:y) :d :y]] 
          (recorder get-children get-child-seq (nth (tree-seq-breadth '(:a ((:x) :b) :c ((:y) :d) :e)) 6 :not-found))))
   (is (= '[:b 
-           [(:a ((:x) :b) :c ((:y) :d) :e) :a ((:x) :b)]] 
+           [(:a ((:x) :b) :c ((:y) :d) :e) :a ((:x) :b) :c (:x) :b :x ((:y) :d) :e (:y) :d :y]] 
          (recorder get-children get-child-seq (nth (tree-seq-breadth '(:a ((:x) :b) :c ((:y) :d) :e)) 7 :not-found))))
   (is (= '[(:y) 
-           [(:a ((:x) :b) :c ((:y) :d) :e) :a ((:x) :b) :c ((:y) :d)]] 
+           [(:a ((:x) :b) :c ((:y) :d) :e) :a ((:x) :b) :c (:x) :b :x ((:y) :d) :e (:y) :d :y]] 
          (recorder get-children get-child-seq (nth (tree-seq-breadth '(:a ((:x) :b) :c ((:y) :d) :e)) 8 :not-found))))
   (is (= '[:d 
-           [(:a ((:x) :b) :c ((:y) :d) :e) :a ((:x) :b) :c ((:y) :d)]] 
+           [(:a ((:x) :b) :c ((:y) :d) :e) :a ((:x) :b) :c (:x) :b :x ((:y) :d) :e (:y) :d :y]] 
          (recorder get-children get-child-seq (nth (tree-seq-breadth '(:a ((:x) :b) :c ((:y) :d) :e)) 9 :not-found))))
   ;level 3
   (is (= '[:x 
-           [(:a ((:x) :b) :c ((:y) :d) :e) :a ((:x) :b) :c ((:y) :d) :e (:x)]] 
+           [(:a ((:x) :b) :c ((:y) :d) :e) :a ((:x) :b) :c (:x) :b :x ((:y) :d) :e (:y) :d :y]] 
          (recorder get-children get-child-seq (nth (tree-seq-breadth '(:a ((:x) :b) :c ((:y) :d) :e)) 10 :not-found))))
   (is (= '[:y 
-           [(:a ((:x) :b) :c ((:y) :d) :e) :a ((:x) :b) :c ((:y) :d) :e (:x) :b (:y)]] 
+           [(:a ((:x) :b) :c ((:y) :d) :e) :a ((:x) :b) :c (:x) :b :x ((:y) :d) :e (:y) :d :y]] 
          (recorder get-children get-child-seq (nth (tree-seq-breadth '(:a ((:x) :b) :c ((:y) :d) :e)) 11 :not-found))))
   ;not found
   (is (= '[:not-found 
-           [(:a ((:x) :b) :c ((:y) :d) :e) :a ((:x) :b) :c ((:y) :d) :e (:x) :b (:y) :d :x :y]] 
+           [(:a ((:x) :b) :c ((:y) :d) :e) :a ((:x) :b) :c (:x) :b :x ((:y) :d) :e (:y) :d :y]] 
          (recorder get-children get-child-seq (nth (tree-seq-breadth '(:a ((:x) :b) :c ((:y) :d) :e)) 12 :not-found))))
   ;all
   (is (= '[(
@@ -173,7 +173,7 @@
             (:x) :b (:y) :d
             :x :y
             ) 
-           [(:a ((:x) :b) :c ((:y) :d) :e) :a ((:x) :b) :c ((:y) :d) :e (:x) :b (:y) :d :x :y]] 
+           [(:a ((:x) :b) :c ((:y) :d) :e) :a ((:x) :b) :c (:x) :b :x ((:y) :d) :e (:y) :d :y]] 
          (recorder get-children get-child-seq (doall (tree-seq-breadth '(:a ((:x) :b) :c ((:y) :d) :e))))))
   )
 
@@ -252,7 +252,7 @@
 
 (deftest test-get-nodes-at-depth-series
   ;fails - Stack Overflow at 10000
-  (is (= '((:bottom)) (nth (get-nodes-at-depth-series (deeply-nested 100)) 100)))
+  (is (= '((:bottom)) (nth (get-nodes-at-depth-series (deeply-nested 10000)) 10000)))
 )
 
 (deftest test-tree-seq-with-treenode-fixed

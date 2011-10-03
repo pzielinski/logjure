@@ -94,18 +94,17 @@
    (tree-seq #(not (is-leaf %)) get-children root))
 
 (defn lazy-list-merge
-  ([] (lazy-seq nil))
-  ([col cols]
-    (lazy-seq
-      (let [s (seq col)]
-        (if s
-          (cons (first s) (lazy-list-merge (rest s) cols))
-          (if (not (empty? cols))
-            (lazy-list-merge (first cols) (rest cols)))))))
-  ([cols]
-       (lazy-seq 
-         (lazy-list-merge (first cols) (rest cols))))
-)
+  [cols]
+  (let [cat 
+        (fn cat [col cols]
+          (lazy-seq
+            (let [s (seq col)]
+              (if s
+                (cons (first s) (cat (rest s) cols))
+                (when cols
+                  (cat (first cols) (next cols)))))))] 
+    (cat (first cols) (next cols)))
+  )
 
 (defn get-nodes-at-depth-series
   "Returns a lazy sequence of lazy sequences. 
@@ -114,12 +113,12 @@
      (let [walk 
            (fn walk 
              [branch? get-children parent-nodes]
-               (cons parent-nodes
-                     (when (seq parent-nodes)
+             (cons parent-nodes
+                   (when (seq parent-nodes)
+                     (let [child-nodes (lazy-list-merge (map get-children parent-nodes))]
                        (lazy-seq 
-                         (walk branch? get-children (lazy-list-merge (map get-children parent-nodes)))))))]
-       (lazy-seq
-           (walk branch? get-children (list root))))
+                         (walk branch? get-children child-nodes))))))]
+       (walk branch? get-children (list root)))
      )
    ([root] 
      (get-nodes-at-depth-series #(not (is-leaf %)) get-children root)
