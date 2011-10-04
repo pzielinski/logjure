@@ -149,4 +149,16 @@
   )
 )
 
+(deftest test-seq-to-stream
+  (let [s (seq-to-stream '(1 2 3))] 
+    (is (= 1 (stream-nth 0 s)))
+    (is (= 2 (stream-nth 1 s)))
+    (is (= 3 (stream-nth 2 s)))
+    (is (= the-empty-stream (stream-nth 3 s)))
+    (is (= 1 (stream-nth 0 (seq-to-stream (iterate inc 1)))))
+    (is (= 2 (stream-nth 1 (seq-to-stream (iterate inc 1)))))
+    (is (= 10001 (stream-nth 10000 (seq-to-stream (iterate inc 1)))))
+  )
+)
+
 (run-tests)

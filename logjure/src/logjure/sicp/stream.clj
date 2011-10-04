@@ -8,8 +8,8 @@
   (null? stream)
   )
 
-(defn cons-stream [x s]
-    (cons-pair x (delay s))
+(defmacro cons-stream [x s]
+    `(cons-pair ~x (delay ~s))
   )
 
 (defn stream-car [stream] 
@@ -76,3 +76,8 @@
       (stream-nth (dec n) (stream-cdr stream))));NEED RECUR !!!!!!!!!!!!!
   )
 
+(defn seq-to-stream [the-seq]
+  (if (seq the-seq)
+    (cons-stream (first the-seq) (seq-to-stream (rest the-seq)))
+    the-empty-stream)
+  )
