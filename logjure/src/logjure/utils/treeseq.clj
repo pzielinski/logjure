@@ -1,5 +1,8 @@
 (ns logjure.utils.treeseq
-  (:use logjure.utils.defmultimethod)
+  (:use 
+    logjure.utils.defmultimethod 
+    logjure.sicp.stream
+    )
   (:require clojure.inspector))
 
 (defprotocol TreeNode
@@ -119,6 +122,25 @@
                        (lazy-seq 
                          (walk branch? get-children child-nodes))))))]
        (walk branch? get-children (list root)))
+     )
+   ([root] 
+     (get-nodes-at-depth-series #(not (is-leaf %)) get-children root)
+     )
+)
+
+(defn get-nodes-at-depth-series-stream
+  "Returns a lazy sequence of lazy sequences. 
+   Eeach child sequence contains all nodes at corresponding depth."
+   ([branch? get-children root]
+     (let [walk 
+           (fn walk 
+             [branch? get-children parent-nodes]
+             (cons-stream 
+               parent-nodes
+               (when (not (stream-null? parent-nodes))
+                 (let [child-nodes (flatten-stream (stream-map #(seq-to-stream (get-children %)) parent-nodes))]
+                   (walk branch? get-children child-nodes)))))]
+       (walk branch? get-children (seq-to-stream (list root))))
      )
    ([root] 
      (get-nodes-at-depth-series #(not (is-leaf %)) get-children root)
