@@ -29,6 +29,7 @@
     (is (= :a (stream-car s)))
     (is (= :b (stream-car (stream-cdr s))))
     (is (= :x (stream-car (stream-cdr (stream-cdr s)))))
+    (is (= the-empty-stream (stream-car (stream-cdr (stream-cdr (stream-cdr s))))))
   )
 )
 

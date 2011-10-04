@@ -73,7 +73,7 @@
     the-empty-stream
     (if (= n 0)
       (stream-car stream) 
-      (stream-nth (dec n) (stream-cdr stream))));NEED RECUR !!!!!!!!!!!!!
+      (recur (dec n) (stream-cdr stream))))
   )
 
 (defn seq-to-stream [the-seq]
