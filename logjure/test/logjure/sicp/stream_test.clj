@@ -177,6 +177,39 @@
     )
   )
 
+(deftest test-flatten-interleave-stream-infinite-of-infinites
+  "
+1: 1 2 3 4 5 6 7 8 9 ...
+2: 1 2 3 4 5 6 7 8 9 ...
+3: 1 2 3 4 5 6 7 8 9 ...
+4: 1 2 3 4 5 6 7 8 9 ...
+5: 1 2 3 4 5 6 7 8 9 ...
+6: 1 2 3 4 5 6 7 8 9 ...
+...
+"
+  (let [create-infinite-stream 
+        (fn create-infinite-stream [i] (stream-map (fn [n] [i n]) (seq-to-stream (iterate inc 1))))
+        sX (stream-map create-infinite-stream (seq-to-stream (iterate inc 1)));infinite stream of infinite streams
+        s (flatten-interleave-stream sX)]
+    (is (= [1 1] (stream-nth 0 s)))
+    (is (= [2 1] (stream-nth 1 s)))
+    (is (= [1 2] (stream-nth 2 s)))
+    (is (= [3 1] (stream-nth 3 s)))
+    (is (= [1 3] (stream-nth 4 s)))
+    (is (= [2 2] (stream-nth 5 s)))
+    (is (= [1 4] (stream-nth 6 s)))
+    (is (= [4 1] (stream-nth 7 s)))
+    (is (= [1 5001] (stream-nth 10000 s)))
+    (is (= [2 2501] (stream-nth 10001 s)))
+    (is (= [1 5002] (stream-nth 10002 s)))
+    (is (= [3 1251] (stream-nth 10003 s)))
+    (is (= [1 5003] (stream-nth 10004 s)))
+    (is (= [2 2502] (stream-nth 10005 s)))
+    (is (= [1 5004] (stream-nth 10006 s)))
+    (is (= [4  626] (stream-nth 10007 s)))
+    )
+  )
+
 (deftest test-flatten-stream-1-infinite
   (let [s1 (seq-to-stream (iterate inc 1))
         sX (cons-stream s1 the-empty-stream);stream of streams
