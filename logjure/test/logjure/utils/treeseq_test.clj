@@ -3,7 +3,11 @@
     logjure.utils.treeseq
     logjure.utils.testing 
     clojure.contrib.test-is)
-  (:import logjure.utils.treeseq.TreeNodeFixed logjure.utils.treeseq.TreeNodeDynamic)
+  (:import 
+    logjure.utils.treeseq.TreeNodeFixed 
+    logjure.utils.treeseq.TreeNodeDynamic
+    logjure.utils.treeseq.TreeNodeInfinite
+    )
   )
 
 (defn create-tree-node-dynamic-println 
@@ -271,6 +275,30 @@
   (is (= '[(:a ((:x) :b) :c ((:y) :d) :e) [(:a ((:x) :b) :c ((:y) :d) :e)]] 
          (recorder get-children get-child-seq (nth (tree-seq-interleave-stream-seq '(:a ((:x) :b) :c ((:y) :d) :e)) 0 :not-found))))
   )
+
+(deftest test-tree-seq-interleave-stream-infinite-tree
+  (let [s (tree-seq-interleave-stream-seq (TreeNodeInfinite. []))]
+    (is (= [] (node-get-value (nth s 0))))
+    (is (= [1] (node-get-value (nth s 1))))
+    (is (= [1 1] (node-get-value (nth s 2))))
+    (is (= [2] (node-get-value (nth s 3))))
+    (is (= [1 1 1] (node-get-value (nth s 4))))
+    (is (= [3] (node-get-value (nth s 5))))
+    (is (= [2 1] (node-get-value (nth s 6))))
+    (is (= [4] (node-get-value (nth s 7))))
+    (is (= [1 1 1 1] (node-get-value (nth s 8))))
+    (is (= [5] (node-get-value (nth s 9))))
+    (is (= [1 2] (node-get-value (nth s 10))))
+    (is (= [1 1 1 1 157] (node-get-value (nth s 10000))))
+    (is (= [5001] (node-get-value (nth s 10001))))
+    (is (= [1 1251] (node-get-value (nth s 10002))))
+    (is (= [5002] (node-get-value (nth s 10003))))
+    (is (= [1 1 626] (node-get-value (nth s 10004))))
+    (is (= [5003] (node-get-value (nth s 10005))))
+    (is (= [2 626] (node-get-value (nth s 10006))))
+    (is (= [5004] (node-get-value (nth s 10007))))
+  )
+)
 
 (deftest test-tree-seq-breadth-x
   (binding 

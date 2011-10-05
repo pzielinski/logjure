@@ -20,6 +20,20 @@
   (node-get-value [node] (:value node))
 )
 
+(defrecord TreeNodeInfinite [parent-vector])
+
+(extend-type TreeNodeInfinite
+  TreeNode
+  (node-is-leaf [node] false)
+  (node-get-children 
+    [node] 
+    (let [parent-vector (node-get-value node)] 
+      (map 
+        (fn [n] (TreeNodeInfinite. (conj parent-vector n))) 
+        (iterate inc 1))))
+  (node-get-value [node] (:parent-vector node))
+)
+
 (defn finalize-tree-node-dynamic-do-nothing [tree-node-dynamic])
 
 (def *finalize-tree-node-dynamic-fn* (atom finalize-tree-node-dynamic-do-nothing))
