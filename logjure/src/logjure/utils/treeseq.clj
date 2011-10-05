@@ -241,3 +241,19 @@
                    )))]
             (walk root1 root2)))
    )
+
+(defn tree-map
+  "Creates new tree with identical structure with each node value mapped."
+  [proc root]
+  (letfn [
+          (node-is-leaf-x 
+            [node] 
+            (is-leaf node))
+          (node-get-children-x 
+            [node] 
+            (map 
+              (fn [n] (TreeNodeX. (proc (node-get-value n)) node-is-leaf-x node-get-children-x))
+              (node-get-children node)))] 
+         (TreeNodeX. (proc (node-get-value root)) node-is-leaf-x node-get-children-x))
+  )
+
