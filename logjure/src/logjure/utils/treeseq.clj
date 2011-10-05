@@ -34,38 +34,6 @@
   (node-get-value [node] (:parent-vector node))
 )
 
-(defn finalize-tree-node-dynamic-do-nothing [tree-node-dynamic])
-
-(def *finalize-tree-node-dynamic-fn* (atom finalize-tree-node-dynamic-do-nothing))
-
-(deftype TreeNodeDynamic [child-value-seq]
-  Cloneable
-  (finalize 
-    [this] 
-    (@*finalize-tree-node-dynamic-fn* this))
-  )
-
-(defn create-tree-node-dynamic [child-value-seq]
-  (TreeNodeDynamic. child-value-seq)
-  )
-
-(extend-type TreeNodeDynamic 
-  TreeNode
-  (node-is-leaf 
-    [node] 
-    (let [value (node-get-value node)]
-          (or (nil? value) (not (sequential? value)))))
-  (node-get-children 
-    [node]
-    (if (node-is-leaf node)
-      ()
-      (let [value (node-get-value node)]
-        (map #(create-tree-node-dynamic %) value))))
-  (node-get-value 
-    [node] 
-    (.child-value-seq node))
-)
-
 ;lazy
 (defn get-child-seq 
   ([node indx is-leaf get-child-count get-child]
