@@ -249,6 +249,29 @@
          (recorder get-children get-child-seq (doall (tree-seq-breadth-stream-seq '(:a ((:x) :b) :c ((:y) :d) :e))))))
   )
 
+(deftest test-tree-seq-interleave-stream
+  (is (= '(:a) (doall (tree-seq-interleave-stream-seq :a))))
+  (is (= '(()) (doall (tree-seq-interleave-stream-seq '()))))
+  (is (= '((:a) :a) (doall (tree-seq-interleave-stream-seq '(:a)))))
+  (is (= '((:a :b :c) :a :b :c) (doall (tree-seq-interleave-stream-seq '(:a :b :c)))))
+  (is (= '((:a (:b) :c) :a :b (:b) :c) (doall (tree-seq-interleave-stream-seq '(:a (:b) :c)))))
+  (is (= '((:a :b (:c)) :a :c :b (:c)) (doall (tree-seq-interleave-stream-seq '(:a :b (:c))))))
+  (is (= '((:a (:b (:x)) :c) :a :b (:b (:x)) :x :c (:x)) (doall (tree-seq-interleave-stream-seq '(:a (:b (:x)) :c)))))
+  (is (= '((:a ((:x) :b) :c) :a (:x) ((:x) :b) :x :c :b) (doall (tree-seq-interleave-stream-seq '(:a ((:x) :b) :c)))))
+  (is (= '((:a ((:x) :b) ((:y) :c) :d) :a (:x) ((:x) :b) :x ((:y) :c) (:y) :d :y :b :c) 
+         (doall (tree-seq-interleave-stream-seq '(:a ((:x) :b) ((:y) :c) :d)))))
+  (is (= '(:a :x :c :b) (doall (filter is-leaf (tree-seq-interleave-stream-seq '(:a ((:x) :b) :c))))))
+  (is (= '((:a ((:x) :b) :c ((:y) :d) :e) :a (:x) ((:x) :b) :x :c (:y) ((:y) :d) :y :e :b :d) 
+         (doall (tree-seq-interleave-stream-seq '(:a ((:x) :b) :c ((:y) :d) :e)))))
+  (is (= '(:a :x :c :y :e :b :d) (doall (filter is-leaf (tree-seq-interleave-stream-seq '(:a ((:x) :b) :c ((:y) :d) :e))))))
+  ;test that no stack overflow; passes 100000
+  (is (= '(:bottom) (doall (filter is-leaf (tree-seq-interleave-stream-seq (deeply-nested 10000))))))
+  ;test laziness
+  ;level 0 (root)
+  (is (= '[(:a ((:x) :b) :c ((:y) :d) :e) [(:a ((:x) :b) :c ((:y) :d) :e)]] 
+         (recorder get-children get-child-seq (nth (tree-seq-interleave-stream-seq '(:a ((:x) :b) :c ((:y) :d) :e)) 0 :not-found))))
+  )
+
 (deftest test-tree-seq-breadth-x
   (binding 
     [tree-seq-breadth tree-seq-breadth-x]
