@@ -128,25 +128,6 @@
      )
 )
 
-(defn get-nodes-at-depth-series-stream
-  "Returns a lazy sequence of lazy sequences. 
-   Eeach child sequence contains all nodes at corresponding depth."
-   ([branch? get-children root]
-     (let [walk 
-           (fn walk 
-             [branch? get-children parent-nodes]
-             (cons-stream 
-               parent-nodes
-               (when (not (stream-null? parent-nodes))
-                 (let [child-nodes (flatten-stream (stream-map #(seq-to-stream (get-children %)) parent-nodes))]
-                   (walk branch? get-children child-nodes)))))]
-       (walk branch? get-children (seq-to-stream (list root))))
-     )
-   ([root] 
-     (get-nodes-at-depth-series #(not (is-leaf %)) get-children root)
-     )
-)
-
 (defn tree-seq-breadth 
   "Returns a lazy sequence of the nodes in a tree, via a breadth-first walk.
    branch? must be a fn of one arg that returns true if passed a node
@@ -161,6 +142,56 @@
   ([root]
     (tree-seq-breadth #(not (is-leaf %)) get-children root))
   )
+
+(defn tree-seq-breadth-stream
+  ""
+   ([branch? get-children root]
+     (let [walk 
+           (fn walk 
+             [branch? get-children parent-nodes]
+             (cons-stream 
+               parent-nodes
+               (when (not (stream-null? parent-nodes))
+                 (let [child-nodes (flatten-stream (stream-map #(seq-to-stream (get-children %)) parent-nodes))]
+                   (walk branch? get-children child-nodes)))))]
+       (flatten-stream (walk branch? get-children (seq-to-stream (list root)))))
+     )
+   ([root] 
+     (tree-seq-breadth-stream #(not (is-leaf %)) get-children root)
+     )
+)
+
+(defn tree-seq-breadth-stream-seq
+   ([branch? get-children root]
+     (stream-to-seq (tree-seq-breadth-stream branch? get-children root)))
+   ([root]
+     (stream-to-seq (tree-seq-breadth-stream root)))
+)
+
+(defn tree-seq-interleave-stream
+  ""
+   ([branch? get-children root]
+     (let [walk 
+           (fn walk 
+             [branch? get-children parent-nodes]
+             (cons-stream 
+               parent-nodes
+               (when (not (stream-null? parent-nodes))
+                 (let [child-nodes (flatten-interleave-stream (stream-map #(seq-to-stream (get-children %)) parent-nodes))]
+                   (walk branch? get-children child-nodes)))))]
+       (flatten-interleave-stream (walk branch? get-children (seq-to-stream (list root)))))
+     )
+   ([root] 
+     (tree-seq-interleave-stream #(not (is-leaf %)) get-children root)
+     )
+)
+
+(defn tree-seq-interleave-stream-seq
+   ([branch? get-children root]
+     (stream-to-seq (tree-seq-interleave-stream branch? get-children root)))
+   ([root]
+     (stream-to-seq (tree-seq-interleave-stream root)))
+)
 
 ;stops walking at allowed depth
 (defn get-nodes-at-depth

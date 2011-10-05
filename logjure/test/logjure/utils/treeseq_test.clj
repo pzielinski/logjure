@@ -118,6 +118,32 @@
   (is (= '(:a :c :e :b :d :x :y) (doall (filter is-leaf (tree-seq-breadth '(:a ((:x) :b) :c ((:y) :d) :e))))))
   )
 
+(deftest test-tree-seq-breadth-stream
+  (binding [tree-seq-breadth tree-seq-breadth-stream-seq]
+    (test-tree-seq-breadth-x)
+  )
+  ;test laziness
+  ;level 0 (root)
+  (is (= '[(:a ((:x) :b) :c ((:y) :d) :e) [(:a ((:x) :b) :c ((:y) :d) :e)]] 
+         (recorder get-children get-child-seq (nth (tree-seq-breadth-stream-seq '(:a ((:x) :b) :c ((:y) :d) :e)) 0 :not-found))))
+  ;level 1
+  (is (= '[:a 
+           [(:a ((:x) :b) :c ((:y) :d) :e)]] 
+         (recorder get-children get-child-seq (nth (tree-seq-breadth-stream-seq '(:a ((:x) :b) :c ((:y) :d) :e)) 1 :not-found))))
+  (is (= '[((:x) :b) 
+           [(:a ((:x) :b) :c ((:y) :d) :e)]] 
+         (recorder get-children get-child-seq (nth (tree-seq-breadth-stream-seq '(:a ((:x) :b) :c ((:y) :d) :e)) 2 :not-found))))
+  (is (= '[:c 
+           [(:a ((:x) :b) :c ((:y) :d) :e)]] 
+         (recorder get-children get-child-seq (nth (tree-seq-breadth-stream-seq '(:a ((:x) :b) :c ((:y) :d) :e)) 3 :not-found))))
+  (is (= '[((:y) :d) 
+           [(:a ((:x) :b) :c ((:y) :d) :e)]] 
+         (recorder get-children get-child-seq (nth (tree-seq-breadth-stream-seq '(:a ((:x) :b) :c ((:y) :d) :e)) 4 :not-found))))
+  (is (= '[:e 
+           [(:a ((:x) :b) :c ((:y) :d) :e) :a ((:x) :b)]] 
+         (recorder get-children get-child-seq (nth (tree-seq-breadth-stream-seq '(:a ((:x) :b) :c ((:y) :d) :e)) 5 :not-found))))
+)
+
 (deftest test-tree-seq-breadth
   (test-tree-seq-breadth-x)
   ;test that no stack overflow; passes 100000
