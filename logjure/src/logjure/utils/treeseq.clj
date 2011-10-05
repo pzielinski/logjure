@@ -200,7 +200,7 @@
   )
 
 (defn tree-seq-breadth-stream
-  ""
+  "Will get stuck if node has infinite children."
    ([branch? get-children root]
      (let [walk 
            (fn walk 
@@ -219,6 +219,7 @@
 )
 
 (defn tree-seq-breadth-stream-seq
+  "Converts to sequence, makes it more greedy."
    ([branch? get-children root]
      (stream-to-seq (tree-seq-breadth-stream branch? get-children root)))
    ([root]
@@ -226,7 +227,7 @@
 )
 
 (defn tree-seq-interleave-stream
-  ""
+  "The only tree-seq capable of sequencing infinite tree, where each node has infinite children."
    ([branch? get-children root]
      (let [walk 
            (fn walk 
@@ -245,6 +246,7 @@
 )
 
 (defn tree-seq-interleave-stream-seq
+  "Converts to sequence, makes it more greedy."
    ([branch? get-children root]
      (stream-to-seq (tree-seq-interleave-stream branch? get-children root)))
    ([root]
