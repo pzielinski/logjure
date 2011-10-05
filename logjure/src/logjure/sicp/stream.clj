@@ -94,6 +94,14 @@ and following streams will never have a chance to contribute to result stream"
       (recur (dec n) (stream-cdr stream))))
   )
 
+(defn stream-nth-2 
+  [stream n not-found]
+  (let [x (stream-nth n stream)]
+    (if (= x the-empty-stream)
+      not-found
+      x))
+  )
+
 (defn seq-to-stream [the-seq]
   (if (seq the-seq)
     (cons-stream (first the-seq) (seq-to-stream (rest the-seq)))
