@@ -11,6 +11,16 @@
   (node-get-value [node])
   )
 
+(defrecord TreeNodeX [value is-leaf get-children])
+
+(extend-type TreeNodeX
+  TreeNode
+  (node-is-leaf [node] ((:is-leaf node) node))
+  (node-get-children [node] ((:get-children node) node))
+  (node-get-value [node] (:value node))
+  )
+
+
 (defrecord TreeNodeFixed [value children])
 
 (extend-type TreeNodeFixed
@@ -18,20 +28,6 @@
   (node-is-leaf [node] (nil? (node-get-children node)))
   (node-get-children [node] (:children node))
   (node-get-value [node] (:value node))
-)
-
-(defrecord TreeNodeInfinite [parent-vector])
-
-(extend-type TreeNodeInfinite
-  TreeNode
-  (node-is-leaf [node] false)
-  (node-get-children 
-    [node] 
-    (let [parent-vector (node-get-value node)] 
-      (map 
-        (fn [n] (TreeNodeInfinite. (conj parent-vector n))) 
-        (iterate inc 1))))
-  (node-get-value [node] (:parent-vector node))
 )
 
 ;lazy

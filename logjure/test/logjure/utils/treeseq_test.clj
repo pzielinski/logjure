@@ -7,7 +7,7 @@
     )
   (:import 
     logjure.utils.treeseq.TreeNodeFixed 
-    logjure.utils.treeseq.TreeNodeInfinite
+    logjure.utils.treeseq.TreeNodeX
     )
   )
 
@@ -310,8 +310,24 @@
          (recorder get-children get-child-seq (nth (tree-seq-interleave-stream-seq '(:a ((:x) :b) :c ((:y) :d) :e)) 0 :not-found))))
   )
 
+(defn create-infinite-tree
+  "Creates infinite tree with each node having infinite children."
+  []
+  (letfn [
+          (node-is-leaf 
+            [node] 
+            false)
+          (node-get-children 
+            [node] 
+            (let [parent-vector (node-get-value node)] 
+              (map 
+                (fn [n] (TreeNodeX. (conj parent-vector n) node-is-leaf node-get-children)) 
+                (iterate inc 1))))] 
+         (TreeNodeX. [] node-is-leaf node-get-children))
+  )
+
 (deftest test-tree-seq-interleave-stream-infinite-tree
-  (let [s (tree-seq-interleave-stream-seq (TreeNodeInfinite. []))]
+  (let [s (tree-seq-interleave-stream-seq (create-infinite-tree))]
     (is (= [] (node-get-value (nth s 0))))
     (is (= [1] (node-get-value (nth s 1))))
     (is (= [1 1] (node-get-value (nth s 2))))
