@@ -6,7 +6,6 @@
     clojure.contrib.test-is
     )
   (:import 
-    logjure.utils.treeseq.TreeNodeFixed 
     logjure.utils.treeseq.TreeNodeX
     )
   )
@@ -490,20 +489,31 @@
   (is (= '((:bottom)) (nth (get-nodes-at-depth-series (deeply-nested 10000)) 10000)))
 )
 
+(defn create-fixed-tree
+  [value children]
+  (letfn [(node-get-children 
+            [node] 
+            children)
+          (node-is-leaf 
+            [node] 
+            (nil? (node-get-children node)))] 
+         (TreeNodeX. value node-is-leaf node-get-children))
+  )
+
 (deftest test-tree-seq-with-treenode-fixed
   (let [
-        tn031 (TreeNodeFixed. :tn031 nil)
-        tn012 (TreeNodeFixed. :tn012 nil)
-        tn011 (TreeNodeFixed. :tn011 nil)
-        tn03  (TreeNodeFixed. :tn03  [tn031])
-        tn02  (TreeNodeFixed. :tn02  nil)
-        tn01  (TreeNodeFixed. :tn01  [tn011 tn012])
-        tn0   (TreeNodeFixed. :tn0   [tn01 tn02 tn03])
-        sample-tree (TreeNodeFixed. :root 
-                            (list (TreeNodeFixed.  :a1 nil)
-                                  (TreeNodeFixed.  :a2 nil)
-                                  (TreeNodeFixed.  :a3 
-                                                   (list (TreeNodeFixed. :a3_1 nil)))))
+        tn031 (create-fixed-tree :tn031 nil)
+        tn012 (create-fixed-tree :tn012 nil)
+        tn011 (create-fixed-tree :tn011 nil)
+        tn03  (create-fixed-tree :tn03  [tn031])
+        tn02  (create-fixed-tree :tn02  nil)
+        tn01  (create-fixed-tree :tn01  [tn011 tn012])
+        tn0   (create-fixed-tree :tn0   [tn01 tn02 tn03])
+        sample-tree (create-fixed-tree :root 
+                            (list (create-fixed-tree  :a1 nil)
+                                  (create-fixed-tree  :a2 nil)
+                                  (create-fixed-tree  :a3 
+                                                   (list (create-fixed-tree :a3_1 nil)))))
         ]
     (is (= false (is-leaf tn0)))
     (is (= [tn01 tn02 tn03] (get-children tn0)))

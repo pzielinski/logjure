@@ -20,16 +20,6 @@
   (node-get-value [node] (:value node))
   )
 
-
-(defrecord TreeNodeFixed [value children])
-
-(extend-type TreeNodeFixed
-  TreeNode
-  (node-is-leaf [node] (nil? (node-get-children node)))
-  (node-get-children [node] (:children node))
-  (node-get-value [node] (:value node))
-)
-
 ;lazy
 (defn get-child-seq 
   ([node indx is-leaf get-child-count get-child]
