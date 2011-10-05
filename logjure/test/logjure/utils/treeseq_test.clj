@@ -6,14 +6,16 @@
   (:import logjure.utils.treeseq.TreeNodeFixed logjure.utils.treeseq.TreeNodeDynamic)
   )
 
-(defn create-tree-node-dynamic-println [child-value-seq]
+(defn create-tree-node-dynamic-println 
+  [child-value-seq]
   (do
     (println (java.util.Date.) " TreeNodeDynamic create.. " child-value-seq)
     (TreeNodeDynamic. child-value-seq)
     )
   )
 
-(defn create-tree-node-dynamic-sleep-println [child-value-seq]
+(defn create-tree-node-dynamic-sleep-println 
+  [child-value-seq]
   (do
     (Thread/sleep 2000)
     (println (java.util.Date.) " TreeNodeDynamic create.. " child-value-seq)
@@ -21,23 +23,28 @@
     )
   )
 
-(defn finalize-tree-node-dynamic [tree-node-dynamic]
+(defn finalize-tree-node-dynamic 
+  [tree-node-dynamic]
   (finalize-tree-node-dynamic-do-nothing tree-node-dynamic))
 
-(defn finalize-tree-node-dynamic-do-println [tree-node-dynamic]
+(defn finalize-tree-node-dynamic-do-println 
+  [tree-node-dynamic]
   (println (java.util.Date.) " TreeNodeDynamic finalize " (.child-value-seq tree-node-dynamic))
   )
 
-(defn get-child-seq-log [node] 
+(defn get-child-seq-log 
+  [node] 
   (do (println (str "get-child-seq " node)) (get-child-seq node)))
 
-(defn get-child-seq-log-each-child [node] 
+(defn get-child-seq-log-each-child 
+  [node] 
   (get-child-seq node 0 clojure.inspector/is-leaf clojure.inspector/get-child-count 
     (fn [n i] 
       (do (println)(println (str "get-child " node " index " i )) 
         (clojure.inspector/get-child n i)))))
 
-(defn sleep-before [time-ms]
+(defn sleep-before 
+  [time-ms]
   (fn [f & args] (do (Thread/sleep 2000) (apply f args)))
   )
 
@@ -96,7 +103,8 @@
 
 ;CHECK WHY THE GET-CHILD-SEQ IS CALLED ON NODES THAT ARE NOT BRANCH NODES !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-(defn do-base-test-tree-seq-breadth []
+(defn do-base-test-tree-seq-breadth 
+  []
   (is (= '(:a) (doall (tree-seq-breadth :a))))
   (is (= '(()) (doall (tree-seq-breadth '()))))
   (is (= '((:a) :a) (doall (tree-seq-breadth '(:a)))))
@@ -119,9 +127,12 @@
   )
 
 (deftest test-tree-seq-breadth-stream
-  (binding [tree-seq-breadth tree-seq-breadth-stream-seq]
+  (binding 
+    [tree-seq-breadth tree-seq-breadth-stream-seq]
     (do-base-test-tree-seq-breadth)
   )
+  ;test that no stack overflow; passes 100000
+  (is (= '(:bottom) (doall (filter is-leaf (tree-seq-breadth-stream-seq (deeply-nested 10000))))))
   ;test laziness
   ;level 0 (root)
   (is (= '[(:a ((:x) :b) :c ((:y) :d) :e) [(:a ((:x) :b) :c ((:y) :d) :e)]] 
@@ -145,10 +156,8 @@
 )
 
 (deftest test-tree-seq-breadth-x
-  (binding [tree-seq-breadth tree-seq-breadth-x]
-    (do-base-test-tree-seq-breadth)
-  )
-  (binding [tree-seq-breadth tree-seq-breadth-x]
+  (binding 
+    [tree-seq-breadth tree-seq-breadth-x]
     (do-base-test-tree-seq-breadth)
   )
   ;test that no stack overflow; passes 100000
@@ -372,10 +381,12 @@
            (map #(node-get-value %) (get-children (create-tree-node-dynamic '(:a ((:x) :b) :c ((:y) :d) :e))))))
   )
 
-(defn node-mapping-fn [node]
+(defn node-mapping-fn 
+  [node]
   (node-get-value node))
 
-(defn node-mapping-fn-gc-sleep [node]
+(defn node-mapping-fn-gc-sleep 
+  [node]
   (let [value (node-get-value node)] 
     (println (java.util.Date.) " RETURN " value) 
     (System/gc) 
@@ -383,7 +394,8 @@
     value)
   )
 
-(defn test-tree-seq-with-treenode-dynamic-finalization-1 []
+(defn test-tree-seq-with-treenode-dynamic-finalization-1 
+  []
     (is (= '((:a ((:x) :b) :c ((:y) :d) :e) 
               :a ((:x) :b) (:x) :x :b :c ((:y) :d) (:y) :y :d :e
               ) 
@@ -410,7 +422,8 @@
     (finally (reset! *finalize-tree-node-dynamic-fn* finalize-tree-node-dynamic-do-nothing)))
   )
 
-(defn test-tree-seq-with-treenode-dynamic-finalization-2 []
+(defn test-tree-seq-with-treenode-dynamic-finalization-2 
+  []
   (try
     (println "finalization test start")
     (reset! *finalize-tree-node-dynamic-fn* finalize-tree-node-dynamic-do-println)
@@ -432,7 +445,8 @@
     (finally (reset! *finalize-tree-node-dynamic-fn* finalize-tree-node-dynamic-do-nothing)))
   )
 
-(defn perform-test-finalize-tree-seq-x [tree-seq-fn root-child-value-seq]
+(defn perform-test-finalize-tree-seq-x 
+  [tree-seq-fn root-child-value-seq]
   (let [records (atom [])
         sleep2000 (sleep-before 2000)
         record-fn 
@@ -480,7 +494,8 @@
     )
   )
 
-(defn perform-test-finalize-tree-seq-breadth [] 
+(defn perform-test-finalize-tree-seq-breadth 
+  [] 
   (let [{:keys [result records] :as result-records-map} 
         (perform-test-finalize-tree-seq-x tree-seq-breadth '(:a ((:x) :b) :c ((:y (:yy)) :d) :e))]
     (is (= '((:a ((:x) :b) :c ((:y (:yy)) :d) :e) 

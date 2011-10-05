@@ -193,7 +193,8 @@
              [branch? get-children parent-nodes]
              (cons-stream 
                parent-nodes
-               (when (not (stream-null? parent-nodes))
+               (if (stream-null? parent-nodes)
+                 the-empty-stream
                  (let [child-nodes (flatten-stream (stream-map #(seq-to-stream (get-children %)) parent-nodes))]
                    (walk branch? get-children child-nodes)))))]
        (flatten-stream (walk branch? get-children (seq-to-stream (list root)))))
@@ -218,7 +219,8 @@
              [branch? get-children parent-nodes]
              (cons-stream 
                parent-nodes
-               (when (not (stream-null? parent-nodes))
+               (if (stream-null? parent-nodes)
+                 the-empty-stream
                  (let [child-nodes (flatten-interleave-stream (stream-map #(seq-to-stream (get-children %)) parent-nodes))]
                    (walk branch? get-children child-nodes)))))]
        (flatten-interleave-stream (walk branch? get-children (seq-to-stream (list root)))))
