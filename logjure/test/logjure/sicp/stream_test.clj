@@ -40,10 +40,22 @@
     (is (= 2 (stream-nth 1 s)))
     (is (= 3 (stream-nth 2 s)))
     (is (= the-empty-stream (stream-nth 3 s)))
-    (is (= 1 (stream-nth 0 (seq-to-stream (iterate inc 1)))))
-    (is (= 2 (stream-nth 1 (seq-to-stream (iterate inc 1)))))
-    (is (= 10001 (stream-nth 10000 (seq-to-stream (iterate inc 1)))))
   )
+  (is (= 1 (stream-nth 0 (seq-to-stream (iterate inc 1)))))
+  (is (= 2 (stream-nth 1 (seq-to-stream (iterate inc 1)))))
+  (is (= 10001 (stream-nth 10000 (seq-to-stream (iterate inc 1)))))
+)
+
+(deftest test-stream-to-seq
+  (let [s (stream-to-seq (seq-to-stream '(1 2 3)))] 
+    (is (= 1 (nth s 0)))
+    (is (= 2 (nth s 1)))
+    (is (= 3 (nth s 2)))
+    (is (= :not-found (nth s 3 :not-found)))
+  )
+  (is (= 1 (nth (stream-to-seq (seq-to-stream (iterate inc 1))) 0)))
+  (is (= 2 (nth (stream-to-seq (seq-to-stream (iterate inc 1))) 1)))
+  (is (= 10001 (nth (stream-to-seq (seq-to-stream (iterate inc 1))) 10000)))
 )
 
 (deftest test-stream-append

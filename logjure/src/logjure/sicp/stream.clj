@@ -99,3 +99,9 @@ and following streams will never have a chance to contribute to result stream"
     (cons-stream (first the-seq) (seq-to-stream (rest the-seq)))
     the-empty-stream)
   )
+
+(defn stream-to-seq [stream]
+  (lazy-seq
+    (when (not (stream-null? stream))
+      (cons (stream-car stream) (stream-to-seq (stream-cdr stream)))))
+  )
