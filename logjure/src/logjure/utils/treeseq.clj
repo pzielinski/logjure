@@ -133,8 +133,8 @@
              [branch? get-children parent-nodes]
              (cons parent-nodes
                    (when (seq parent-nodes)
-                     (let [child-nodes (lazy-list-merge (map get-children parent-nodes))]
-                       (lazy-seq 
+                     (lazy-seq 
+                       (let [child-nodes (lazy-list-merge (map get-children parent-nodes))]
                          (walk branch? get-children child-nodes))))))]
        (walk branch? get-children (list root)))
      )
