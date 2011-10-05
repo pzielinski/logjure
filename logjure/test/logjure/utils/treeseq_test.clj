@@ -148,6 +148,11 @@
   (binding [tree-seq-breadth tree-seq-breadth-x]
     (do-base-test-tree-seq-breadth)
   )
+  (binding [tree-seq-breadth tree-seq-breadth-x]
+    (do-base-test-tree-seq-breadth)
+  )
+  ;test that no stack overflow; passes 100000
+  (is (= '(:bottom) (doall (filter is-leaf (tree-seq-breadth-x (deeply-nested 10000))))))
   ;test laziness
   ;level 0 (root)
   (is (= '[(:a ((:x) :b) :c ((:y) :d) :e) []] 
