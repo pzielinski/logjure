@@ -109,6 +109,21 @@
     (cat (first cols) (next cols)))
   )
 
+(defn lazy-list-merge-x
+  "Makes get-nodes-at-depth-series faile with StackOverflow error."
+  ([] (lazy-seq nil))
+  ([col cols]
+    (lazy-seq
+      (let [s (seq col)]
+        (if s
+          (cons (first s) (lazy-list-merge-x (rest s) cols))
+          (if (not (empty? cols))
+            (lazy-list-merge-x (first cols) (rest cols)))))))
+  ([cols]
+    (lazy-seq 
+      (lazy-list-merge-x (first cols) (rest cols))))
+  )
+
 (defn get-nodes-at-depth-series
   "Returns a lazy sequence of lazy sequences. 
    Eeach child sequence contains all nodes at corresponding depth."
@@ -128,6 +143,25 @@
      )
 )
 
+(defn get-nodes-at-depth-series-x
+  "Returns a lazy sequence of lazy sequences. 
+   Eeach child sequence contains all nodes at corresponding depth."
+   ([branch? get-children root]
+     (let [walk 
+           (fn walk 
+             [branch? get-children parent-nodes]
+               (cons parent-nodes
+                     (when (seq parent-nodes)
+                       (lazy-seq 
+                         (walk branch? get-children (lazy-list-merge-x (map get-children parent-nodes)))))))]
+       (lazy-seq
+           (walk branch? get-children (list root))))
+     )
+   ([root] 
+     (get-nodes-at-depth-series-x #(not (is-leaf %)) get-children root)
+     )
+)
+
 (defn tree-seq-breadth 
   "Returns a lazy sequence of the nodes in a tree, via a breadth-first walk.
    branch? must be a fn of one arg that returns true if passed a node
@@ -141,6 +175,14 @@
     (lazy-list-merge (get-nodes-at-depth-series branch? children root)))
   ([root]
     (tree-seq-breadth #(not (is-leaf %)) get-children root))
+  )
+
+(defn tree-seq-breadth-x 
+  "Uses lazy-list-merge-x. Is most lazy of all tree-seq-breadth-*."
+  ([branch? children root]
+    (lazy-list-merge-x (get-nodes-at-depth-series-x branch? children root)))
+  ([root]
+    (tree-seq-breadth-x #(not (is-leaf %)) get-children root))
   )
 
 (defn tree-seq-breadth-stream

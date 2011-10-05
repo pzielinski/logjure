@@ -96,7 +96,7 @@
 
 ;CHECK WHY THE GET-CHILD-SEQ IS CALLED ON NODES THAT ARE NOT BRANCH NODES !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
 
-(defn test-tree-seq-breadth-x []
+(defn do-base-test-tree-seq-breadth []
   (is (= '(:a) (doall (tree-seq-breadth :a))))
   (is (= '(()) (doall (tree-seq-breadth '()))))
   (is (= '((:a) :a) (doall (tree-seq-breadth '(:a)))))
@@ -120,7 +120,7 @@
 
 (deftest test-tree-seq-breadth-stream
   (binding [tree-seq-breadth tree-seq-breadth-stream-seq]
-    (test-tree-seq-breadth-x)
+    (do-base-test-tree-seq-breadth)
   )
   ;test laziness
   ;level 0 (root)
@@ -144,8 +144,67 @@
          (recorder get-children get-child-seq (nth (tree-seq-breadth-stream-seq '(:a ((:x) :b) :c ((:y) :d) :e)) 5 :not-found))))
 )
 
+(deftest test-tree-seq-breadth-x
+  (binding [tree-seq-breadth tree-seq-breadth-x]
+    (do-base-test-tree-seq-breadth)
+  )
+  ;test laziness
+  ;level 0 (root)
+  (is (= '[(:a ((:x) :b) :c ((:y) :d) :e) []] 
+         (recorder get-children get-child-seq (nth (tree-seq-breadth-x '(:a ((:x) :b) :c ((:y) :d) :e)) 0 :not-found))))
+  ;level 1
+  (is (= '[:a 
+           [(:a ((:x) :b) :c ((:y) :d) :e)]] 
+         (recorder get-children get-child-seq (nth (tree-seq-breadth-x '(:a ((:x) :b) :c ((:y) :d) :e)) 1 :not-found))))
+  (is (= '[((:x) :b) 
+           [(:a ((:x) :b) :c ((:y) :d) :e)]] 
+         (recorder get-children get-child-seq (nth (tree-seq-breadth-x '(:a ((:x) :b) :c ((:y) :d) :e)) 2 :not-found))))
+  (is (= '[:c 
+           [(:a ((:x) :b) :c ((:y) :d) :e)]] 
+         (recorder get-children get-child-seq (nth (tree-seq-breadth-x '(:a ((:x) :b) :c ((:y) :d) :e)) 3 :not-found))))
+  (is (= '[((:y) :d) 
+           [(:a ((:x) :b) :c ((:y) :d) :e)]] 
+         (recorder get-children get-child-seq (nth (tree-seq-breadth-x '(:a ((:x) :b) :c ((:y) :d) :e)) 4 :not-found))))
+  (is (= '[:e 
+           [(:a ((:x) :b) :c ((:y) :d) :e)]] 
+         (recorder get-children get-child-seq (nth (tree-seq-breadth-x '(:a ((:x) :b) :c ((:y) :d) :e)) 5 :not-found))))
+  ;level 2
+  (is (= '[(:x) 
+           [(:a ((:x) :b) :c ((:y) :d) :e) :a ((:x) :b)]] 
+         (recorder get-children get-child-seq (nth (tree-seq-breadth-x '(:a ((:x) :b) :c ((:y) :d) :e)) 6 :not-found))))
+  (is (= '[:b 
+           [(:a ((:x) :b) :c ((:y) :d) :e) :a ((:x) :b)]] 
+         (recorder get-children get-child-seq (nth (tree-seq-breadth-x '(:a ((:x) :b) :c ((:y) :d) :e)) 7 :not-found))))
+  (is (= '[(:y) 
+           [(:a ((:x) :b) :c ((:y) :d) :e) :a ((:x) :b) :c ((:y) :d)]] 
+         (recorder get-children get-child-seq (nth (tree-seq-breadth-x '(:a ((:x) :b) :c ((:y) :d) :e)) 8 :not-found))))
+  (is (= '[:d 
+           [(:a ((:x) :b) :c ((:y) :d) :e) :a ((:x) :b) :c ((:y) :d)]] 
+         (recorder get-children get-child-seq (nth (tree-seq-breadth-x '(:a ((:x) :b) :c ((:y) :d) :e)) 9 :not-found))))
+  ;level 3
+  (is (= '[:x 
+           [(:a ((:x) :b) :c ((:y) :d) :e) :a ((:x) :b) :c ((:y) :d) :e (:x)]] 
+         (recorder get-children get-child-seq (nth (tree-seq-breadth-x '(:a ((:x) :b) :c ((:y) :d) :e)) 10 :not-found))))
+  (is (= '[:y 
+           [(:a ((:x) :b) :c ((:y) :d) :e) :a ((:x) :b) :c ((:y) :d) :e (:x) :b (:y)]] 
+         (recorder get-children get-child-seq (nth (tree-seq-breadth-x '(:a ((:x) :b) :c ((:y) :d) :e)) 11 :not-found))))
+  ;not found
+  (is (= '[:not-found 
+           [(:a ((:x) :b) :c ((:y) :d) :e) :a ((:x) :b) :c ((:y) :d) :e (:x) :b (:y) :d :x :y]] 
+         (recorder get-children get-child-seq (nth (tree-seq-breadth-x '(:a ((:x) :b) :c ((:y) :d) :e)) 12 :not-found))))
+  ;all
+  (is (= '[(
+            (:a ((:x) :b) :c ((:y) :d) :e)
+            :a ((:x) :b) :c ((:y) :d) :e
+            (:x) :b (:y) :d
+            :x :y
+            ) 
+           [(:a ((:x) :b) :c ((:y) :d) :e) :a ((:x) :b) :c ((:y) :d) :e (:x) :b (:y) :d :x :y]] 
+         (recorder get-children get-child-seq (doall (tree-seq-breadth-x '(:a ((:x) :b) :c ((:y) :d) :e))))))
+)
+
 (deftest test-tree-seq-breadth
-  (test-tree-seq-breadth-x)
+  (do-base-test-tree-seq-breadth)
   ;test that no stack overflow; passes 100000
   (is (= '(:bottom) (doall (filter is-leaf (tree-seq-breadth (deeply-nested 100))))))
   ;test laziness
