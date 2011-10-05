@@ -227,7 +227,27 @@
   (is (= '[:d 
            [(:a ((:x) :b) :c ((:y) :d) :e) :a ((:x) :b) :c ((:y) :d) :e (:x)]] 
          (recorder get-children get-child-seq (nth (tree-seq-breadth-stream-seq '(:a ((:x) :b) :c ((:y) :d) :e)) 9 :not-found))))
-)
+  ;level 3
+  (is (= '[:x 
+           [(:a ((:x) :b) :c ((:y) :d) :e) :a ((:x) :b) :c ((:y) :d) :e (:x) :b (:y)]] 
+         (recorder get-children get-child-seq (nth (tree-seq-breadth-stream-seq '(:a ((:x) :b) :c ((:y) :d) :e)) 10 :not-found))))
+  (is (= '[:y 
+           [(:a ((:x) :b) :c ((:y) :d) :e) :a ((:x) :b) :c ((:y) :d) :e (:x) :b (:y) :d :x :y]] 
+         (recorder get-children get-child-seq (nth (tree-seq-breadth-stream-seq '(:a ((:x) :b) :c ((:y) :d) :e)) 11 :not-found))))
+  ;not found
+  (is (= '[:not-found 
+           [(:a ((:x) :b) :c ((:y) :d) :e) :a ((:x) :b) :c ((:y) :d) :e (:x) :b (:y) :d :x :y]] 
+         (recorder get-children get-child-seq (nth (tree-seq-breadth-stream-seq '(:a ((:x) :b) :c ((:y) :d) :e)) 12 :not-found))))
+  ;all
+  (is (= '[(
+            (:a ((:x) :b) :c ((:y) :d) :e)
+            :a ((:x) :b) :c ((:y) :d) :e
+            (:x) :b (:y) :d
+            :x :y
+            ) 
+           [(:a ((:x) :b) :c ((:y) :d) :e) :a ((:x) :b) :c ((:y) :d) :e (:x) :b (:y) :d :x :y]] 
+         (recorder get-children get-child-seq (doall (tree-seq-breadth-stream-seq '(:a ((:x) :b) :c ((:y) :d) :e))))))
+  )
 
 (deftest test-tree-seq-breadth-x
   (binding 
