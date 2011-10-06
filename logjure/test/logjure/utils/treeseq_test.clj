@@ -715,43 +715,41 @@
   (is (= ['?x :x] (nth (tree-seq-multi-depth (deeply-nested 2000 '?x) (deeply-nested 2000 :x)) 2000)))
   )
 
-(deftest test-tree-map
-  (is (= [1] (node-get-value (tree-map identity (TreeNodeX. [1] is-leaf get-children)))))
-  (is (= [1] (node-get-value (tree-map (fn [value] value) (TreeNodeX. [1] is-leaf get-children)))))
-  (is (= [1 :a] (node-get-value (tree-map (fn [value] (conj value :a)) (TreeNodeX. [1] is-leaf get-children)))))
+(deftest test-tree-map-value
+  (is (= [1] (node-get-value (tree-map-value identity (TreeNodeX. [1] is-leaf get-children)))))
+  (is (= [1] (node-get-value (tree-map-value (fn [value] value) (TreeNodeX. [1] is-leaf get-children)))))
+  (is (= [1 :a] (node-get-value (tree-map-value (fn [value] (conj value :a)) (TreeNodeX. [1] is-leaf get-children)))))
   (let [tree (create-fixed-node 
                [1] 
                (list (create-fixed-node  [1 1] nil)
                      (create-fixed-node  [1 2] nil)
                      (create-fixed-node  [1 3] (list (create-fixed-node [1 3 1] nil)))))]
     ;root
-    (is (= [1] (node-get-value (tree-map identity tree))))
+    (is (= [1] (node-get-value (tree-map-value identity tree))))
     ;children
-    (is (= [1 1] (node-get-value (first (node-get-children (tree-map identity tree))))))
-    (is (= [1 2] (node-get-value (second (node-get-children (tree-map identity tree))))))
-    (is (= [1 3] (node-get-value (nth (node-get-children (tree-map identity tree)) 2))))
-    (is (= :not-found (nth (node-get-children (tree-map identity tree)) 3 :not-found)))
+    (is (= [1 1] (node-get-value (first (node-get-children (tree-map-value identity tree))))))
+    (is (= [1 2] (node-get-value (second (node-get-children (tree-map-value identity tree))))))
+    (is (= [1 3] (node-get-value (nth (node-get-children (tree-map-value identity tree)) 2))))
+    (is (= :not-found (nth (node-get-children (tree-map-value identity tree)) 3 :not-found)))
     ;sequence
-    (is (= [1] (node-get-value (nth (tree-seq-depth (tree-map identity tree)) 0))))
-    (is (= [1 1] (node-get-value (nth (tree-seq-depth (tree-map identity tree)) 1))))
-    (is (= [1 2] (node-get-value (nth (tree-seq-depth (tree-map identity tree)) 2))))
-    (is (= [1 3] (node-get-value (nth (tree-seq-depth (tree-map identity tree)) 3))))
-    (is (= [1 3 1] (node-get-value (nth (tree-seq-depth (tree-map identity tree)) 4))))
-    (is (= :not-found (nth (tree-seq-depth (tree-map identity tree)) 5 :not-found)))
+    (is (= [1] (node-get-value (nth (tree-seq-depth (tree-map-value identity tree)) 0))))
+    (is (= [1 1] (node-get-value (nth (tree-seq-depth (tree-map-value identity tree)) 1))))
+    (is (= [1 2] (node-get-value (nth (tree-seq-depth (tree-map-value identity tree)) 2))))
+    (is (= [1 3] (node-get-value (nth (tree-seq-depth (tree-map-value identity tree)) 3))))
+    (is (= [1 3 1] (node-get-value (nth (tree-seq-depth (tree-map-value identity tree)) 4))))
+    (is (= :not-found (nth (tree-seq-depth (tree-map-value identity tree)) 5 :not-found)))
     ;mapping
     (letfn 
       [(mapping-fn 
          [value] 
          (conj value :a))]
-      (is (= [1 :a] (node-get-value (nth (tree-seq-depth (tree-map mapping-fn tree)) 0))))
-      (is (= [1 1 :a] (node-get-value (nth (tree-seq-depth (tree-map mapping-fn tree)) 1))))
-      (is (= [1 2 :a] (node-get-value (nth (tree-seq-depth (tree-map mapping-fn tree)) 2))))
-      (is (= [1 3 :a] (node-get-value (nth (tree-seq-depth (tree-map mapping-fn tree)) 3))))
-      (is (= [1 3 1 :a] (node-get-value (nth (tree-seq-depth (tree-map mapping-fn tree)) 4)))))
+      (is (= [1 :a] (node-get-value (nth (tree-seq-depth (tree-map-value mapping-fn tree)) 0))))
+      (is (= [1 1 :a] (node-get-value (nth (tree-seq-depth (tree-map-value mapping-fn tree)) 1))))
+      (is (= [1 2 :a] (node-get-value (nth (tree-seq-depth (tree-map-value mapping-fn tree)) 2))))
+      (is (= [1 3 :a] (node-get-value (nth (tree-seq-depth (tree-map-value mapping-fn tree)) 3))))
+      (is (= [1 3 1 :a] (node-get-value (nth (tree-seq-depth (tree-map-value mapping-fn tree)) 4)))))
     )
-)
-
-(deftest test-tree-map-with-treenode-fixed
+  ;test with fixed tree
   (let [
         tn031 (create-fixed-node :tn031 nil)
         tn012 (create-fixed-node :tn012 nil)
@@ -760,12 +758,43 @@
         tn02  (create-fixed-node :tn02  nil)
         tn01  (create-fixed-node :tn01  [tn011 tn012])
         tn0   (create-fixed-node :tn0   [tn01 tn02 tn03])
+        mapping-fn (fn mapping-fn [value] (vector :a value))
+        mapped-tree (tree-map-value mapping-fn tn0)
+        node-seq (tree-seq-depth mapped-tree)
+        value-seq (map node-get-value node-seq)
         ]
-    ;(is (= false (is-leaf tn0)))
-    ;(is (= [tn01 tn02 tn03] (get-children tn0)))
-    ;(is (= [tn0 tn01 tn011 tn012 tn02 tn03 tn031] (tree-seq-depth tn0)))
-    ;(is (= [tn0 tn01 tn02 tn03 tn011 tn012 tn031] (tree-seq-breadth tn0)))
+    (is (= [:a :tn0] (nth value-seq 0)))
+    (is (= [:a :tn01] (nth value-seq 1)))
+    (is (= [:a :tn011] (nth value-seq 2)))
+    (is (= [:a :tn012] (nth value-seq 3)))
+    (is (= [:a :tn02] (nth value-seq 4)))
+    (is (= [:a :tn03] (nth value-seq 5)))
+    (is (= [:a :tn031] (nth value-seq 6)))
+    (is (= :not-found (nth value-seq 7 :not-found)))
    )
-  )
+  ;test with infinite tree
+  (let [mapping-fn (fn mapping-fn [vect] (conj vect :a))
+        s (tree-seq-interleave-stream-seq (tree-map-value mapping-fn (create-infinite-tree)))]
+    (is (= [:a] (node-get-value (nth s 0))))
+    (is (= [1 :a] (node-get-value (nth s 1))))
+    (is (= [1 1 :a] (node-get-value (nth s 2))))
+    (is (= [2 :a] (node-get-value (nth s 3))))
+    (is (= [1 1 1 :a] (node-get-value (nth s 4))))
+    (is (= [3 :a] (node-get-value (nth s 5))))
+    (is (= [2 1 :a] (node-get-value (nth s 6))))
+    (is (= [4 :a] (node-get-value (nth s 7))))
+    (is (= [1 1 1 1 :a] (node-get-value (nth s 8))))
+    (is (= [5 :a] (node-get-value (nth s 9))))
+    (is (= [1 2 :a] (node-get-value (nth s 10))))
+    (is (= [1 1 1 1 157 :a] (node-get-value (nth s 10000))))
+    (is (= [5001 :a] (node-get-value (nth s 10001))))
+    (is (= [1 1251 :a] (node-get-value (nth s 10002))))
+    (is (= [5002 :a] (node-get-value (nth s 10003))))
+    (is (= [1 1 626 :a] (node-get-value (nth s 10004))))
+    (is (= [5003 :a] (node-get-value (nth s 10005))))
+    (is (= [2 626 :a] (node-get-value (nth s 10006))))
+    (is (= [5004 :a] (node-get-value (nth s 10007))))
+    )
+)
 
 (run-tests)

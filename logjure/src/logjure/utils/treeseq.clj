@@ -266,26 +266,9 @@ calculate-value [original-node original-parent-node]"
            (fn [n] (node-get-children-x root))))
   )
 
-(defn tree-map
+(defn tree-map-value
   "Creates new tree with identical structure with each node value mapped."
   [proc root]
-  (letfn [
-          (node-is-leaf-x 
-            [original-node] 
-            (is-leaf original-node))
-          (node-get-children-x 
-            [original-node] 
-            (map 
-              (fn 
-                [orignal-child-node] 
-                (TreeNodeX. 
-                  (proc (node-get-value orignal-child-node)) 
-                  (fn [n] (node-is-leaf-x orignal-child-node)) 
-                  (fn [n] (node-get-children-x orignal-child-node))))
-              (node-get-children original-node)))]
-         (TreeNodeX. 
-           (proc (node-get-value root)) 
-           (fn [n] (node-is-leaf-x root)) 
-           (fn [n] (node-get-children-x root))))
+  (tree-clone (fn [node parent-node] (proc (node-get-value node))) root)
   )
 
