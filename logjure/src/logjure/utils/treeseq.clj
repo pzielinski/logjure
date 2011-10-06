@@ -242,6 +242,30 @@
             (walk root1 root2)))
    )
 
+(defn tree-clone
+  "Creates new tree with identical structure with each node value mapped.
+calculate-value [original-node original-parent-node]"
+  [calculate-value root]
+  (letfn [
+          (node-is-leaf-x 
+            [original-node] 
+            (is-leaf original-node))
+          (node-get-children-x 
+            [original-node] 
+            (map 
+              (fn 
+                [original-child-node] 
+                (TreeNodeX. 
+                  (calculate-value original-child-node original-node) 
+                  (fn [n] (node-is-leaf-x original-child-node)) 
+                  (fn [n] (node-get-children-x original-child-node))))
+              (node-get-children original-node)))]
+         (TreeNodeX. 
+           (calculate-value root nil) 
+           (fn [n] (node-is-leaf-x root)) 
+           (fn [n] (node-get-children-x root))))
+  )
+
 (defn tree-map
   "Creates new tree with identical structure with each node value mapped."
   [proc root]
