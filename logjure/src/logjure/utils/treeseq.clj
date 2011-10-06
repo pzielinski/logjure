@@ -244,33 +244,38 @@
 
 (defn tree-clone
   "Creates new tree with identical structure with each node value mapped.
-calculate-value [original-node original-parent-node position]"
+calculate-value [position original-node original-parent-node parent-node]"
   [calculate-value root]
   (letfn [
           (node-is-leaf-x 
-            [original-node] 
+            [original-node node] 
             (is-leaf original-node))
-          (node-get-children-x 
-            [original-node] 
+          (node-get-children-x
+            [original-node node] 
             (map 
               (fn 
                 [original-child-node position] 
                 (TreeNodeX. 
-                  (calculate-value original-child-node original-node position) 
-                  (fn [n] (node-is-leaf-x original-child-node)) 
-                  (fn [n] (node-get-children-x original-child-node))))
+                  (calculate-value position original-child-node original-node node) 
+                  (fn [n] (node-is-leaf-x original-child-node n)) 
+                  (fn [n] (node-get-children-x original-child-node n))))
               (node-get-children original-node)
-              (iterate inc 1)))]
+              (iterate inc 1)))
+          ]
          (TreeNodeX. 
-           (calculate-value root nil 1) 
-           (fn [n] (node-is-leaf-x root)) 
-           (fn [n] (node-get-children-x root))))
+           (calculate-value 1 root nil nil) 
+           (fn [n] (node-is-leaf-x root n)) 
+           (fn [n] (node-get-children-x root n))))
   )
 
 (defn tree-map-value
   "Creates new tree with identical structure with each node value mapped."
   [proc root]
-  (tree-clone (fn [node parent-node position] (proc (node-get-value node))) root)
+  (tree-clone 
+    (fn 
+      [position original-node original-parent-node parent-node] 
+      (proc (node-get-value original-node))) 
+    root)
   )
 
 (defn tree-id
@@ -278,11 +283,11 @@ calculate-value [original-node original-parent-node position]"
   [root]
   (tree-clone 
     (fn 
-      [node parent-node position]
-      (let [value (node-get-value node)]
+      [position original-node original-parent-node parent-node]
+      (let [value (node-get-value original-node)]
       (if parent-node
-        (let [parent-value (node-get-value parent-node)
-              parent-id (:id parent-value)
+        (let [parent-value-map (node-get-value parent-node)
+              parent-id (:id parent-value-map)
               id (conj parent-id position)]
           {:id id :value value})
         {:id [1] :value value}))) 
