@@ -489,7 +489,7 @@
   (is (= '((:bottom)) (nth (get-nodes-at-depth-series (deeply-nested 10000)) 10000)))
 )
 
-(defn create-fixed-tree
+(defn create-fixed-node
   [value children]
   (letfn [(node-get-children 
             [node] 
@@ -502,19 +502,13 @@
 
 (deftest test-tree-seq-with-treenode-fixed
   (let [
-        tn031 (create-fixed-tree :tn031 nil)
-        tn012 (create-fixed-tree :tn012 nil)
-        tn011 (create-fixed-tree :tn011 nil)
-        tn03  (create-fixed-tree :tn03  [tn031])
-        tn02  (create-fixed-tree :tn02  nil)
-        tn01  (create-fixed-tree :tn01  [tn011 tn012])
-        tn0   (create-fixed-tree :tn0   [tn01 tn02 tn03])
-        sample-tree (create-fixed-tree :root 
-                            (list (create-fixed-tree  :a1 nil)
-                                  (create-fixed-tree  :a2 nil)
-                                  (create-fixed-tree  :a3 
-                                                   (list (create-fixed-tree :a3_1 nil)))))
-        ]
+        tn031 (create-fixed-node :tn031 nil)
+        tn012 (create-fixed-node :tn012 nil)
+        tn011 (create-fixed-node :tn011 nil)
+        tn03  (create-fixed-node :tn03  [tn031])
+        tn02  (create-fixed-node :tn02  nil)
+        tn01  (create-fixed-node :tn01  [tn011 tn012])
+        tn0   (create-fixed-node :tn0   [tn01 tn02 tn03])]
     (is (= false (is-leaf tn0)))
     (is (= [tn01 tn02 tn03] (get-children tn0)))
     (is (= [tn0 tn01 tn011 tn012 tn02 tn03 tn031] (tree-seq-depth tn0)))
@@ -719,6 +713,59 @@
             ) 
          (doall (tree-seq-multi-depth '(:a (:b) :c) '(:A (:B) :C)))))
   (is (= ['?x :x] (nth (tree-seq-multi-depth (deeply-nested 2000 '?x) (deeply-nested 2000 :x)) 2000)))
+  )
+
+(deftest test-tree-map
+  (is (= [1] (node-get-value (tree-map identity (TreeNodeX. [1] is-leaf get-children)))))
+  (is (= [1] (node-get-value (tree-map (fn [value] value) (TreeNodeX. [1] is-leaf get-children)))))
+  (is (= [1 :a] (node-get-value (tree-map (fn [value] (conj value :a)) (TreeNodeX. [1] is-leaf get-children)))))
+  (let [tree (create-fixed-node 
+               [1] 
+               (list (create-fixed-node  [1 1] nil)
+                     (create-fixed-node  [1 2] nil)
+                     (create-fixed-node  [1 3] (list (create-fixed-node [1 3 1] nil)))))]
+    ;root
+    (is (= [1] (node-get-value (tree-map identity tree))))
+    ;children
+    (is (= [1 1] (node-get-value (first (node-get-children (tree-map identity tree))))))
+    (is (= [1 2] (node-get-value (second (node-get-children (tree-map identity tree))))))
+    (is (= [1 3] (node-get-value (nth (node-get-children (tree-map identity tree)) 2))))
+    (is (= :not-found (nth (node-get-children (tree-map identity tree)) 3 :not-found)))
+    ;sequence
+    (is (= [1] (node-get-value (nth (tree-seq-depth (tree-map identity tree)) 0))))
+    (is (= [1 1] (node-get-value (nth (tree-seq-depth (tree-map identity tree)) 1))))
+    (is (= [1 2] (node-get-value (nth (tree-seq-depth (tree-map identity tree)) 2))))
+    (is (= [1 3] (node-get-value (nth (tree-seq-depth (tree-map identity tree)) 3))))
+    (is (= [1 3 1] (node-get-value (nth (tree-seq-depth (tree-map identity tree)) 4))))
+    (is (= :not-found (nth (tree-seq-depth (tree-map identity tree)) 5 :not-found)))
+    ;mapping
+    (letfn 
+      [(mapping-fn 
+         [value] 
+         (conj value :a))]
+      (is (= [1 :a] (node-get-value (nth (tree-seq-depth (tree-map mapping-fn tree)) 0))))
+      (is (= [1 1 :a] (node-get-value (nth (tree-seq-depth (tree-map mapping-fn tree)) 1))))
+      (is (= [1 2 :a] (node-get-value (nth (tree-seq-depth (tree-map mapping-fn tree)) 2))))
+      (is (= [1 3 :a] (node-get-value (nth (tree-seq-depth (tree-map mapping-fn tree)) 3))))
+      (is (= [1 3 1 :a] (node-get-value (nth (tree-seq-depth (tree-map mapping-fn tree)) 4)))))
+    )
+)
+
+(deftest test-tree-map-with-treenode-fixed
+  (let [
+        tn031 (create-fixed-node :tn031 nil)
+        tn012 (create-fixed-node :tn012 nil)
+        tn011 (create-fixed-node :tn011 nil)
+        tn03  (create-fixed-node :tn03  [tn031])
+        tn02  (create-fixed-node :tn02  nil)
+        tn01  (create-fixed-node :tn01  [tn011 tn012])
+        tn0   (create-fixed-node :tn0   [tn01 tn02 tn03])
+        ]
+    ;(is (= false (is-leaf tn0)))
+    ;(is (= [tn01 tn02 tn03] (get-children tn0)))
+    ;(is (= [tn0 tn01 tn011 tn012 tn02 tn03 tn031] (tree-seq-depth tn0)))
+    ;(is (= [tn0 tn01 tn02 tn03 tn011 tn012 tn031] (tree-seq-breadth tn0)))
+   )
   )
 
 (run-tests)

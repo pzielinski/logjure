@@ -247,13 +247,21 @@
   [proc root]
   (letfn [
           (node-is-leaf-x 
-            [node] 
-            (is-leaf node))
+            [original-node] 
+            (is-leaf original-node))
           (node-get-children-x 
-            [node] 
+            [original-node] 
             (map 
-              (fn [n] (TreeNodeX. (proc (node-get-value n)) node-is-leaf-x node-get-children-x))
-              (node-get-children node)))] 
-         (TreeNodeX. (proc (node-get-value root)) node-is-leaf-x node-get-children-x))
+              (fn 
+                [orignal-child-node] 
+                (TreeNodeX. 
+                  (proc (node-get-value orignal-child-node)) 
+                  (fn [n] (node-is-leaf-x orignal-child-node)) 
+                  (fn [n] (node-get-children-x orignal-child-node))))
+              (node-get-children original-node)))]
+         (TreeNodeX. 
+           (proc (node-get-value root)) 
+           (fn [n] (node-is-leaf-x root)) 
+           (fn [n] (node-get-children-x root))))
   )
 
