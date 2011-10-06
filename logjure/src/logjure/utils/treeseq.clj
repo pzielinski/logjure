@@ -302,6 +302,21 @@ from being gc-ed.
     root)
   )
 
+(defn seq-tree
+  "Creates tree from sequence."
+  [s]
+  (letfn [
+          (node-is-leaf 
+            [sx node]
+            (is-leaf sx))
+          (node-get-children 
+            [sx node] 
+            (map 
+              (fn [sxx] (TreeNodeX. sxx (fn [n] (node-is-leaf sxx n)) (fn [n] (node-get-children sxx n)))) 
+              (get-children sx)))] 
+         (TreeNodeX. s (fn [n] (node-is-leaf s n)) (fn [n] (node-get-children s n))))
+  )
+
 (defn tree-seq-multi-depth
   "Walks two trees in lockstep."
    ([root1 root2]
@@ -322,14 +337,40 @@ from being gc-ed.
 
 (defn tree-seq-multi-depth-2
   "Walks two trees in lockstep."
-  ([root1 root2]
-     (tree-seq-multi-depth-2 #(not (is-leaf %)) get-children root1 root2))
-   ([is-branch? get-children root1 root2]
-     (tree-seq-multi-depth-2 is-branch? get-children (tree-seq-depth root1) (tree-seq-depth root2) 0))
-   ([is-branch? get-children s1 s2 position]
+   ([root1 root2]
+     (let [root1x (if true (seq-tree root1) root1)
+           root2x (if true (seq-tree root2) root2)]
+       (tree-seq-multi-depth-2 
+         (tree-seq-depth (tree-map-id root1x)) 
+         (tree-seq-depth (tree-map-id root2x)) 
+         nil
+         nil)))
+   ([s1 s2 previous-n1 previous-n2]
      (when (and (seq s1) (seq s2))
-       (cons
-         [(first s1) (first s2)]
-         (lazy-seq
-           (tree-seq-multi-depth-2 is-branch? get-children (rest s1) (rest s2) (inc position))))))
+       (let [n1 (first s1)
+             n2 (first s2)
+             id1 (:id n1)
+             id2 (:id n2)
+             [n1x s1x n2x s2x]
+             (cond 
+               (= id1 id2) 
+               [n1 s1 n2 s2]
+               (and (is-leaf previous-n1) (not (is-leaf previous-n2)))
+               (let [new-s2 (drop-while #(not (= id1 (:id %))) s2)
+                     new-n2 (first new-s2)]
+                 [n1 s1 new-n2 new-s2])
+               (and (not (is-leaf previous-n1)) (is-leaf previous-n2))
+               (let [new-s1 (drop-while #(not (= id2 (:id %))) s1)
+                     new-n1 (first new-s1)]
+                 [new-n1 new-s1 n2 s2])
+               )
+             ]
+         (cons
+           [(node-get-value n1x) (node-get-value n2x)]
+           (lazy-seq
+             (tree-seq-multi-depth-2 
+               (rest s1x) 
+               (rest s2x) 
+               n1x
+               n2x))))))
    )

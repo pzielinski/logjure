@@ -808,6 +808,26 @@
     )
   )
 
+(deftest test-seq-tree
+    (is (= {:id [1] :value '()} (node-get-value (tree-map-value-id (seq-tree '())))))
+    (is (= {:id [1] :value :a} (node-get-value (tree-map-value-id (seq-tree :a)))))
+    (is (= '({:id [1] :value :a}) 
+           (doall (map node-get-value (tree-seq-depth (tree-map-value-id (seq-tree :a)))))))
+    (is (= '( {:id [1] :value (1 2 3)}
+              {:id [1 1] :value 1}
+              {:id [1 2] :value 2}
+              {:id [1 3] :value 3}
+              ) 
+           (doall (map node-get-value (tree-seq-depth (tree-map-value-id (seq-tree '(1 2 3))))))))
+    (is (= '( {:id [1] :value (1 (2) 3)}
+              {:id [1 1] :value 1}
+              {:id [1 2] :value (2)}
+              {:id [1 2 1] :value 2}
+              {:id [1 3] :value 3}
+              ) 
+           (doall (map node-get-value (tree-seq-depth (tree-map-value-id (seq-tree '(1 (2) 3))))))))
+  )
+
 (deftest test-tree-seq-multi-depth
   (is (= '([() ()]) (doall (tree-seq-multi-depth '() '()))))
   (is (= '([:a :A]) (doall (tree-seq-multi-depth :a :A))))
@@ -825,7 +845,27 @@
             [:c :C]
             ) 
          (doall (tree-seq-multi-depth '(:a (:b) :c) '(:A (:B) :C)))))
-  (is (= ['?x :x] (nth (tree-seq-multi-depth (deeply-nested 2000 '?x) (deeply-nested 2000 :x)) 2000)))
+  (is (= ['?x :x] (nth (tree-seq-multi-depth (deeply-nested 10000 '?x) (deeply-nested 10000 :x)) 10000)))
+  )
+
+(deftest test-tree-seq-multi-depth-2
+  (is (= '([() ()]) (doall (tree-seq-multi-depth-2 '() '()))))
+  (is (= '([:a :A]) (doall (tree-seq-multi-depth-2 :a :A))))
+  (is (= '([(:a) (:A)] [:a :A]) (doall (tree-seq-multi-depth-2 '(:a) '(:A)))))
+  (is (= '([(:a (:b) :c) (:A :B :C)] 
+            [:a :A]
+            [(:b) :B]
+            [:c :C]
+            ) 
+         (doall (tree-seq-multi-depth-2 '(:a (:b) :c) '(:A :B :C)))))
+  (is (= '([(:a (:b) :c) (:A (:B) :C)] 
+            [:a :A]
+            [(:b) (:B)]
+            [:b :B]
+            [:c :C]
+            ) 
+         (doall (tree-seq-multi-depth-2 '(:a (:b) :c) '(:A (:B) :C)))))
+  (is (= ['?x :x] (nth (tree-seq-multi-depth-2 (deeply-nested 10000 '?x) (deeply-nested 10000 :x)) 10000)))
   )
 
 (run-tests)
