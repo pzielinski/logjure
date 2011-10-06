@@ -242,54 +242,80 @@
             (walk root1 root2)))
    )
 
-(defn tree-clone
-  "Creates new tree with identical structure with each node value mapped.
-calculate-value [position original-node original-parent-node parent-node]"
-  [calculate-value root]
+(defn tree-map-node
+  "Creates new tree with identical structure with each node mapped to a new node.
+transform node can do post creation processing on new node
+transform-node [position original-node original-parent-node new-parent-node new-node]
+This code could be made simpler if node kept its parent, but that would prevent nodes
+from being gc-ed.
+"
+  ([transform-node root]
   (letfn [
           (node-is-leaf-x 
             [original-node node] 
             (is-leaf original-node))
           (node-get-children-x
-            [original-node node] 
+            [original-parent-node new-parent-node] 
             (map 
-              (fn 
-                [original-child-node position] 
-                (TreeNodeX. 
-                  (calculate-value position original-child-node original-node node) 
-                  (fn [n] (node-is-leaf-x original-child-node n)) 
-                  (fn [n] (node-get-children-x original-child-node n))))
-              (node-get-children original-node)
+              (fn [original-node position]
+                (transform-node
+                  position 
+                  original-node 
+                  original-parent-node 
+                  new-parent-node
+                  (TreeNodeX. 
+                    (node-get-value original-node) 
+                    (fn [n] (node-is-leaf-x original-node n)) 
+                    (fn [n] (node-get-children-x original-node n)))
+                  ))
+              (node-get-children original-parent-node)
               (iterate inc 1)))
           ]
-         (TreeNodeX. 
-           (calculate-value 1 root nil nil) 
-           (fn [n] (node-is-leaf-x root n)) 
-           (fn [n] (node-get-children-x root n))))
+         (transform-node
+           1 
+           root 
+           nil 
+           nil
+           (TreeNodeX. 
+             (node-get-value root) 
+             (fn [n] (node-is-leaf-x root n)) 
+             (fn [n] (node-get-children-x root n))))))
   )
 
 (defn tree-map-value
   "Creates new tree with identical structure with each node value mapped."
   [proc root]
-  (tree-clone 
-    (fn 
-      [position original-node original-parent-node parent-node] 
-      (proc (node-get-value original-node))) 
+  (tree-map-node 
+    (fn [position original-node original-parent-node new-parent-node new-node] 
+      (assoc new-node :value (proc (node-get-value new-node)))) 
+    root)
+  )
+
+(defn tree-map-id
+  "Creates new tree with identical structure with each node getting id vector."
+  [root]
+  (tree-map-node 
+    (fn [position original-node original-parent-node new-parent-node new-node]
+      (let [id (if new-parent-node
+                 (let [parent-id (:id new-parent-node)]
+                   (conj parent-id position))
+                 [1])]
+        (assoc new-node :id id)))
     root)
   )
 
 (defn tree-id
   "Creates new tree with identical structure with each node getting id vector."
   [root]
-  (tree-clone 
-    (fn 
-      [position original-node original-parent-node parent-node]
-      (let [value (node-get-value original-node)]
-      (if parent-node
-        (let [parent-value-map (node-get-value parent-node)
-              parent-id (:id parent-value-map)
-              id (conj parent-id position)]
-          {:id id :value value})
-        {:id [1] :value value}))) 
+  (tree-map-node 
+    (fn [position original-node original-parent-node new-parent-node new-node]
+      (let [value (node-get-value original-node)
+            new-value (if new-parent-node
+                        (let [parent-value-map (node-get-value new-parent-node)
+                              parent-id (:id parent-value-map)
+                              id (conj parent-id position)]
+                          {:id id :value value})
+                        {:id [1] :value value})]
+        (assoc new-node :value new-value)))
     root)
   )

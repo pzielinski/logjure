@@ -821,4 +821,10 @@
     )
   )
 
+(deftest test-tree-map-id
+  (let [s (tree-seq-interleave-stream-seq (tree-map-id (create-infinite-tree)))]
+    (is (= (:id (nth s 0)) (node-get-value (nth s 0))))
+    )
+  )
+
 (run-tests)
