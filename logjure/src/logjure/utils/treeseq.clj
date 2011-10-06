@@ -244,7 +244,7 @@
 
 (defn tree-clone
   "Creates new tree with identical structure with each node value mapped.
-calculate-value [original-node original-parent-node]"
+calculate-value [original-node original-parent-node position]"
   [calculate-value root]
   (letfn [
           (node-is-leaf-x 
@@ -254,14 +254,15 @@ calculate-value [original-node original-parent-node]"
             [original-node] 
             (map 
               (fn 
-                [original-child-node] 
+                [original-child-node position] 
                 (TreeNodeX. 
-                  (calculate-value original-child-node original-node) 
+                  (calculate-value original-child-node original-node position) 
                   (fn [n] (node-is-leaf-x original-child-node)) 
                   (fn [n] (node-get-children-x original-child-node))))
-              (node-get-children original-node)))]
+              (node-get-children original-node)
+              (iterate inc 1)))]
          (TreeNodeX. 
-           (calculate-value root nil) 
+           (calculate-value root nil 1) 
            (fn [n] (node-is-leaf-x root)) 
            (fn [n] (node-get-children-x root))))
   )
@@ -269,6 +270,21 @@ calculate-value [original-node original-parent-node]"
 (defn tree-map-value
   "Creates new tree with identical structure with each node value mapped."
   [proc root]
-  (tree-clone (fn [node parent-node] (proc (node-get-value node))) root)
+  (tree-clone (fn [node parent-node position] (proc (node-get-value node))) root)
   )
 
+(defn tree-id
+  "Creates new tree with identical structure with each node getting id vector."
+  [root]
+  (tree-clone 
+    (fn 
+      [node parent-node position]
+      (let [value (node-get-value node)]
+      (if parent-node
+        (let [parent-value (node-get-value parent-node)
+              parent-id (:id parent-value)
+              id (conj parent-id position)]
+          {:id id :value value})
+        {:id [1] :value value}))) 
+    root)
+  )
