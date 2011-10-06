@@ -224,24 +224,6 @@
      (get-nodes-at-depth #(not (is-leaf %)) get-children root allowed-depth))
 )
 
-(defn tree-seq-multi-depth
-  "Walks two trees in lockstep."
-   ([root1 root2]
-     (tree-seq-multi-depth #(not (is-leaf %)) get-children root1 root2))
-   ([is-branch? get-children root1 root2]
-     (letfn [(walk 
-               [node1 node2]
-               (lazy-seq
-                 (if
-                   (and (is-branch? node1) (is-branch? node2))
-                   (cons [node1 node2]
-                         ;ISSUE: map silently ignores some children if one seq is longer !!!!!!!
-                         (mapcat walk (get-children node1) (get-children node2)))
-                   (list [node1 node2])
-                   )))]
-            (walk root1 root2)))
-   )
-
 (defn tree-map-node
   "Creates new tree with identical structure with each node mapped to a new node.
 transform node can do post creation processing on new node
@@ -319,3 +301,35 @@ from being gc-ed.
         (assoc new-node :value new-value)))
     root)
   )
+
+(defn tree-seq-multi-depth
+  "Walks two trees in lockstep."
+   ([root1 root2]
+     (tree-seq-multi-depth #(not (is-leaf %)) get-children root1 root2))
+   ([is-branch? get-children root1 root2]
+     (letfn [(walk 
+               [node1 node2]
+               (lazy-seq
+                 (if
+                   (and (is-branch? node1) (is-branch? node2))
+                   (cons [node1 node2]
+                         ;ISSUE: map silently ignores some children if one seq is longer !!!!!!!
+                         (mapcat walk (get-children node1) (get-children node2)))
+                   (list [node1 node2])
+                   )))]
+            (walk root1 root2)))
+   )
+
+(defn tree-seq-multi-depth-2
+  "Walks two trees in lockstep."
+  ([root1 root2]
+     (tree-seq-multi-depth-2 #(not (is-leaf %)) get-children root1 root2))
+   ([is-branch? get-children root1 root2]
+     (tree-seq-multi-depth-2 is-branch? get-children (tree-seq-depth root1) (tree-seq-depth root2) 0))
+   ([is-branch? get-children s1 s2 position]
+     (when (and (seq s1) (seq s2))
+       (cons
+         [(first s1) (first s2)]
+         (lazy-seq
+           (tree-seq-multi-depth-2 is-branch? get-children (rest s1) (rest s2) (inc position))))))
+   )
