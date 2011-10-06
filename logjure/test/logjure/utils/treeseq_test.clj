@@ -695,26 +695,6 @@
   ;(perform-test-finalize-tree-seq-breadth)
 )
 
-(deftest test-tree-seq-multi-depth
-  (is (= '([() ()]) (doall (tree-seq-multi-depth '() '()))))
-  (is (= '([:a :A]) (doall (tree-seq-multi-depth :a :A))))
-  (is (= '([(:a) (:A)] [:a :A]) (doall (tree-seq-multi-depth '(:a) '(:A)))))
-  (is (= '([(:a (:b) :c) (:A :B :C)] 
-            [:a :A]
-            [(:b) :B]
-            [:c :C]
-            ) 
-         (doall (tree-seq-multi-depth '(:a (:b) :c) '(:A :B :C)))))
-  (is (= '([(:a (:b) :c) (:A (:B) :C)] 
-            [:a :A]
-            [(:b) (:B)]
-            [:b :B]
-            [:c :C]
-            ) 
-         (doall (tree-seq-multi-depth '(:a (:b) :c) '(:A (:B) :C)))))
-  (is (= ['?x :x] (nth (tree-seq-multi-depth (deeply-nested 2000 '?x) (deeply-nested 2000 :x)) 2000)))
-  )
-
 (deftest test-tree-map-value
   (is (= [1] (node-get-value (tree-map-value identity (TreeNodeX. [1] is-leaf get-children)))))
   (is (= [1] (node-get-value (tree-map-value (fn [value] value) (TreeNodeX. [1] is-leaf get-children)))))
@@ -797,8 +777,8 @@
     )
 )
 
-(deftest test-tree-id
-  (let [s (tree-seq-interleave-stream-seq (tree-id (create-infinite-tree)))]
+(deftest test-tree-map-value-id
+  (let [s (tree-seq-interleave-stream-seq (tree-map-value-id (create-infinite-tree)))]
     (is (= {:id [1] :value [1]} (node-get-value (nth s 0))))
     (is (= {:id [1 1] :value [1 1]} (node-get-value (nth s 1))))
     (is (= {:id [1 1 1] :value [1 1 1]} (node-get-value (nth s 2))))
@@ -824,7 +804,28 @@
 (deftest test-tree-map-id
   (let [s (tree-seq-interleave-stream-seq (tree-map-id (create-infinite-tree)))]
     (is (= (:id (nth s 0)) (node-get-value (nth s 0))))
+    (is (= (:id (nth s 10000)) (node-get-value (nth s 10000))))
     )
+  )
+
+(deftest test-tree-seq-multi-depth
+  (is (= '([() ()]) (doall (tree-seq-multi-depth '() '()))))
+  (is (= '([:a :A]) (doall (tree-seq-multi-depth :a :A))))
+  (is (= '([(:a) (:A)] [:a :A]) (doall (tree-seq-multi-depth '(:a) '(:A)))))
+  (is (= '([(:a (:b) :c) (:A :B :C)] 
+            [:a :A]
+            [(:b) :B]
+            [:c :C]
+            ) 
+         (doall (tree-seq-multi-depth '(:a (:b) :c) '(:A :B :C)))))
+  (is (= '([(:a (:b) :c) (:A (:B) :C)] 
+            [:a :A]
+            [(:b) (:B)]
+            [:b :B]
+            [:c :C]
+            ) 
+         (doall (tree-seq-multi-depth '(:a (:b) :c) '(:A (:B) :C)))))
+  (is (= ['?x :x] (nth (tree-seq-multi-depth (deeply-nested 2000 '?x) (deeply-nested 2000 :x)) 2000)))
   )
 
 (run-tests)

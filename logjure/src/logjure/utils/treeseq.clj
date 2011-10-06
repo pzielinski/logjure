@@ -286,7 +286,7 @@ from being gc-ed.
     root)
   )
 
-(defn tree-id
+(defn tree-map-value-id
   "Creates new tree with identical structure with each node getting id vector."
   [root]
   (tree-map-node 
