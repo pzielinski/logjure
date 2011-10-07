@@ -60,43 +60,41 @@ and we never store more than one binding for a given variable."
   ;what about the case when dat is variable and pat is datum? is it possible?
   )
 
-(defn build-frames-stream
+(defn build-frames-seq
   ([pat dat frame]
-    (build-frames-stream (seq-to-stream (tree-seq-multi-depth pat dat)) frame))
-  ([stream frame]
-    (if (stream-null? stream)
-      the-empty-stream
-      (let [[n1 n2] (stream-car stream)]
+    (build-frames-seq (tree-seq-multi-depth pat dat) frame))
+  ([s frame]
+    (when (seq s)
+      (let [[n1 n2] (first s)]
         (if (variable? n1)
           ;n1 is variable
           (let [n1-var-value (get-value-in-frame n1 frame)]
             (if n1-var-value
               ;there is a value for n1 variable in frame
-              (cons-stream
+              (cons
                 [n1 n2 frame]
-                (build-frames-stream 
-                  (stream-append-delayed 
-                    (seq-to-stream (tree-seq-multi-depth n1-var-value n2)) 
-                    (stream-cdr stream))
-                  frame))
+                (lazy-seq
+                  (build-frames-seq 
+                    (concat (tree-seq-multi-depth n1-var-value n2) (rest s))
+                    frame)))
               ;NO value for n1 variable in frame
               (let [new-frame (extend-frame n1 n2 frame)]
-                (cons-stream
+                (cons
                   [n1 n2 new-frame]
-                  (build-frames-stream (stream-cdr stream) new-frame)
-                  ))
-              ))
+                  (lazy-seq
+                    (build-frames-seq (rest s) new-frame))
+                  ))))
           ;n1 is not a variable
-          (cons-stream
+          (cons
             [n1 n2 frame]
-            (build-frames-stream (stream-cdr stream) frame))
+            (lazy-seq
+              (build-frames-seq (rest s) frame)))
           ))))
   )  
 
-(defn pattern-match-3
+(defn pattern-match-seq
   ([pat dat frame]
-    (let [stream (build-frames-stream pat dat frame)
-          s (stream-to-seq stream)
+    (let [s (build-frames-seq pat dat frame)
           nomatch? (fn nomatch? [[n1 n2 _]] (and (is-leaf n1) (not (variable? n1)) (not (equal? n1 n2))))]
       (if (some nomatch? s)
         'failed
@@ -105,7 +103,7 @@ and we never store more than one binding for a given variable."
 
 (defn pattern-match
   [pat dat frame]
-  (pattern-match-3 pat dat frame)
+  (pattern-match-seq pat dat frame)
   )
 
 (defn check-an-assertion
