@@ -1,10 +1,6 @@
 (ns logjure.sicp.pair
   )
 
-(defn null? [x]
-  (nil? x)
-  )
-
 (defn cons-pair [a b]
   (list a b)
   )

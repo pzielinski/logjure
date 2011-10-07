@@ -6,7 +6,7 @@
 
 (defn stream-null? 
   [stream]
-  (null? stream)
+  (nil? stream)
   )
 
 (defmacro cons-stream 
