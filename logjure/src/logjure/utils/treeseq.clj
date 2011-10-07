@@ -224,7 +224,22 @@
      (get-nodes-at-depth #(not (is-leaf %)) get-children root allowed-depth))
 )
 
-(defn tree-map-node
+(defn seq-tree
+  "Creates tree from sequence."
+  [s]
+  (letfn [
+          (node-is-leaf 
+            [sx node]
+            (is-leaf sx))
+          (node-get-children 
+            [sx node] 
+            (map 
+              (fn [sxx] (TreeNodeX. sxx (fn [n] (node-is-leaf sxx n)) (fn [n] (node-get-children sxx n)))) 
+              (get-children sx)))] 
+         (TreeNodeX. s (fn [n] (node-is-leaf s n)) (fn [n] (node-get-children s n))))
+  )
+
+(defn tree-map-tree-node
   "Creates new tree with identical structure with each node mapped to a new node.
 transform node can do post creation processing on new node
 transform-node [position original-node original-parent-node new-parent-node new-node]
@@ -262,6 +277,15 @@ from being gc-ed.
              (node-get-value root) 
              (fn [n] (node-is-leaf-x root n)) 
              (fn [n] (node-get-children-x root n))))))
+  )
+
+(defmultimethod tree-map-node 
+  [transform-node root] 
+  (fn [transform-node root] (satisfies? TreeNode root))
+  true 
+  (tree-map-tree-node transform-node root)
+  :default 
+  (tree-map-tree-node transform-node (seq-tree root))
   )
 
 (defn tree-map-value
@@ -302,49 +326,14 @@ from being gc-ed.
     root)
   )
 
-(defn seq-tree
-  "Creates tree from sequence."
-  [s]
-  (letfn [
-          (node-is-leaf 
-            [sx node]
-            (is-leaf sx))
-          (node-get-children 
-            [sx node] 
-            (map 
-              (fn [sxx] (TreeNodeX. sxx (fn [n] (node-is-leaf sxx n)) (fn [n] (node-get-children sxx n)))) 
-              (get-children sx)))] 
-         (TreeNodeX. s (fn [n] (node-is-leaf s n)) (fn [n] (node-get-children s n))))
-  )
-
 (defn tree-seq-multi-depth
   "Walks two trees in lockstep."
    ([root1 root2]
-     (tree-seq-multi-depth #(not (is-leaf %)) get-children root1 root2))
-   ([is-branch? get-children root1 root2]
-     (letfn [(walk 
-               [node1 node2]
-               (lazy-seq
-                 (if
-                   (and (is-branch? node1) (is-branch? node2))
-                   (cons [node1 node2]
-                         ;ISSUE: map silently ignores some children if one seq is longer !!!!!!!
-                         (mapcat walk (get-children node1) (get-children node2)))
-                   (list [node1 node2])
-                   )))]
-            (walk root1 root2)))
-   )
-
-(defn tree-seq-multi-depth-2
-  "Walks two trees in lockstep."
-   ([root1 root2]
-     (let [root1x (if true (seq-tree root1) root1)
-           root2x (if true (seq-tree root2) root2)]
-       (tree-seq-multi-depth-2 
-         (tree-seq-depth (tree-map-id root1x)) 
-         (tree-seq-depth (tree-map-id root2x)) 
-         nil
-         nil)))
+     (tree-seq-multi-depth 
+       (tree-seq-depth (tree-map-id root1)) 
+       (tree-seq-depth (tree-map-id root2)) 
+       nil
+       nil))
    ([s1 s2 previous-n1 previous-n2]
      (when (and (seq s1) (seq s2))
        (let [n1 (first s1)
@@ -368,7 +357,7 @@ from being gc-ed.
          (cons
            [(node-get-value n1x) (node-get-value n2x)]
            (lazy-seq
-             (tree-seq-multi-depth-2 
+             (tree-seq-multi-depth 
                (rest s1x) 
                (rest s2x) 
                n1x

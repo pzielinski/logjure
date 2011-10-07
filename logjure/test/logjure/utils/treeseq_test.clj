@@ -848,24 +848,4 @@
   (is (= ['?x :x] (nth (tree-seq-multi-depth (deeply-nested 10000 '?x) (deeply-nested 10000 :x)) 10000)))
   )
 
-(deftest test-tree-seq-multi-depth-2
-  (is (= '([() ()]) (doall (tree-seq-multi-depth-2 '() '()))))
-  (is (= '([:a :A]) (doall (tree-seq-multi-depth-2 :a :A))))
-  (is (= '([(:a) (:A)] [:a :A]) (doall (tree-seq-multi-depth-2 '(:a) '(:A)))))
-  (is (= '([(:a (:b) :c) (:A :B :C)] 
-            [:a :A]
-            [(:b) :B]
-            [:c :C]
-            ) 
-         (doall (tree-seq-multi-depth-2 '(:a (:b) :c) '(:A :B :C)))))
-  (is (= '([(:a (:b) :c) (:A (:B) :C)] 
-            [:a :A]
-            [(:b) (:B)]
-            [:b :B]
-            [:c :C]
-            ) 
-         (doall (tree-seq-multi-depth-2 '(:a (:b) :c) '(:A (:B) :C)))))
-  (is (= ['?x :x] (nth (tree-seq-multi-depth-2 (deeply-nested 10000 '?x) (deeply-nested 10000 :x)) 10000)))
-  )
-
 (run-tests)
