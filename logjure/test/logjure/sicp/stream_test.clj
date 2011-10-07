@@ -47,6 +47,7 @@
 )
 
 (deftest test-stream-to-seq
+  (is (= '() (stream-to-seq the-empty-stream)))
   (let [s (stream-to-seq (seq-to-stream '(1 2 3)))] 
     (is (= 1 (nth s 0)))
     (is (= 2 (nth s 1)))
