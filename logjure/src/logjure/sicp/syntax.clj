@@ -40,7 +40,7 @@
   )
 
 (defn variable? [exp]
-  (= \? (first (str exp)))
+  (and (symbol? exp) (= \? (first (str exp))))
   )
 
 (defn constant-symbol? [exp] 
