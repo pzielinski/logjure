@@ -153,7 +153,7 @@
     (tree-seq-breadth-x #(not (is-leaf %)) get-children root))
   )
 
-(defn tree-seq-breadth-stream
+(defn tree-stream-breadth
   "Will get stuck if node has infinite children."
    ([branch? get-children root]
      (let [walk 
@@ -168,19 +168,19 @@
        (flatten-stream (walk branch? get-children (seq-to-stream (list root)))))
      )
    ([root] 
-     (tree-seq-breadth-stream #(not (is-leaf %)) get-children root)
+     (tree-stream-breadth #(not (is-leaf %)) get-children root)
      )
 )
 
-(defn tree-seq-breadth-stream-seq
+(defn tree-stream-breadth-seq
   "Converts to sequence, makes it more greedy."
    ([branch? get-children root]
-     (stream-to-seq (tree-seq-breadth-stream branch? get-children root)))
+     (stream-to-seq (tree-stream-breadth branch? get-children root)))
    ([root]
-     (stream-to-seq (tree-seq-breadth-stream root)))
+     (stream-to-seq (tree-stream-breadth root)))
 )
 
-(defn tree-seq-interleave-stream
+(defn tree-stream-interleave
   "The only tree-seq capable of sequencing infinite tree, where each node has infinite children."
    ([branch? get-children root]
      (let [walk 
@@ -195,16 +195,16 @@
        (flatten-interleave-stream (walk branch? get-children (seq-to-stream (list root)))))
      )
    ([root] 
-     (tree-seq-interleave-stream #(not (is-leaf %)) get-children root)
+     (tree-stream-interleave #(not (is-leaf %)) get-children root)
      )
 )
 
-(defn tree-seq-interleave-stream-seq
+(defn tree-stream-interleave-seq
   "Converts to sequence, makes it more greedy."
    ([branch? get-children root]
-     (stream-to-seq (tree-seq-interleave-stream branch? get-children root)))
+     (stream-to-seq (tree-stream-interleave branch? get-children root)))
    ([root]
-     (stream-to-seq (tree-seq-interleave-stream root)))
+     (stream-to-seq (tree-stream-interleave root)))
 )
 
 ;stops walking at allowed depth
