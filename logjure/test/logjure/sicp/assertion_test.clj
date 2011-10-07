@@ -1,10 +1,12 @@
 (ns logjure.sicp.assertion-test
   (:use 
+    logjure.sicp.stream
     logjure.sicp.syntax
     logjure.sicp.table
     logjure.sicp.frame
     logjure.sicp.store
     logjure.sicp.assertion
+    logjure.utils.treeseq
     logjure.utils.testing
     clojure.contrib.test-is
     )
@@ -88,7 +90,7 @@
 ;test deep nested
 (deftest test-pattern-match-when-deep-nested
   ;initial frame is not empty, value is a list, match
-  (is (= 'b (get-value-in-frame '?x (pattern-match (deeply-nested 100 '?x) (deeply-nested 100 'b) (make-empty-frame)))))
+  (is (= 'b (get-value-in-frame '?x (pattern-match (deeply-nested 10000 '?x) (deeply-nested 10000 'b) (make-empty-frame)))))
 )
 
 (run-tests)
