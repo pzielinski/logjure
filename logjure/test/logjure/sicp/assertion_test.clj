@@ -91,32 +91,4 @@
   (is (= 'b (get-value-in-frame '?x (pattern-match (deeply-nested 100 '?x) (deeply-nested 100 'b) (make-empty-frame)))))
 )
 
-(deftest test-pattern-match-2-walker
-  (is (= '([() () {}]) (doall (pattern-match-2-walker '() '() (make-empty-frame)))))
-  (is (= '([:a :A {}]) (doall (pattern-match-2-walker :a :A (make-empty-frame)))))
-  (is (= '([(:a) (:A) {}] [:a :A {}]) (doall (pattern-match-2-walker '(:a) '(:A) (make-empty-frame)))))
-  (is (= '([(:a (:b) :c) (:A :B :C) {}] 
-            [:a :A {}]
-            [(:b) :B {}]
-            [:c :C {}]
-            ) 
-         (doall (pattern-match-2-walker '(:a (:b) :c) '(:A :B :C) (make-empty-frame)))))
-  (is (= '([(:a (:b) :c) (:A (:B) :C) {}] 
-            [:a :A {}]
-            [(:b) (:B) {}]
-            [:b :B {}]
-            [:c :C {}]
-            ) 
-         (doall (pattern-match-2-walker '(:a (:b) :c) '(:A (:B) :C) (make-empty-frame)))))
-  )
-
-(deftest test-pattern-match-2-walker-variable
-  (is (= '([?x :a {?x :a}]) 
-         (doall (pattern-match-2-walker '?x :a (make-empty-frame)))))
-  (is (= '([(?x :a) (:b :a) {}] [?x :b {?x :b}] [:a :a {?x :b}]) 
-         (doall (pattern-match-2-walker '(?x :a) '(:b :a) (make-empty-frame)))))
-  (is (= '([(?x ?y) (:x :y) {?x :x, ?y :y}] [:x :x {?x :x, ?y :y}] [:y :y {?x :x, ?y :y}]) 
-         (doall (pattern-match-2-walker '(?x ?y) '(:x :y) (extend-frame '?x :x (extend-frame '?y :y (make-empty-frame)))))))
-  )
-
 (run-tests)

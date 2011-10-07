@@ -1,6 +1,8 @@
 (ns logjure.sicp.assertion
   (:use 
     logjure.utils.treeseq
+    logjure.sicp.pair
+    logjure.sicp.stream
     logjure.sicp.table
     logjure.sicp.syntax
     logjure.sicp.frame
@@ -113,9 +115,52 @@ and we never store more than one binding for a given variable."
         frame)))
   )
 
+(defn build-frames-stream
+  ([pat dat frame]
+    (build-frames-stream (seq-to-stream (tree-seq-multi-depth pat dat)) frame))
+  ([stream frame]
+    (if (stream-null? stream)
+      the-empty-stream
+      (let [[n1 n2] (stream-car stream)]
+        (if (variable? n1)
+          ;n1 is variable
+          (let [n1-var-value (get-value-in-frame n1 frame)]
+            (if n1-var-value
+              ;there is a value for n1 variable in frame
+              (cons-stream
+                [n1 n2 frame]
+                (build-frames-stream 
+                  (stream-append-delayed 
+                    (seq-to-stream (tree-seq-multi-depth n1-var-value n2)) 
+                    (stream-cdr stream))
+                  frame))
+              ;NO value for n1 variable in frame
+              (let [new-frame (extend-frame n1 n2 frame)]
+                (cons-stream
+                  [n1 n2 new-frame]
+                  (build-frames-stream (stream-cdr stream) new-frame)
+                  ))
+              ))
+          ;n1 is not a variable
+          (cons-stream
+            [n1 n2 frame]
+            (build-frames-stream (stream-cdr stream) frame))
+          ))))
+  )  
+
+(defn pattern-match-3
+  ([pat dat frame]
+    (let [stream (build-frames-stream pat dat frame)
+          s (stream-to-seq stream)
+          nomatch? (fn nomatch? [[n1 n2 _]] (and (is-leaf n1) (not (variable? n1)) (not (equal? n1 n2))))]
+      (if (some nomatch? s)
+        'failed
+        (get (last s) 2))))
+  )
+
 (defn pattern-match
   [pat dat frame]
-  (pattern-match-1 pat dat frame)
+  (pattern-match-3 pat dat frame)
   )
 
 (defn check-an-assertion
