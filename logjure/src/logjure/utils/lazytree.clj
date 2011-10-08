@@ -102,8 +102,8 @@ from being gc-ed.
 (defn tree-map-value
   "Creates new tree with identical structure with each node value mapped."
   [proc root]
-  (tree-map-node 
-    (fn [position original-node original-parent-node new-parent-node new-node] 
+  (tree-map
+    (fn [new-node] 
       (assoc new-node :value (proc (node-get-value new-node)))) 
     root)
   )
