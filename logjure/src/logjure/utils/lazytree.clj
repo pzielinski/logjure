@@ -96,22 +96,6 @@ from being gc-ed.
     root)
   )
 
-(defn tree-map-value-id
-  "Creates new tree with identical structure with each node getting id vector."
-  [root]
-  (tree-map-node 
-    (fn [position original-node original-parent-node new-parent-node new-node]
-      (let [value (node-get-value original-node)
-            new-value (if new-parent-node
-                        (let [parent-value-map (node-get-value new-parent-node)
-                              parent-id (:id parent-value-map)
-                              id (conj parent-id position)]
-                          {:id id :value value})
-                        {:id [1] :value value})]
-        (assoc new-node :value new-value)))
-    root)
-  )
-
 (defn create-fixed-node
   [value children]
   (letfn [(node-get-children 
@@ -202,4 +186,12 @@ Each new node value is sequence of argument tree node values.
       (vector (node-get-value root1) (node-get-value root2)) 
       (fn [n] (node-is-leaf-x root1 root2)) 
       (fn [n] (node-get-children-x root1 root2)))))
+  )
+
+(defn tree-map-value-id
+  "Creates new tree with identical structure with each node getting id vector."
+  [root]
+  (tree-map-value 
+    (fn [[val1 val2]] {:id val1, :value val2}) 
+    (tree-conjoin (create-infinite-tree) root))
   )
