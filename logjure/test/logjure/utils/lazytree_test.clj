@@ -38,6 +38,24 @@
     )
   )
 
+(deftest test-tree-map-reduce
+  (let [s (tree-stream-interleave-seq 
+            (tree-map-reduce 
+              (fn [parent node]
+                (let [depth (if parent (:depth parent) 1)]
+                  (assoc node :depth (inc depth))))
+              (create-infinite-tree)))]
+    ;value
+    (is (= [1] (node-get-value (nth s 0))))
+    (is (= [1 2 626] (node-get-value (nth s 10006))))
+    (is (= [1 5004] (node-get-value (nth s 10007))))
+    ;depth
+    (is (= 1 (:depth (nth s 0))))
+    (is (= 3 (:depth (nth s 10006))))
+    (is (= 3 (:depth (nth s 10007))))
+    )
+  )
+
 (deftest test-tree-map-value
   (is (= [1] (node-get-value (tree-map-value identity (TreeNodeX. [1] is-leaf get-children)))))
   (is (= [1] (node-get-value (tree-map-value (fn [value] value) (TreeNodeX. [1] is-leaf get-children)))))

@@ -36,7 +36,7 @@
 
 (defn tree-map
   "Creates new tree with identical structure with each node mapped to a new node.
-map-node-fn [new-node]"
+transform-node [new-node]"
   [transform-node root]
   (letfn 
     [(node-is-leaf-x 
@@ -59,40 +59,29 @@ map-node-fn [new-node]"
         (fn [n] (node-get-children-x root n)))))
   )
 
-(defn tree-map-node
+(defn tree-map-reduce
   "Creates new tree with identical structure with each node mapped to a new node.
-transform node can do post creation processing on new node
-transform-node [position original-node original-parent-node new-parent-node new-node]
-This code could be made simpler if node kept its parent, but that would prevent nodes
-from being gc-ed.
+transform-node [new-parent-node new-node] has access to both parent and node.
 "
   ([transform-node root]
   (letfn [
           (node-is-leaf-x 
-            [original-node node] 
+            [original-node new-node] 
             (node-is-leaf original-node))
           (node-get-children-x
             [original-parent-node new-parent-node] 
             (map 
-              (fn [original-node position]
+              (fn [original-node]
                 (transform-node
-                  position 
-                  original-node 
-                  original-parent-node 
                   new-parent-node
                   (TreeNodeX. 
                     (node-get-value original-node) 
                     (fn [n] (node-is-leaf-x original-node n)) 
-                    (fn [n] (node-get-children-x original-node n)))
-                  ))
-              (node-get-children original-parent-node)
-              (iterate inc 1)))
+                    (fn [n] (node-get-children-x original-node n)))))
+              (node-get-children original-parent-node)))
           ]
          (transform-node
-           1 
-           root 
            nil 
-           nil
            (TreeNodeX. 
              (node-get-value root) 
              (fn [n] (node-is-leaf-x root n)) 
