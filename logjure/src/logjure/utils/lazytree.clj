@@ -140,8 +140,10 @@ from being gc-ed.
   )
 
 (defn tree-disjoin
-  "Creates new tree with structure that is overlay of argument trees, each new node value 
-is sequence of argument tree node values, nil is used if no node in argument tree.
+  "Creates new tree with structure that is overlay of argument trees, 
+all branches from both trees are covered. 
+Each new node value is sequence of argument tree node values, nil is used if no node in argument tree.
+TODO: use special symbol for no node instead of nil.
 "
   ([root1 root2]
   (letfn 
@@ -173,3 +175,31 @@ is sequence of argument tree node values, nil is used if no node in argument tre
       (fn [n] (node-get-children-x root1 root2)))))
   )
 
+(defn tree-conjoin
+  "Creates new tree with structure that is overlay of argument trees, 
+only matching branches from both trees are covered. 
+Each new node value is sequence of argument tree node values.
+"
+  ([root1 root2]
+  (letfn 
+    [(node-is-leaf-x 
+       [node1 node2] 
+       (and (node-is-leaf node1) (node-is-leaf node2)))
+     (node-get-children-x
+       [node1 node2]
+       (map 
+         (fn 
+           [n1 n2]
+           (TreeNodeX. 
+             (vector (node-get-value n1) (node-get-value n2))
+             (fn [n] (node-is-leaf-x n1 n2)) 
+             (fn [n] (node-get-children-x n1 n2)))
+           )
+         (node-get-children node1) 
+         (node-get-children node2) 
+         ))]
+    (TreeNodeX. 
+      (vector (node-get-value root1) (node-get-value root2)) 
+      (fn [n] (node-is-leaf-x root1 root2)) 
+      (fn [n] (node-get-children-x root1 root2)))))
+  )

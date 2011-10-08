@@ -214,4 +214,72 @@
                       (seq-to-tree (deeply-nested 10000 :x))))) 10000)))
   )
 
+(deftest test-tree-conjoin
+  (let 
+    [t1 (seq-to-tree '())
+     t2 (seq-to-tree '())
+     t (tree-conjoin t1 t2)]
+    (is (= '[() ()] (node-get-value t)))
+    )
+  (let 
+    [t1 (seq-to-tree :a)
+     t2 (seq-to-tree :b)
+     t (tree-conjoin t1 t2)]
+    (is (= '[:a :b] (node-get-value t)))
+    )
+  (let 
+    [t1 (seq-to-tree '(:a))
+     t2 (seq-to-tree '(:b))
+     t (tree-conjoin t1 t2)
+     s (map node-get-value (tree-seq-depth t))]
+    (is (= '([(:a) (:b)] [:a :b]) s))
+    )
+    (is (= '( [(:a (:b)) (:A (:B))] 
+              [:a :A] 
+              [(:b) (:B)] 
+              [:b :B]) 
+           (map node-get-value 
+                (tree-seq-depth 
+                  (tree-conjoin 
+                    (seq-to-tree '(:a (:b))) 
+                    (seq-to-tree '(:A (:B))))))))
+    (is (= '( [(:a (:b) :c) (:A (:B))] 
+              [:a :A] 
+              [(:b) (:B)] 
+              [:b :B]) 
+           (map node-get-value 
+                (tree-seq-depth 
+                  (tree-conjoin 
+                    (seq-to-tree '(:a (:b) :c)) 
+                    (seq-to-tree '(:A (:B))))))))
+    (is (= '( [(:a1 (:a21) :a3 :a4) (:b1 (:b21 (:b221)) :b3)] 
+              [:a1 :b1] 
+              [(:a21) (:b21 (:b221))] 
+              [:a21 :b21]
+              [:a3 :b3]
+              ) 
+           (map node-get-value 
+                (tree-seq-depth 
+                  (tree-conjoin 
+                    (seq-to-tree '(:a1 (:a21) :a3 :a4)) 
+                    (seq-to-tree '(:b1 (:b21 (:b221)) :b3))
+                    )))))
+    (is (= '( [[1] [1]] 
+              [[1 1] [1 1]] 
+              [[1 1 1] [1 1 1]])
+           (take 3
+                 (map node-get-value 
+                      (tree-seq-depth 
+                        (tree-conjoin 
+                          (create-infinite-tree) 
+                          (create-infinite-tree)))))))
+    (is (= ['?x :x]
+           (nth
+             (map node-get-value 
+                  (tree-seq-depth 
+                    (tree-conjoin 
+                      (seq-to-tree (deeply-nested 10000 '?x)) 
+                      (seq-to-tree (deeply-nested 10000 :x))))) 10000)))
+  )
+
 (run-tests)
