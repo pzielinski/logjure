@@ -30,6 +30,14 @@
            (doall (map node-get-value (tree-seq-depth (tree-map-value-id (seq-tree '(1 (2) 3) is-leaf get-children)))))))
   )
 
+(deftest test-tree-map
+  (let [s (tree-stream-interleave-seq (tree-map identity (create-infinite-tree)))]
+    (is (= [1] (node-get-value (nth s 0))))
+    (is (= [1 2 626] (node-get-value (nth s 10006))))
+    (is (= [1 5004] (node-get-value (nth s 10007))))
+    )
+  )
+
 (deftest test-tree-map-value
   (is (= [1] (node-get-value (tree-map-value identity (TreeNodeX. [1] is-leaf get-children)))))
   (is (= [1] (node-get-value (tree-map-value (fn [value] value) (TreeNodeX. [1] is-leaf get-children)))))

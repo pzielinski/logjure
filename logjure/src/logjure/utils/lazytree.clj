@@ -34,6 +34,31 @@
          (TreeNodeX. s (fn [n] (node-is-leaf s n)) (fn [n] (node-get-children s n))))
   )
 
+(defn tree-map
+  "Creates new tree with identical structure with each node mapped to a new node.
+map-node-fn [new-node]"
+  [transform-node root]
+  (letfn 
+    [(node-is-leaf-x 
+       [original-node new-node] 
+       (node-is-leaf original-node))
+     (node-get-children-x
+       [original-parent-node new-parent-node] 
+       (map 
+         (fn [original-node]
+           (transform-node
+             (TreeNodeX. 
+               (node-get-value original-node) 
+               (fn [n] (node-is-leaf-x original-node n)) 
+               (fn [n] (node-get-children-x original-node n)))))
+         (node-get-children original-parent-node)))]
+    (transform-node
+      (TreeNodeX. 
+        (node-get-value root) 
+        (fn [n] (node-is-leaf-x root n)) 
+        (fn [n] (node-get-children-x root n)))))
+  )
+
 (defn tree-map-node
   "Creates new tree with identical structure with each node mapped to a new node.
 transform node can do post creation processing on new node
@@ -80,19 +105,6 @@ from being gc-ed.
   (tree-map-node 
     (fn [position original-node original-parent-node new-parent-node new-node] 
       (assoc new-node :value (proc (node-get-value new-node)))) 
-    root)
-  )
-
-(defn tree-map-id
-  "Creates new tree with identical structure with each node getting id vector."
-  [root]
-  (tree-map-node 
-    (fn [position original-node original-parent-node new-parent-node new-node]
-      (let [id (if new-parent-node
-                 (let [parent-id (:id new-parent-node)]
-                   (conj parent-id position))
-                 [1])]
-        (assoc new-node :id id)))
     root)
   )
 
@@ -193,5 +205,18 @@ Each new node value is sequence of argument tree node values.
   [root]
   (tree-map-value 
     (fn [[val1 val2]] {:id val1, :value val2}) 
+    (tree-conjoin (create-infinite-tree) root))
+  )
+
+(defn tree-map-id
+  "Creates new tree with identical structure with each node getting id vector."
+  [root]
+  (tree-map
+    (fn [node]
+      (let 
+        [value (node-get-value node)
+         [val1 val2] value
+         id val1]
+        (assoc node :id id :value val2)))
     (tree-conjoin (create-infinite-tree) root))
   )
