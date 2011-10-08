@@ -208,7 +208,12 @@
      (walk root 0)))
    ([root allowed-depth] 
      (get-nodes-at-depth #(not (is-leaf %)) get-children root allowed-depth))
-)
+   )
+
+(defn seq-to-tree
+  [s]
+  (seq-tree s is-leaf get-children)
+  )
 
 (defn tree-seq-multi-depth
   "Walks two trees in lockstep."

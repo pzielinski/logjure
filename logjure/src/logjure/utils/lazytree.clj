@@ -138,3 +138,38 @@ from being gc-ed.
                 (iterate inc 1))))] 
          (TreeNodeX. [1] node-is-leaf node-get-children))
   )
+
+(defn tree-disjoin
+  "Creates new tree with structure that is overlay of argument trees, each new node value 
+is sequence of argument tree node values, nil is used if no node in argument tree.
+"
+  ([root1 root2]
+  (letfn 
+    [(node-is-leaf-x 
+       [node1 node2] 
+       (or (and node1 (node-is-leaf node1)) (and node2 (node-is-leaf node2))))
+     (node-get-children-x
+       [node1 node2]
+       (take-while
+         (fn [n] (let [[val1 val2] (node-get-value n)] (or val1 val2)))
+         (map 
+           (fn 
+             [n1 n2]
+             (TreeNodeX. 
+               (vector (if n1 (node-get-value n1) nil) (if n2 (node-get-value n2) nil))
+               (fn [n] (node-is-leaf-x n1 n2)) 
+               (fn [n] (node-get-children-x n1 n2)))
+             )
+           (if node1 
+             (concat (node-get-children node1) (repeat nil)) 
+             (repeat nil))
+           (if node2 
+             (concat (node-get-children node2) (repeat nil)) 
+             (repeat nil))
+           )))]
+    (TreeNodeX. 
+      (vector (node-get-value root1) (node-get-value root2)) 
+      (fn [n] (node-is-leaf-x root1 root2)) 
+      (fn [n] (node-get-children-x root1 root2)))))
+  )
+
