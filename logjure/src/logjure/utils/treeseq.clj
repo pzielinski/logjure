@@ -217,40 +217,10 @@
 
 (defn tree-seq-multi-depth
   "Walks two trees in lockstep."
-   ([root1 root2]
-     (let [root1x (if (satisfies? TreeNode root1) root1 (seq-tree root1 is-leaf get-children))
-           root2x (if (satisfies? TreeNode root2) root2 (seq-tree root2 is-leaf get-children))]
-     (tree-seq-multi-depth 
-       (tree-seq-depth (tree-map-id root1x)) 
-       (tree-seq-depth (tree-map-id root2x)) 
-       nil
-       nil)))
-   ([s1 s2 previous-n1 previous-n2]
-     (when (and (seq s1) (seq s2))
-       (let [n1 (first s1)
-             n2 (first s2)
-             id1 (:id n1)
-             id2 (:id n2)
-             [n1x s1x n2x s2x]
-             (cond 
-               (= id1 id2) 
-               [n1 s1 n2 s2]
-               (and (is-leaf previous-n1) (not (is-leaf previous-n2)))
-               (let [new-s2 (drop-while #(not (= id1 (:id %))) s2)
-                     new-n2 (first new-s2)]
-                 [n1 s1 new-n2 new-s2])
-               (and (not (is-leaf previous-n1)) (is-leaf previous-n2))
-               (let [new-s1 (drop-while #(not (= id2 (:id %))) s1)
-                     new-n1 (first new-s1)]
-                 [new-n1 new-s1 n2 s2])
-               )
-             ]
-         (cons
-           [(node-get-value n1x) (node-get-value n2x)]
-           (lazy-seq
-             (tree-seq-multi-depth 
-               (rest s1x) 
-               (rest s2x) 
-               n1x
-               n2x))))))
-   )
+  [root1 root2]
+  (let [root1x (if (satisfies? TreeNode root1) root1 (seq-to-tree root1))
+        root2x (if (satisfies? TreeNode root2) root2 (seq-to-tree root2))]
+    (map
+      #(:value %)
+      (tree-seq-depth (tree-conjoin root1x root2x))))
+  )
