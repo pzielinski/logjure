@@ -209,3 +209,44 @@ Each new node value is sequence of argument tree node values.
         (assoc node :id id :value val2)))
     (tree-conjoin (create-infinite-tree) root))
   )
+
+(defrecord TreeNodeSimple [value get-children-values])
+
+(extend-type TreeNodeSimple
+  TreeNode
+  (node-is-leaf 
+    [node] 
+    (empty? ((:get-children-values node) node)))
+  (node-get-children 
+    [node] 
+    (map 
+      (fn [child-value] (TreeNodeSimple. child-value (:get-children-values node))) 
+      ((:get-children-values node) node)))
+  (node-get-value 
+    [node] 
+    (:value node))
+  )
+
+(defn create-tree
+  ""
+  [root-value get-children-values]
+  (letfn 
+    [(get-children-values-x 
+       [node] 
+       (get-children-values (node-get-value node)))]  
+    (TreeNodeSimple. root-value get-children-values-x))
+  )
+
+(defn create-infinite-tree-simple
+  "Creates infinite tree with each node having infinite children."
+  []
+  (letfn 
+    [(get-children-values-x 
+       [node] 
+       (let [parent-vector (node-get-value node)] 
+         (map 
+           (fn [n] (conj parent-vector n)) 
+           (iterate inc 1))))] 
+    (TreeNodeSimple. [1] get-children-values-x))
+  )
+
