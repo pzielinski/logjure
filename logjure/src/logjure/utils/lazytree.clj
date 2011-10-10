@@ -43,18 +43,12 @@ get-children-values [parent-value] drives creation of the children nodes."
 
 (defn seq-tree
   "Creates tree from sequence."
-  [s is-leaf get-children]
-  (letfn [
-          (node-is-leaf 
-            [sx node]
-            (is-leaf sx))
-          (node-get-children 
-            [sx node] 
-            (map 
-              (fn [sxx] (TreeNodeX. sxx (fn [n] (node-is-leaf sxx n)) (fn [n] (node-get-children sxx n)))) 
-              (get-children sx)))] 
-         (TreeNodeX. s (fn [n] (node-is-leaf s n)) (fn [n] (node-get-children s n))))
-  )
+  [the-seq is-leaf get-children]
+  (create-tree
+    the-seq
+    (fn [s] 
+      (get-children s)))
+  ) 
 
 (defn tree-map
   "Creates new tree with identical structure with each node mapped to a new node.
