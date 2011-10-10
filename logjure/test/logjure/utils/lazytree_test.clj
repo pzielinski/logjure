@@ -1,5 +1,6 @@
 (ns logjure.utils.lazytree-test
   (:use 
+    logjure.utils.treenode
     logjure.utils.lazytree
     logjure.utils.treeseq
     logjure.utils.testing 
@@ -42,8 +43,8 @@
   (let [s (tree-stream-interleave-seq 
             (tree-map-reduce 
               (fn [parent node]
-                (let [depth (if parent (:depth parent) 1)]
-                  (assoc node :depth (inc depth))))
+                (let [depth (if parent (inc (:depth parent)) 1)]
+                  (assoc node :depth depth)))
               (create-infinite-tree)))]
     ;value
     (is (= [1] (node-get-value (nth s 0))))
@@ -52,7 +53,7 @@
     ;depth
     (is (= 1 (:depth (nth s 0))))
     (is (= 3 (:depth (nth s 10006))))
-    (is (= 3 (:depth (nth s 10007))))
+    (is (= 2 (:depth (nth s 10007))))
     )
   )
 

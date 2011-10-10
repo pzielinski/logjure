@@ -1,6 +1,7 @@
 (ns logjure.utils.treeseq
   (:use 
     logjure.utils.defmultimethod 
+    logjure.utils.treenode
     logjure.utils.lazytree
     logjure.sicp.stream
     )

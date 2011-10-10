@@ -1,6 +1,7 @@
 (ns logjure.utils.treeseq-test
   (:use 
     logjure.sicp.stream
+    logjure.utils.treenode
     logjure.utils.lazytree
     logjure.utils.treeseq
     logjure.utils.testing 
