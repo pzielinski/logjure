@@ -3,42 +3,7 @@
     logjure.utils.defmultimethod 
     logjure.utils.treenode
     logjure.utils.lazytree
-    logjure.sicp.stream
     )
-  (:require clojure.inspector))
-
-;lazy
-(defn get-child-seq 
-  ([node indx is-leaf get-child-count get-child]
-    (lazy-seq 
-      (if (is-leaf node)
-        ()
-        (let [child-count (get-child-count node)]
-          (if (= child-count 0)
-            ()
-            (cons (get-child node indx)
-                  (when (< indx (dec child-count))
-                    (get-child-seq node (inc indx) is-leaf get-child-count get-child))
-                  ))))))
-  ([node indx] 
-    (get-child-seq 
-      node 
-      indx 
-      clojure.inspector/is-leaf 
-      clojure.inspector/get-child-count 
-      clojure.inspector/get-child))
-  ([node] 
-    (get-child-seq node 0))
-)
-
-(defmultimethod is-leaf [node] #(satisfies? TreeNode %)
-  true (node-is-leaf node)
-  :default (clojure.inspector/is-leaf node)
-  )
-
-(defmultimethod get-children [node] #(satisfies? TreeNode %)
-  true (node-get-children node)
-  :default (get-child-seq node)
   )
 
 (defn tree-seq-depth
@@ -139,60 +104,6 @@
   ([root]
     (tree-seq-breadth-x #(not (is-leaf %)) get-children root))
   )
-
-(defn tree-stream-breadth
-  "Will get stuck if node has infinite children."
-   ([branch? get-children root]
-     (let [walk 
-           (fn walk 
-             [branch? get-children parent-nodes]
-             (cons-stream 
-               parent-nodes
-               (if (stream-null? parent-nodes)
-                 the-empty-stream
-                 (let [child-nodes (flatten-stream (stream-map #(seq-to-stream (get-children %)) parent-nodes))]
-                   (walk branch? get-children child-nodes)))))]
-       (flatten-stream (walk branch? get-children (seq-to-stream (list root)))))
-     )
-   ([root] 
-     (tree-stream-breadth #(not (is-leaf %)) get-children root)
-     )
-)
-
-(defn tree-stream-breadth-seq
-  "Converts to sequence, makes it more greedy."
-   ([branch? get-children root]
-     (stream-to-seq (tree-stream-breadth branch? get-children root)))
-   ([root]
-     (stream-to-seq (tree-stream-breadth root)))
-)
-
-(defn tree-stream-interleave
-  "The only tree-seq capable of sequencing infinite tree, where each node has infinite children."
-   ([branch? get-children root]
-     (let [walk 
-           (fn walk 
-             [branch? get-children parent-nodes]
-             (cons-stream 
-               parent-nodes
-               (if (stream-null? parent-nodes)
-                 the-empty-stream
-                 (let [child-nodes (flatten-interleave-stream (stream-map #(seq-to-stream (get-children %)) parent-nodes))]
-                   (walk branch? get-children child-nodes)))))]
-       (flatten-interleave-stream (walk branch? get-children (seq-to-stream (list root)))))
-     )
-   ([root] 
-     (tree-stream-interleave #(not (is-leaf %)) get-children root)
-     )
-)
-
-(defn tree-stream-interleave-seq
-  "Converts to sequence, makes it more greedy."
-   ([branch? get-children root]
-     (stream-to-seq (tree-stream-interleave branch? get-children root)))
-   ([root]
-     (stream-to-seq (tree-stream-interleave root)))
-)
 
 ;stops walking at allowed depth
 (defn get-nodes-at-depth

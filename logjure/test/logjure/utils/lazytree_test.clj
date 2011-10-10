@@ -3,6 +3,7 @@
     logjure.utils.treenode
     logjure.utils.lazytree
     logjure.utils.treeseq
+    logjure.utils.treestream
     logjure.utils.testing 
     clojure.contrib.test-is
     )
