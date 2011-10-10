@@ -13,6 +13,34 @@
   (node-get-value [node] (:value node))
   )
 
+(defn create-tree
+  "Creates new tree.
+get-children-values [parent-value] drives creation of the children nodes."
+  [root-value get-children-values]
+  (letfn [
+          (node-is-leaf 
+            [node] 
+            (empty? (node-get-children node)))
+          (node-get-children 
+            [node] 
+            (let [parent-value (node-get-value node)] 
+              (map 
+                (fn [child-value] (TreeNodeX. child-value node-is-leaf node-get-children)) 
+                (get-children-values parent-value))))] 
+         (TreeNodeX. root-value node-is-leaf node-get-children))
+  )
+
+(defn create-infinite-tree
+  "Creates infinite tree with each node having infinite children."
+  []
+  (create-tree
+    [1]
+    (fn [parent-value] 
+      (map 
+        (fn [n] (conj parent-value n)) 
+        (iterate inc 1)))) 
+  )
+
 (defn seq-tree
   "Creates tree from sequence."
   [s is-leaf get-children]
@@ -100,22 +128,6 @@ transform-node [new-parent-node new-node] has access to both parent and node.
             [node] 
             (nil? (node-get-children node)))] 
          (TreeNodeX. value node-is-leaf node-get-children))
-  )
-
-(defn create-infinite-tree
-  "Creates infinite tree with each node having infinite children."
-  []
-  (letfn [
-          (node-is-leaf 
-            [node] 
-            false)
-          (node-get-children 
-            [node] 
-            (let [parent-vector (node-get-value node)] 
-              (map 
-                (fn [n] (TreeNodeX. (conj parent-vector n) node-is-leaf node-get-children)) 
-                (iterate inc 1))))] 
-         (TreeNodeX. [1] node-is-leaf node-get-children))
   )
 
 (defn tree-disjoin
