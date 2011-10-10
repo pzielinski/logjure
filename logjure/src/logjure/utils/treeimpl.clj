@@ -47,6 +47,7 @@
   [the-seq is-leaf get-children]
   (create-tree
     the-seq
-    (get-children s))
+    (fn [s] 
+      (get-children s)))
   ) 
 
