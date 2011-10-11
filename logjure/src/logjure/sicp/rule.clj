@@ -103,30 +103,67 @@ by the equal? clause of unify-match."
       (extend-frame the-var the-val frame)))
   )
 
+(defn- unify-match-seq
+  ([pat dat frame]
+    (unify-match-seq (tree-seq-multi-depth pat dat) frame))
+  ([s frame]
+    (when (seq s)
+      (let [[n1 n2] (first s)]
+        (if (variable? n1)
+          ;n1 is variable
+          (if-let [n1-var-value (get-value-in-frame n1 frame)]
+            ;there is a value for n1 variable in frame
+            (cons
+              [n1 n2 frame]
+              (lazy-seq
+                (unify-match-seq 
+                  (concat (tree-seq-multi-depth n1-var-value n2) (rest s))
+                  frame)))
+            ;NO value for n1 variable in frame
+            (let [new-frame (extend-frame n1 n2 frame)]
+              (cons
+                [n1 n2 new-frame]
+                (lazy-seq
+                  (unify-match-seq (rest s) new-frame))
+                )))
+          ;n1 is not a variable - check if n2 is variable
+          (if (variable? n2)
+            ;n2 is variable (n1 is not a variable)
+            (if-let [n2-var-value (get-value-in-frame n2 frame)]
+              ;there is a value for n2 variable in frame
+              (cons
+                [n1 n2 frame]
+                (lazy-seq
+                  (unify-match-seq 
+                    (concat (tree-seq-multi-depth n1 n2-var-value) (rest s))
+                    frame)))
+              ;NO value for n2 variable in frame (n1 is not a variable): extend frame for n2 var with n1 value
+              (let [new-frame (extend-frame n2 n1 frame)]
+                (cons
+                  [n1 n2 new-frame]
+                  (lazy-seq
+                    (unify-match-seq (rest s) new-frame))
+                  )))
+            ;n2 is not a variable (n1 is not a variable)
+            (cons
+              [n1 n2 frame]
+              (lazy-seq
+                (unify-match-seq (rest s) frame))))
+          ))))
+  )  
+
 (defn unify-match
   "The unification algorithm is implemented as a procedure that takes as inputs two patterns and a frame and returns
 either the extended frame or the symbol failed. The unifier is like the pattern matcher except that it is symmetrical
 -- variables are allowed on both sides of the match. Unify-match is basically the same as pattern-match, except
 that there is extra code (marked ``***'' below) to handle the case where the object on the right side of the match is a
 variable."
-  [p1 p2 frame]
-  (cond 
-    (eq? frame 'failed) 
-    'failed
-    (equal? p1 p2) 
-    frame
-    (var? p1) 
-    (extend-if-possible p1 p2 frame)
-    (var? p2) 
-    (extend-if-possible p2 p1 frame) ; ***
-    (and (seq? p1) (seq? p2))
-    (unify-match (second p1)
-                 (second p2)
-                 (unify-match (first p1);RECUR!!!!!!!!!!!!!!!
-                              (first p2)
-                              frame))
-    :else 'failed
-    )
+  ([p1 p2 frame]
+    (let [s (unify-match-seq p1 p2 frame)
+          nomatch? (fn nomatch? [[n1 n2 _]] (and (is-leaf n1) (not (variable? n1)) (not (equal? n1 n2))))]
+      (if (some nomatch? s)
+        'failed
+        (get (last s) 2))))
   )
 
 (defn rename-variables-in
