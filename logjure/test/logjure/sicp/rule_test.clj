@@ -33,7 +33,7 @@
     ;list & double list binding in frame
     (is (= true (depends-on? '((((?y)))) '?x (extend-frame '?y '((?z)) (extend-frame '?z '(?x) (make-empty-frame))))))
     ;deep nested
-    (is (= true (depends-on? (deeply-nested 100 '?x) '?x (make-empty-frame))))
+    (is (= true (depends-on? (deeply-nested 10000 '?x) '?x (make-empty-frame))))
   )
 
 (run-tests)

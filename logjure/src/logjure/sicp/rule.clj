@@ -1,5 +1,7 @@
 (ns logjure.sicp.rule
   (:use 
+    logjure.utils.treenode
+    logjure.utils.treeseq
     logjure.sicp.table
     logjure.sicp.syntax
     logjure.sicp.frame
@@ -19,26 +21,50 @@
   (symbol (str variable rule-application-id))
   )
 
+(defn depends-on-seq
+  ([exp the-var frame]
+    (depends-on-seq (tree-seq-depth exp) exp the-var frame))
+  ([the-seq exp the-var frame]
+    (when (seq the-seq)
+      (if-let [e (first the-seq)]
+        (if (variable? e)
+          ;e is variable
+          (if (equal? the-var e)
+            (cons
+              [e true frame]
+              (lazy-seq
+                (depends-on-seq (rest the-seq) exp the-var frame)))
+            (if-let [value (get-value-in-frame e frame)]
+              ;there is a value for e variable in frame
+              (cons
+                [e false frame]
+                (lazy-seq
+                  (depends-on-seq 
+                    (concat (tree-seq-depth value) (rest the-seq))
+                    exp
+                    the-var
+                    frame)))
+              ;NO value for e variable in frame
+              (cons
+                [e false frame]
+                (lazy-seq
+                  (depends-on-seq (rest the-seq) exp the-var frame))
+                )))
+          ;e is not a variable
+          (cons
+            [e false frame]
+            (lazy-seq
+              (depends-on-seq (rest the-seq) exp the-var frame)))
+          ))))
+  )  
+
 (defn depends-on?
   "Depends-on? is a predicate that tests whether an expression proposed to be the value of a pattern variable depends
 on the variable. This must be done relative to the current frame because the expression may contain occurrences of
 a variable that already has a value that depends on our test variable. The structure of depends-on? is a simple
 recursive tree walk in which we substitute for the values of variables whenever necessary."
   [exp the-var frame]
-  (letfn 
-    [(tree-walk 
-       [e]
-       (cond 
-         (variable? e)
-         (if (equal? the-var e)
-           true
-           (if-let [value (get-value-in-frame e frame)]
-             (tree-walk value)
-             false))
-         (seq? e)
-         (or (tree-walk (first e)) (tree-walk (second e)))
-         :else false))]
-    (tree-walk exp))
+  (if (some (fn [[_ depends-on _]] depends-on) (depends-on-seq exp the-var frame)) true false)
   )
 
 (declare unify-match)

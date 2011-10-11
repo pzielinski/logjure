@@ -48,22 +48,21 @@ and we never store more than one binding for a given variable."
       (let [[n1 n2] (first s)]
         (if (variable? n1)
           ;n1 is variable
-          (let [n1-var-value (get-value-in-frame n1 frame)]
-            (if n1-var-value
-              ;there is a value for n1 variable in frame
+          (if-let [n1-var-value (get-value-in-frame n1 frame)]
+            ;there is a value for n1 variable in frame
+            (cons
+              [n1 n2 frame]
+              (lazy-seq
+                (build-frames-seq 
+                  (concat (tree-seq-multi-depth n1-var-value n2) (rest s))
+                  frame)))
+            ;NO value for n1 variable in frame
+            (let [new-frame (extend-frame n1 n2 frame)]
               (cons
-                [n1 n2 frame]
+                [n1 n2 new-frame]
                 (lazy-seq
-                  (build-frames-seq 
-                    (concat (tree-seq-multi-depth n1-var-value n2) (rest s))
-                    frame)))
-              ;NO value for n1 variable in frame
-              (let [new-frame (extend-frame n1 n2 frame)]
-                (cons
-                  [n1 n2 new-frame]
-                  (lazy-seq
-                    (build-frames-seq (rest s) new-frame))
-                  ))))
+                  (build-frames-seq (rest s) new-frame))
+                )))
           ;n1 is not a variable
           (cons
             [n1 n2 frame]
