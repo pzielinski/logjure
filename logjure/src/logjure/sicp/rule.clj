@@ -68,6 +68,8 @@ recursive tree walk in which we substitute for the values of variables whenever 
   )
 
 (defn- unify-match-seq
+  "Using tree-seq-multi-depth only quarantees that pat & dat can not both be a sequences. 
+It is possible that one of pat or dat can still be a sequence."
   ([pat dat frame]
     ;already failed - stop
     (if (or (equal? frame 'failed) (not pat) (not dat))
@@ -111,14 +113,18 @@ recursive tree walk in which we substitute for the values of variables whenever 
                     (concat (tree-seq-multi-depth n1 n2-var-value) (rest s))
                     frame)))
               ;NO value for n2 variable in frame (n1 is not a variable): extend frame for n2 var with n1 value
-              ;no need to do depends-on? check because n1 is not a variable (and of course is also not a seq)
-              (let [new-frame (extend-frame n2 n1 frame)]
-                (cons
-                  ;lets put n2 variable first and n1 value second, so that nomatch? fn in unify-match works
-                  [n2 n1 new-frame] 
-                  (lazy-seq
-                    (unify-match-seq (rest s) new-frame))
-                  )))
+              ;n1 can still be an expression (not a variable) that depends on n2, hence depends-on? check
+              (if (depends-on? n1 n2 frame)
+                ;n1 expr depends on n2 variable - stop & FAIL the whole thing
+                (list [n1 n2 'fail])
+                ;n1 expr does not depend on n2 variable - can safely extend frame
+                (let [new-frame (extend-frame n2 n1 frame)]
+                  (cons
+                    ;lets put n2 variable first and n1 value second, so that nomatch? fn in unify-match works
+                    [n2 n1 new-frame] 
+                    (lazy-seq
+                      (unify-match-seq (rest s) new-frame))
+                    ))))
             ;n2 is not a variable (n1 is not a variable)
             (cons
               [n1 n2 frame]
