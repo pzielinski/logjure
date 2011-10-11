@@ -69,40 +69,6 @@ recursive tree walk in which we substitute for the values of variables whenever 
 
 (declare unify-match)
 
-(defn extend-if-possible
-  "In unification, as in one-sided pattern matching, we want to accept a proposed extension of the frame only if it is
-consistent with existing bindings. The procedure extend-if-possible used in unification is the same as the
-extend-if-consistent used in pattern matching except for two special checks, marked ``***'' in the program
-below. In the first case, if the variable we are trying to match is not bound, but the value we are trying to match it
-with is itself a (different) variable, it is necessary to check to see if the value is bound, and if so, to match its value.
-If both parties to the match are unbound, we may bind either to the other.
-The second check deals with attempts to bind a variable to a pattern that includes that variable. Such a situation can
-occur whenever a variable is repeated in both patterns. Consider, for example, unifying the two patterns (?x ?x)
-and (?y <expression involving ?y>) in a frame where both ?x and ?y are unbound. First ?x is matched against
-?y, making a binding of ?x to ?y. Next, the same ?x is matched against the given expression involving ?y. Since ?x
-is already bound to ?y, this results in matching ?y against the expression. If we think of the unifier as finding a set
-of values for the pattern variables that make the patterns the same, then these patterns imply instructions to find a ?
-y such that ?y is equal to the expression involving ?y. There is no general method for solving such equations, so we
-reject such bindings; these cases are recognized by the predicate depends-on?.80 On the other hand, we do not want
-to reject attempts to bind a variable to itself. For example, consider unifying (?x ?x) and (?y ?y). The second
-attempt to bind ?x to ?y matches ?y (the stored value of ?x) against ?y (the new value of ?x). This is taken care of
-by the equal? clause of unify-match."
-  [the-var the-val frame]
-  (let [var-value (get-value-in-frame the-var frame)]
-    (cond 
-      var-value
-      (unify-match var-value the-val frame);TRAMPOLINE/RECUR!!!!!!!!!!!!!!!
-      (variable? the-val) ; ***
-      (let [val-value (get-value-in-frame the-val frame)]
-        (if val-value
-          (unify-match the-var val-value frame);TRAMPOLINE/RECUR!!!!!!!!!!!!!!!
-          (extend-frame the-var the-val frame)))
-      (depends-on? the-val the-var frame) ; ***
-      'failed
-      :else 
-      (extend-frame the-var the-val frame)))
-  )
-
 (defn- unify-match-seq
   ([pat dat frame]
     (unify-match-seq (tree-seq-multi-depth pat dat) frame))
@@ -120,12 +86,18 @@ by the equal? clause of unify-match."
                   (concat (tree-seq-multi-depth n1-var-value n2) (rest s))
                   frame)))
             ;NO value for n1 variable in frame
-            (let [new-frame (extend-frame n1 n2 frame)]
-              (cons
-                [n1 n2 new-frame]
-                (lazy-seq
-                  (unify-match-seq (rest s) new-frame))
-                )))
+            ;n2 can still be a variable that depends on n1, hence depends-on? check
+            (if (depends-on? n2 n1 frame)
+              ;n2 expr depends on n1 variable - stop & FAIL the whole thing
+              (list [n1 n2 'fail])
+              ;n2 expr does not depend on n1 variable - can safely extend frame
+              (let [new-frame (extend-frame n1 n2 frame)]
+                (cons
+                  [n1 n2 new-frame]
+                  (lazy-seq
+                    (unify-match-seq (rest s) new-frame))
+                  ))
+              ))
           ;n1 is not a variable - check if n2 is variable
           (if (variable? n2)
             ;n2 is variable (n1 is not a variable)
@@ -138,6 +110,7 @@ by the equal? clause of unify-match."
                     (concat (tree-seq-multi-depth n1 n2-var-value) (rest s))
                     frame)))
               ;NO value for n2 variable in frame (n1 is not a variable): extend frame for n2 var with n1 value
+              ;no need to do depends-on? check because n1 is not a variable (and of course is also not a seq)
               (let [new-frame (extend-frame n2 n1 frame)]
                 (cons
                   [n1 n2 new-frame]
@@ -157,13 +130,37 @@ by the equal? clause of unify-match."
 either the extended frame or the symbol failed. The unifier is like the pattern matcher except that it is symmetrical
 -- variables are allowed on both sides of the match. Unify-match is basically the same as pattern-match, except
 that there is extra code (marked ``***'' below) to handle the case where the object on the right side of the match is a
-variable."
+variable.
+  In unification, as in one-sided pattern matching, we want to accept a proposed extension of the frame only if it is
+consistent with existing bindings. The procedure extend-if-possible used in unification is the same as the
+extend-if-consistent used in pattern matching except for two special checks, marked ``***'' in the program
+below. In the first case, if the variable we are trying to match is not bound, but the value we are trying to match it
+with is itself a (different) variable, it is necessary to check to see if the value is bound, and if so, to match its value.
+If both parties to the match are unbound, we may bind either to the other.
+The second check deals with attempts to bind a variable to a pattern that includes that variable. Such a situation can
+occur whenever a variable is repeated in both patterns. Consider, for example, unifying the two patterns (?x ?x)
+and (?y <expression involving ?y>) in a frame where both ?x and ?y are unbound. First ?x is matched against
+?y, making a binding of ?x to ?y. Next, the same ?x is matched against the given expression involving ?y. Since ?x
+is already bound to ?y, this results in matching ?y against the expression. If we think of the unifier as finding a set
+of values for the pattern variables that make the patterns the same, then these patterns imply instructions to find a ?
+y such that ?y is equal to the expression involving ?y. There is no general method for solving such equations, so we
+reject such bindings; these cases are recognized by the predicate depends-on?.80 On the other hand, we do not want
+to reject attempts to bind a variable to itself. For example, consider unifying (?x ?x) and (?y ?y). The second
+attempt to bind ?x to ?y matches ?y (the stored value of ?x) against ?y (the new value of ?x). This is taken care of
+by the equal? clause of unify-match."
   ([p1 p2 frame]
-    (let [s (unify-match-seq p1 p2 frame)
-          nomatch? (fn nomatch? [[n1 n2 _]] (and (is-leaf n1) (not (variable? n1)) (not (equal? n1 n2))))]
-      (if (some nomatch? s)
-        'failed
-        (get (last s) 2))))
+    (letfn 
+      [(nomatch? 
+         [[n1 n2 _]] 
+         (and (is-leaf n1) (not (variable? n1)) (not (equal? n1 n2))))
+       ;frame can be 'failed if depends-on? failed
+       (failed? 
+         [[_ _ frame]] 
+         (= frame 'failed))]
+      (let [s (unify-match-seq p1 p2 frame)]
+        (if (some (or nomatch? failed?) s)
+          'failed
+          (get (last s) 2)))))
   )
 
 (defn rename-variables-in
