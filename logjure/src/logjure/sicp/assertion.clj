@@ -70,11 +70,14 @@ This leads us to match (f ?y) against the proposed new value (f b) in the same f
 extends the frame by adding a binding of ?y to b. ?X remains bound to (f ?y). We never modify a stored binding
 and we never store more than one binding for a given variable."
   ([pat dat frame]
-    (let [s (pattern-match-seq pat dat frame)
-          nomatch? (fn nomatch? [[n1 n2 _]] (and (is-leaf n1) (not (variable? n1)) (not (equal? n1 n2))))]
-      (if (some nomatch? s)
-        'failed
-        (get (last s) 2))))
+    ;already failed - stop
+    (if (equal? frame 'failed)
+      'failed
+      (let [s (pattern-match-seq pat dat frame)
+            nomatch? (fn nomatch? [[n1 n2 _]] (and (is-leaf n1) (not (variable? n1)) (not (equal? n1 n2))))]
+        (if (some nomatch? s)
+          'failed
+          (get (last s) 2)))))
   )
 
 (defn check-an-assertion
