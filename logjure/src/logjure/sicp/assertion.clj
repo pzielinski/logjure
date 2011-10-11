@@ -71,7 +71,7 @@ extends the frame by adding a binding of ?y to b. ?X remains bound to (f ?y). We
 and we never store more than one binding for a given variable."
   ([pat dat frame]
     ;already failed - stop
-    (if (equal? frame 'failed)
+    (if (or (equal? frame 'failed) (not pat) (not dat))
       'failed
       (let [s (pattern-match-seq pat dat frame)
             nomatch? (fn nomatch? [[n1 n2 _]] (and (is-leaf n1) (not (variable? n1)) (not (equal? n1 n2))))]

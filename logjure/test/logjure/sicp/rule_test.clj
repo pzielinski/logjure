@@ -41,11 +41,21 @@
   (is (= 'failed (unify-match nil nil 'failed) ))
   (is (= 'failed (unify-match nil :x 'failed) ))
   (is (= 'failed (unify-match :x nil 'failed) ))
+  (is (= 'failed (unify-match '?x nil 'failed) ))
+  (is (= 'failed (unify-match nil '?x 'failed) ))
+  (is (= 'failed (unify-match '?x :a 'failed) ))
+  (is (= 'failed (unify-match :a '?x 'failed) ))
+  (is (= 'failed (unify-match '?x '?x 'failed) ))
+  (is (= 'failed (unify-match '?x '?y 'failed) ))
 )
 
 ;initial frame is empty
 (deftest test-unify-match-when-frame-empty
-  (is (= (make-empty-frame) (unify-match nil nil (make-empty-frame)) ))
+  (is (= 'failed (unify-match nil nil (make-empty-frame)) ))
+  (is (= 'failed (unify-match nil :x (make-empty-frame)) ))
+  (is (= 'failed (unify-match :x nil (make-empty-frame)) ))
+  (is (= 'failed (unify-match '?x nil (make-empty-frame)) ))
+  (is (= 'failed (unify-match nil '?x (make-empty-frame)) ))
   (is (= (make-empty-frame) (unify-match :x :x (make-empty-frame)) ))
   (is (= :x (get-value-in-frame '?x (unify-match '?x :x (make-empty-frame)))))
 )

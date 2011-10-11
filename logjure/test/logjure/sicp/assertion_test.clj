@@ -19,11 +19,21 @@
   (is (= 'failed (pattern-match nil nil 'failed) ))
   (is (= 'failed (pattern-match nil :x 'failed) ))
   (is (= 'failed (pattern-match :x nil 'failed) ))
+  (is (= 'failed (pattern-match '?x nil 'failed) ))
+  (is (= 'failed (pattern-match nil '?x 'failed) ))
+  (is (= 'failed (pattern-match '?x :a 'failed) ))
+  (is (= 'failed (pattern-match :a '?x 'failed) ))
+  (is (= 'failed (pattern-match '?x '?x 'failed) ))
+  (is (= 'failed (pattern-match '?x '?y 'failed) ))
 )
 
 ;initial frame is empty
 (deftest test-pattern-match-when-frame-empty
-  (is (= (make-empty-frame) (pattern-match nil nil (make-empty-frame)) ))
+  (is (= 'failed (pattern-match nil nil (make-empty-frame)) ))
+  (is (= 'failed (pattern-match nil :x (make-empty-frame)) ))
+  (is (= 'failed (pattern-match :x nil (make-empty-frame)) ))
+  (is (= 'failed (pattern-match '?x nil (make-empty-frame)) ))
+  (is (= 'failed (pattern-match nil '?x (make-empty-frame)) ))
   (is (= (make-empty-frame) (pattern-match :x :x (make-empty-frame)) ))
   (is (= :x (get-value-in-frame '?x (pattern-match '?x :x (make-empty-frame)))))
 )

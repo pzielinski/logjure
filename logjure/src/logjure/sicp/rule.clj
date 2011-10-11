@@ -67,11 +67,12 @@ recursive tree walk in which we substitute for the values of variables whenever 
   (if (some (fn [[_ depends-on _]] depends-on) (depends-on-seq exp the-var frame)) true false)
   )
 
-(declare unify-match)
-
 (defn- unify-match-seq
   ([pat dat frame]
-    (unify-match-seq (tree-seq-multi-depth pat dat) frame))
+    ;already failed - stop
+    (if (or (equal? frame 'failed) (not pat) (not dat))
+      (list [pat dat 'failed])
+      (unify-match-seq (tree-seq-multi-depth pat dat) frame)))
   ([s frame]
     (when (seq s)
       (let [[n1 n2] (first s)]
