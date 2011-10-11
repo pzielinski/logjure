@@ -12,6 +12,8 @@
     )
   )
 
+(refer-private 'logjure.sicp.assertion)
+
 ;initial frame is 'failed
 (deftest test-pattern-match-when-frame-failed
   (is (= 'failed (pattern-match nil nil 'failed) ))

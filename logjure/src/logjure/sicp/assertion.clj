@@ -14,7 +14,38 @@
 ;---------------------------------------------------------------------------------------------------
 ; MATCH ASSERTIONS
 
-(comment
+(defn- pattern-match-seq
+  ([pat dat frame]
+    (pattern-match-seq (tree-seq-multi-depth pat dat) frame))
+  ([s frame]
+    (when (seq s)
+      (let [[n1 n2] (first s)]
+        (if (variable? n1)
+          ;n1 is variable
+          (if-let [n1-var-value (get-value-in-frame n1 frame)]
+            ;there is a value for n1 variable in frame
+            (cons
+              [n1 n2 frame]
+              (lazy-seq
+                (pattern-match-seq 
+                  (concat (tree-seq-multi-depth n1-var-value n2) (rest s))
+                  frame)))
+            ;NO value for n1 variable in frame
+            (let [new-frame (extend-frame n1 n2 frame)]
+              (cons
+                [n1 n2 new-frame]
+                (lazy-seq
+                  (pattern-match-seq (rest s) new-frame))
+                )))
+          ;n1 is not a variable
+          (cons
+            [n1 n2 frame]
+            (lazy-seq
+              (pattern-match-seq (rest s) frame)))
+          ))))
+  )  
+
+(defn pattern-match
   "The basic pattern matcher returns either the symbol failed or an extension of the given frame. The basic idea of
 the matcher is to check the pattern against the data, element by element, accumulating bindings for the pattern
 variables. If the pattern and the data object are the same, the match succeeds and we return the frame of bindings
@@ -38,42 +69,8 @@ and we wish to augment this frame by a binding of ?x to (f b). We look up ?x and
 This leads us to match (f ?y) against the proposed new value (f b) in the same frame. Eventually this match
 extends the frame by adding a binding of ?y to b. ?X remains bound to (f ?y). We never modify a stored binding
 and we never store more than one binding for a given variable."
-  )
-
-(defn build-frames-seq
   ([pat dat frame]
-    (build-frames-seq (tree-seq-multi-depth pat dat) frame))
-  ([s frame]
-    (when (seq s)
-      (let [[n1 n2] (first s)]
-        (if (variable? n1)
-          ;n1 is variable
-          (if-let [n1-var-value (get-value-in-frame n1 frame)]
-            ;there is a value for n1 variable in frame
-            (cons
-              [n1 n2 frame]
-              (lazy-seq
-                (build-frames-seq 
-                  (concat (tree-seq-multi-depth n1-var-value n2) (rest s))
-                  frame)))
-            ;NO value for n1 variable in frame
-            (let [new-frame (extend-frame n1 n2 frame)]
-              (cons
-                [n1 n2 new-frame]
-                (lazy-seq
-                  (build-frames-seq (rest s) new-frame))
-                )))
-          ;n1 is not a variable
-          (cons
-            [n1 n2 frame]
-            (lazy-seq
-              (build-frames-seq (rest s) frame)))
-          ))))
-  )  
-
-(defn pattern-match
-  ([pat dat frame]
-    (let [s (build-frames-seq pat dat frame)
+    (let [s (pattern-match-seq pat dat frame)
           nomatch? (fn nomatch? [[n1 n2 _]] (and (is-leaf n1) (not (variable? n1)) (not (equal? n1 n2))))]
       (if (some nomatch? s)
         'failed

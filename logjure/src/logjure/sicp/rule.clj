@@ -21,7 +21,7 @@
   (symbol (str variable rule-application-id))
   )
 
-(defn depends-on-seq
+(defn- depends-on-seq
   ([exp the-var frame]
     (depends-on-seq (tree-seq-depth exp) exp the-var frame))
   ([the-seq exp the-var frame]

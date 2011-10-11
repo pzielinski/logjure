@@ -1,6 +1,4 @@
-(ns logjure.sicp.rule-test)
-
-(ns logjure.sicp.assertion-test
+(ns logjure.sicp.rule-test
   (:use 
     logjure.sicp.syntax
     logjure.sicp.table
@@ -12,6 +10,8 @@
     clojure.contrib.test-is
     )
   )
+
+(refer-private 'logjure.sicp.rule)
 
 (deftest test-depends-on? ;[expr var frame]
     ;emtpy frame
