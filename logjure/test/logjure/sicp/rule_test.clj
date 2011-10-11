@@ -58,6 +58,7 @@
   (is (= 'failed (unify-match nil '?x (make-empty-frame)) ))
   (is (= (make-empty-frame) (unify-match :x :x (make-empty-frame)) ))
   (is (= :x (get-value-in-frame '?x (unify-match '?x :x (make-empty-frame)))))
+  (is (= :x (get-value-in-frame '?x (unify-match :x '?x (make-empty-frame)))))
 )
 
 ;initial frame is not empty

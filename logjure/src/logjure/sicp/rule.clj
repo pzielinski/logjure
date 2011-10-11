@@ -114,7 +114,8 @@ recursive tree walk in which we substitute for the values of variables whenever 
               ;no need to do depends-on? check because n1 is not a variable (and of course is also not a seq)
               (let [new-frame (extend-frame n2 n1 frame)]
                 (cons
-                  [n1 n2 new-frame]
+                  ;lets put n2 variable first and n1 value second, so that nomatch? fn in unify-match works
+                  [n2 n1 new-frame] 
                   (lazy-seq
                     (unify-match-seq (rest s) new-frame))
                   )))
