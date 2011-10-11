@@ -1,5 +1,6 @@
 (ns logjure.sicp.assertion
   (:use 
+    logjure.utils.treenode
     logjure.utils.treeseq
     logjure.sicp.pair
     logjure.sicp.stream
@@ -13,7 +14,7 @@
 ;---------------------------------------------------------------------------------------------------
 ; MATCH ASSERTIONS
 
-(defn pattern-match-1
+(comment
   "The basic pattern matcher returns either the symbol failed or an extension of the given frame. The basic idea of
 the matcher is to check the pattern against the data, element by element, accumulating bindings for the pattern
 variables. If the pattern and the data object are the same, the match succeeds and we return the frame of bindings
@@ -37,27 +38,6 @@ and we wish to augment this frame by a binding of ?x to (f b). We look up ?x and
 This leads us to match (f ?y) against the proposed new value (f b) in the same frame. Eventually this match
 extends the frame by adding a binding of ?y to b. ?X remains bound to (f ?y). We never modify a stored binding
 and we never store more than one binding for a given variable."
-  [pat dat frame]
-  (cond (eq? frame 'failed) 
-        'failed
-        (equal? pat dat) 
-        frame
-        (variable? pat) 
-        (let [variable pat
-              value (get-value-in-frame variable frame)]
-          (if value
-            (pattern-match-1 value dat frame);NEED RECUR !!!!!!!!!!!!!
-            (extend-frame variable dat frame)))
-        (and (seq? pat) (seq? dat))
-        (pattern-match-1 (rest pat)
-                       (rest dat)
-                       (pattern-match-1 (first pat);NEED RECUR !!!!!!!!!!!!! will not work
-                                      (first dat)
-                                      frame))
-        :else 
-        'failed)
-  ;DOES NOT COVER CASE WHEN DAT IS VARIABLE
-  ;what about the case when dat is variable and pat is datum? is it possible?
   )
 
 (defn build-frames-seq
@@ -92,18 +72,13 @@ and we never store more than one binding for a given variable."
           ))))
   )  
 
-(defn pattern-match-seq
+(defn pattern-match
   ([pat dat frame]
     (let [s (build-frames-seq pat dat frame)
           nomatch? (fn nomatch? [[n1 n2 _]] (and (is-leaf n1) (not (variable? n1)) (not (equal? n1 n2))))]
       (if (some nomatch? s)
         'failed
         (get (last s) 2))))
-  )
-
-(defn pattern-match
-  [pat dat frame]
-  (pattern-match-seq pat dat frame)
   )
 
 (defn check-an-assertion
