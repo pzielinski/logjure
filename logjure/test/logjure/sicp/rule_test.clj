@@ -45,8 +45,15 @@
   (is (= 'failed (unify-match nil '?x 'failed) ))
   (is (= 'failed (unify-match '?x :a 'failed) ))
   (is (= 'failed (unify-match :a '?x 'failed) ))
+  (is (= 'failed (unify-match '?x '(:a) 'failed) ))
+  (is (= 'failed (unify-match '(:a) '?x 'failed) ))
   (is (= 'failed (unify-match '?x '?x 'failed) ))
+  (is (= 'failed (unify-match '?x '(?x) 'failed) ))
+  (is (= 'failed (unify-match '(?x) '?x 'failed) ))
   (is (= 'failed (unify-match '?x '?y 'failed) ))
+  (is (= 'failed (unify-match '?x '(?y) 'failed) ))
+  (is (= 'failed (unify-match '(?x) '?y 'failed) ))
+  (is (= 'failed (unify-match '(?x) '(?y) 'failed) ))
 )
 
 ;initial frame is empty
@@ -56,9 +63,12 @@
   (is (= 'failed (unify-match :x nil (make-empty-frame)) ))
   (is (= 'failed (unify-match '?x nil (make-empty-frame)) ))
   (is (= 'failed (unify-match nil '?x (make-empty-frame)) ))
+  (is (= 'failed (unify-match '(?x) nil (make-empty-frame)) ))
+  (is (= 'failed (unify-match nil '(?x) (make-empty-frame)) ))
   (is (= (make-empty-frame) (unify-match :x :x (make-empty-frame)) ))
   (is (= :x (get-value-in-frame '?x (unify-match '?x :x (make-empty-frame)))))
   (is (= :x (get-value-in-frame '?x (unify-match :x '?x (make-empty-frame)))))
+  (is (= '(?y) (get-value-in-frame '?x (unify-match '?x '(?y) (make-empty-frame)))))
 )
 
 ;initial frame is not empty
