@@ -24,21 +24,21 @@
 on the variable. This must be done relative to the current frame because the expression may contain occurrences of
 a variable that already has a value that depends on our test variable. The structure of depends-on? is a simple
 recursive tree walk in which we substitute for the values of variables whenever necessary."
-  [exp var frame]
-  (letfn [(tree-walk 
-          [e]
-          (cond 
-            (variable? e)
-            (if (equal? var e)
-              true
-              (let [value (get-value-in-frame e frame)]
-                (if value
-                  (tree-walk value)
-                  false)))
-            (seq? e)
-            (or (tree-walk (first e)) (tree-walk (second e)))
-            :else false))]
-         (tree-walk exp))
+  [exp the-var frame]
+  (letfn 
+    [(tree-walk 
+       [e]
+       (cond 
+         (variable? e)
+         (if (equal? the-var e)
+           true
+           (if-let [value (get-value-in-frame e frame)]
+             (tree-walk value)
+             false))
+         (seq? e)
+         (or (tree-walk (first e)) (tree-walk (second e)))
+         :else false))]
+    (tree-walk exp))
   )
 
 (declare unify-match)
