@@ -43,11 +43,13 @@ get-children-values [parent-value] drives creation of the children nodes."
 
 (defn seq-tree
   "Creates tree from sequence."
-  [the-seq is-leaf get-children]
+  ([the-seq]
+  (seq-tree the-seq is-leaf get-children))
+  ([the-seq is-leaf get-children]
   (create-tree
     the-seq
     (fn [s] 
-      (get-children s)))
+      (get-children s))))
   ) 
 
 (defn tree-map

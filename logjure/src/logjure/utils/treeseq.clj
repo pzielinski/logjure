@@ -122,16 +122,11 @@
      (get-nodes-at-depth #(not (is-leaf %)) get-children root allowed-depth))
    )
 
-(defn seq-to-tree
-  [s]
-  (seq-tree s is-leaf get-children)
-  )
-
 (defn tree-seq-multi-depth
   "Walks two trees in lockstep."
   [root1 root2]
-  (let [root1x (if (satisfies? TreeNode root1) root1 (seq-to-tree root1))
-        root2x (if (satisfies? TreeNode root2) root2 (seq-to-tree root2))]
+  (let [root1x (if (satisfies? TreeNode root1) root1 (seq-tree root1))
+        root2x (if (satisfies? TreeNode root2) root2 (seq-tree root2))]
     (map
       #(:value %)
       (tree-seq-depth (tree-conjoin root1x root2x))))

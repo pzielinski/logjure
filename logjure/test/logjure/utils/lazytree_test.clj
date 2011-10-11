@@ -197,20 +197,20 @@
 
 (deftest test-tree-disjoin
   (let 
-    [t1 (seq-to-tree '())
-     t2 (seq-to-tree '())
+    [t1 (seq-tree '())
+     t2 (seq-tree '())
      t (tree-disjoin t1 t2)]
     (is (= '[() ()] (node-get-value t)))
     )
   (let 
-    [t1 (seq-to-tree :a)
-     t2 (seq-to-tree :b)
+    [t1 (seq-tree :a)
+     t2 (seq-tree :b)
      t (tree-disjoin t1 t2)]
     (is (= '[:a :b] (node-get-value t)))
     )
   (let 
-    [t1 (seq-to-tree '(:a))
-     t2 (seq-to-tree '(:b))
+    [t1 (seq-tree '(:a))
+     t2 (seq-tree '(:b))
      t (tree-disjoin t1 t2)
      s (map node-get-value (tree-seq-depth t))]
     (is (= '([(:a) (:b)] [:a :b]) s))
@@ -222,8 +222,8 @@
            (map node-get-value 
                 (tree-seq-depth 
                   (tree-disjoin 
-                    (seq-to-tree '(:a (:b))) 
-                    (seq-to-tree '(:A (:B))))))))
+                    (seq-tree '(:a (:b))) 
+                    (seq-tree '(:A (:B))))))))
     (is (= '( [(:a (:b) :c) (:A (:B))] 
               [:a :A] 
               [(:b) (:B)] 
@@ -232,8 +232,8 @@
            (map node-get-value 
                 (tree-seq-depth 
                   (tree-disjoin 
-                    (seq-to-tree '(:a (:b) :c)) 
-                    (seq-to-tree '(:A (:B))))))))
+                    (seq-tree '(:a (:b) :c)) 
+                    (seq-tree '(:A (:B))))))))
     (is (= '( [(:a1 (:a21) :a3 :a4) (:b1 (:b21 (:b221)) :b3)] 
               [:a1 :b1] 
               [(:a21) (:b21 (:b221))] 
@@ -245,8 +245,8 @@
            (map node-get-value 
                 (tree-seq-depth 
                   (tree-disjoin 
-                    (seq-to-tree '(:a1 (:a21) :a3 :a4)) 
-                    (seq-to-tree '(:b1 (:b21 (:b221)) :b3))
+                    (seq-tree '(:a1 (:a21) :a3 :a4)) 
+                    (seq-tree '(:b1 (:b21 (:b221)) :b3))
                     )))))
     (is (= '( [[1] [1]] 
               [[1 1] [1 1]] 
@@ -262,26 +262,26 @@
              (map node-get-value 
                   (tree-seq-depth 
                     (tree-disjoin 
-                      (seq-to-tree (deeply-nested 10000 '?x)) 
-                      (seq-to-tree (deeply-nested 10000 :x))))) 10000)))
+                      (seq-tree (deeply-nested 10000 '?x)) 
+                      (seq-tree (deeply-nested 10000 :x))))) 10000)))
   )
 
 (deftest test-tree-conjoin
   (let 
-    [t1 (seq-to-tree '())
-     t2 (seq-to-tree '())
+    [t1 (seq-tree '())
+     t2 (seq-tree '())
      t (tree-conjoin t1 t2)]
     (is (= '[() ()] (node-get-value t)))
     )
   (let 
-    [t1 (seq-to-tree :a)
-     t2 (seq-to-tree :b)
+    [t1 (seq-tree :a)
+     t2 (seq-tree :b)
      t (tree-conjoin t1 t2)]
     (is (= '[:a :b] (node-get-value t)))
     )
   (let 
-    [t1 (seq-to-tree '(:a))
-     t2 (seq-to-tree '(:b))
+    [t1 (seq-tree '(:a))
+     t2 (seq-tree '(:b))
      t (tree-conjoin t1 t2)
      s (map node-get-value (tree-seq-depth t))]
     (is (= '([(:a) (:b)] [:a :b]) s))
@@ -293,8 +293,8 @@
            (map node-get-value 
                 (tree-seq-depth 
                   (tree-conjoin 
-                    (seq-to-tree '(:a (:b))) 
-                    (seq-to-tree '(:A (:B))))))))
+                    (seq-tree '(:a (:b))) 
+                    (seq-tree '(:A (:B))))))))
     (is (= '( [(:a (:b) :c) (:A (:B))] 
               [:a :A] 
               [(:b) (:B)] 
@@ -302,8 +302,8 @@
            (map node-get-value 
                 (tree-seq-depth 
                   (tree-conjoin 
-                    (seq-to-tree '(:a (:b) :c)) 
-                    (seq-to-tree '(:A (:B))))))))
+                    (seq-tree '(:a (:b) :c)) 
+                    (seq-tree '(:A (:B))))))))
     (is (= '( [(:a1 (:a21) :a3 :a4) (:b1 (:b21 (:b221)) :b3)] 
               [:a1 :b1] 
               [(:a21) (:b21 (:b221))] 
@@ -313,8 +313,8 @@
            (map node-get-value 
                 (tree-seq-depth 
                   (tree-conjoin 
-                    (seq-to-tree '(:a1 (:a21) :a3 :a4)) 
-                    (seq-to-tree '(:b1 (:b21 (:b221)) :b3))
+                    (seq-tree '(:a1 (:a21) :a3 :a4)) 
+                    (seq-tree '(:b1 (:b21 (:b221)) :b3))
                     )))))
     (is (= '( [[1] [1]] 
               [[1 1] [1 1]] 
@@ -330,8 +330,8 @@
              (map node-get-value 
                   (tree-seq-depth 
                     (tree-conjoin 
-                      (seq-to-tree (deeply-nested 10000 '?x)) 
-                      (seq-to-tree (deeply-nested 10000 :x))))) 10000)))
+                      (seq-tree (deeply-nested 10000 '?x)) 
+                      (seq-tree (deeply-nested 10000 :x))))) 10000)))
   )
 
 (run-tests)
