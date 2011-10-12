@@ -1,4 +1,9 @@
 (ns logjure.sicp.syntax
+  (:use 
+    logjure.utils.treenode
+    logjure.utils.treeseq
+    logjure.utils.sequtil
+    )
   )
 
 (defn display [& more]
@@ -14,7 +19,7 @@
   )
 
 (defn equal? [list1 list2]
-  (= list1 list2)
+  (deep-equal? list1 list2)
   )
 
 (defn null? [x]
