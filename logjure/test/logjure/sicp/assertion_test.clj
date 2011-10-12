@@ -46,6 +46,7 @@
   (is (= (make-empty-frame) (pattern-match :x :x (make-empty-frame)) ))
   (is (= :x (get-value-in-frame '?x (pattern-match '?x :x (make-empty-frame)))))
   (is (= '(:x) (get-value-in-frame '?x (pattern-match '?x '(:x) (make-empty-frame)))))
+  (is (= 'failed (pattern-match '(?x) :x (make-empty-frame))))
 )
 
 ;initial frame is not empty
