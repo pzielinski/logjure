@@ -131,8 +131,8 @@ transform-node [new-parent-node new-node] has access to both parent and node.
 all branches from both trees are covered. 
 Each new node value is sequence of argument tree node values, nil is used if no node in argument tree.
 TODO: use special symbol for no node instead of nil.
-"
-  ([root1 root2]
+Guarantees that all returned nodes are leaves."
+  ([root1 root2 not-found]
   (letfn 
     [(node-is-leaf-x 
        [node1 node2] 
@@ -140,12 +140,12 @@ TODO: use special symbol for no node instead of nil.
      (node-get-children-x
        [node1 node2]
        (take-while
-         (fn [n] (let [[val1 val2] (node-get-value n)] (or val1 val2)))
+         (fn [n] (let [[val1 val2] (node-get-value n)] (or (not (= val1 not-found)) (not (= val2 not-found)))))
          (map 
            (fn 
              [n1 n2]
              (TreeNodeX. 
-               (vector (if n1 (node-get-value n1) nil) (if n2 (node-get-value n2) nil))
+               (vector (if n1 (node-get-value n1) not-found) (if n2 (node-get-value n2) not-found))
                (fn [n] (node-is-leaf-x n1 n2)) 
                (fn [n] (node-get-children-x n1 n2)))
              )
@@ -166,7 +166,7 @@ TODO: use special symbol for no node instead of nil.
   "Creates new tree with structure that is overlay of argument trees, 
 only matching branches from both trees are covered. 
 Each new node value is sequence of argument tree node values.
-"
+Some nodes may not be leaves."
   ([root1 root2]
   (letfn 
     [(node-is-leaf-x 

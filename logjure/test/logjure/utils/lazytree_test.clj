@@ -199,19 +199,19 @@
   (let 
     [t1 (seq-tree '())
      t2 (seq-tree '())
-     t (tree-disjoin t1 t2)]
+     t (tree-disjoin t1 t2 :not-found)]
     (is (= '[() ()] (node-get-value t)))
     )
   (let 
     [t1 (seq-tree :a)
      t2 (seq-tree :b)
-     t (tree-disjoin t1 t2)]
+     t (tree-disjoin t1 t2 :not-found)]
     (is (= '[:a :b] (node-get-value t)))
     )
   (let 
     [t1 (seq-tree '(:a))
      t2 (seq-tree '(:b))
-     t (tree-disjoin t1 t2)
+     t (tree-disjoin t1 t2 :not-found)
      s (map node-get-value (tree-seq-depth t))]
     (is (= '([(:a) (:b)] [:a :b]) s))
     )
@@ -223,31 +223,33 @@
                 (tree-seq-depth 
                   (tree-disjoin 
                     (seq-tree '(:a (:b))) 
-                    (seq-tree '(:A (:B))))))))
+                    (seq-tree '(:A (:B)))
+                    :not-found)))))
     (is (= '( [(:a (:b) :c) (:A (:B))] 
               [:a :A] 
               [(:b) (:B)] 
               [:b :B]
-              [:c nil]) 
+              [:c :not-found]) 
            (map node-get-value 
                 (tree-seq-depth 
                   (tree-disjoin 
                     (seq-tree '(:a (:b) :c)) 
-                    (seq-tree '(:A (:B))))))))
+                    (seq-tree '(:A (:B)))
+                    :not-found)))))
     (is (= '( [(:a1 (:a21) :a3 :a4) (:b1 (:b21 (:b221)) :b3)] 
               [:a1 :b1] 
               [(:a21) (:b21 (:b221))] 
               [:a21 :b21]
-              [nil (:b221)]
-              [nil :b221]
+              [:not-found (:b221)]
+              [:not-found :b221]
               [:a3 :b3]
-              [:a4 nil]) 
+              [:a4 :not-found]) 
            (map node-get-value 
                 (tree-seq-depth 
                   (tree-disjoin 
                     (seq-tree '(:a1 (:a21) :a3 :a4)) 
                     (seq-tree '(:b1 (:b21 (:b221)) :b3))
-                    )))))
+                    :not-found)))))
     (is (= '( [[1] [1]] 
               [[1 1] [1 1]] 
               [[1 1 1] [1 1 1]])
@@ -256,14 +258,16 @@
                       (tree-seq-depth 
                         (tree-disjoin 
                           (create-infinite-tree) 
-                          (create-infinite-tree)))))))
+                          (create-infinite-tree)
+                          :not-found))))))
     (is (= ['?x :x]
            (nth
              (map node-get-value 
                   (tree-seq-depth 
                     (tree-disjoin 
                       (seq-tree (deeply-nested 10000 '?x)) 
-                      (seq-tree (deeply-nested 10000 :x))))) 10000)))
+                      (seq-tree (deeply-nested 10000 :x))
+                      :not-found))) 10000)))
   )
 
 (deftest test-tree-conjoin
