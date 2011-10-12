@@ -89,10 +89,10 @@ It is possible that one of pat or dat can still be a sequence."
                   (concat (tree-seq-multi-depth-leaves n1-var-value n2) (rest s))
                   frame)))
             ;NO value for n1 variable in frame
-            ;n2 can still be a variable that depends on n1, hence depends-on? check
+            ;n2 can still be an expression that depends on n1, hence depends-on? check
             (if (depends-on? n2 n1 frame)
               ;n2 expr depends on n1 variable - stop & FAIL the whole thing
-              (list [n1 n2 'fail])
+              (list [n1 n2 'failed])
               ;n2 expr does not depend on n1 variable - can safely extend frame
               (let [new-frame (extend-frame n1 n2 frame)]
                 (cons
@@ -116,7 +116,7 @@ It is possible that one of pat or dat can still be a sequence."
               ;n1 can still be an expression (not a variable) that depends on n2, hence depends-on? check
               (if (depends-on? n1 n2 frame)
                 ;n1 expr depends on n2 variable - stop & FAIL the whole thing
-                (list [n1 n2 'fail])
+                (list [n1 n2 'failed])
                 ;n1 expr does not depend on n2 variable - can safely extend frame
                 (let [new-frame (extend-frame n2 n1 frame)]
                   (cons
