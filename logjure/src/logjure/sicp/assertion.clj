@@ -16,7 +16,7 @@
 
 (defn- pattern-match-seq
   ([pat dat frame]
-    (pattern-match-seq (tree-seq-multi-depth pat dat) frame))
+    (pattern-match-seq (tree-seq-multi-depth-leaves pat dat) frame))
   ([s frame]
     (when (seq s)
       (let [[n1 n2] (first s)]
@@ -28,7 +28,7 @@
               [n1 n2 frame]
               (lazy-seq
                 (pattern-match-seq 
-                  (concat (tree-seq-multi-depth n1-var-value n2) (rest s))
+                  (concat (tree-seq-multi-depth-leaves n1-var-value n2) (rest s))
                   frame)))
             ;NO value for n1 variable in frame
             (let [new-frame (extend-frame n1 n2 frame)]
@@ -74,7 +74,7 @@ and we never store more than one binding for a given variable."
     (if (or (equal? frame 'failed) (not pat) (not dat))
       'failed
       (let [s (pattern-match-seq pat dat frame)
-            nomatch? (fn nomatch? [[n1 n2 _]] (and (is-leaf n1) (not (variable? n1)) (not (equal? n1 n2))))]
+            nomatch? (fn nomatch? [[n1 n2 _]] (and (not (variable? n1)) (not (equal? n1 n2))))]
         (if (some nomatch? s)
           'failed
           (get (last s) 2)))))
