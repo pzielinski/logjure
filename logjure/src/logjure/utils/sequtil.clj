@@ -1,9 +1,8 @@
 (ns logjure.utils.sequtil
   (:use 
     logjure.utils.lazytree
+    logjure.utils.treenode
     logjure.utils.treeseq
-    logjure.utils.testing 
-    clojure.contrib.test-is
     )
 )
 
@@ -21,6 +20,14 @@
   "Compares s forms."
   [expr1 expr2]
   (every? 
-    (fn [[v1 v2]] (= v1 v2)) 
-    (tree-seq-depth (tree-disjoin (seq-tree expr1) (seq-tree expr2) :not-found)))
+    #(apply = %) 
+    (map 
+      node-get-value 
+      (filter 
+        is-leaf 
+        (tree-seq-depth 
+          (tree-disjoin 
+            (seq-tree expr1) 
+            (seq-tree expr2) 
+            :not-found)))))
   )
