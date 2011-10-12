@@ -268,6 +268,20 @@
                       (seq-tree (deeply-nested 10000 '?x)) 
                       (seq-tree (deeply-nested 10000 :x))
                       :not-found))) 10000)))
+    ;test node-is-leaf
+    (is (= '( [:a1 :b1]
+              [:a21 :b21]
+              [:not-found :b221]
+              [:a3 :not-found]
+              [:a4 :not-found]) 
+           (map node-get-value 
+                (filter
+                  node-is-leaf
+                  (tree-seq-depth 
+                    (tree-disjoin 
+                      (seq-tree '(:a1 (:a21) (:a3) :a4)) 
+                      (seq-tree '(:b1 (:b21 (:b221)) :b3))
+                      :not-found))))))
   )
 
 (deftest test-tree-conjoin
@@ -336,7 +350,7 @@
                     (tree-conjoin 
                       (seq-tree (deeply-nested 10000 '?x)) 
                       (seq-tree (deeply-nested 10000 :x))))) 10000)))
-    ;test is-leaf
+    ;test node-is-leaf
     (is (= '( [:a1 :b1] 
               [:a21 :b21]
               [(:a3) :b3]

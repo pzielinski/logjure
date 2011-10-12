@@ -136,7 +136,7 @@ Guarantees that all returned nodes are leaves."
   (letfn 
     [(node-is-leaf-x 
        [node1 node2] 
-       (or (and node1 (node-is-leaf node1)) (and node2 (node-is-leaf node2))))
+       (and (or (not node1) (node-is-leaf node1)) (or (not node2) (node-is-leaf node2))))
      (node-get-children-x
        [node1 node2]
        (take-while
