@@ -123,11 +123,23 @@
    )
 
 (defn tree-seq-multi-depth
-  "Walks two trees in lockstep."
+  "Walks two trees in lockstep. Extract all nodes values into sequence, depth first."
   [root1 root2]
   (let [root1x (if (satisfies? TreeNode root1) root1 (seq-tree root1))
         root2x (if (satisfies? TreeNode root2) root2 (seq-tree root2))]
     (map
       #(:value %)
       (tree-seq-depth (tree-conjoin root1x root2x))))
+  )
+
+(defn tree-seq-multi-depth-leaves
+  "Walks two trees in lockstep. Extract leaf nodes values into sequence, depth first."
+  [root1 root2]
+  (let [root1x (if (satisfies? TreeNode root1) root1 (seq-tree root1))
+        root2x (if (satisfies? TreeNode root2) root2 (seq-tree root2))]
+    (map
+      #(:value %)
+      (filter
+        node-is-leaf
+        (tree-seq-depth (tree-conjoin root1x root2x)))))
   )
