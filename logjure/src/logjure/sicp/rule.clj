@@ -74,7 +74,7 @@ It is possible that one of pat or dat can still be a sequence."
     ;already failed - stop
     (if (or (equal? frame 'failed) (not pat) (not dat))
       (list [pat dat 'failed])
-      (unify-match-seq (tree-seq-multi-depth pat dat) frame)))
+      (unify-match-seq (tree-seq-multi-depth-leaves pat dat) frame)))
   ([s frame]
     (when (seq s)
       (let [[n1 n2] (first s)]
@@ -86,7 +86,7 @@ It is possible that one of pat or dat can still be a sequence."
               [n1 n2 frame]
               (lazy-seq
                 (unify-match-seq 
-                  (concat (tree-seq-multi-depth n1-var-value n2) (rest s))
+                  (concat (tree-seq-multi-depth-leaves n1-var-value n2) (rest s))
                   frame)))
             ;NO value for n1 variable in frame
             ;n2 can still be a variable that depends on n1, hence depends-on? check
@@ -110,7 +110,7 @@ It is possible that one of pat or dat can still be a sequence."
                 [n1 n2 frame]
                 (lazy-seq
                   (unify-match-seq 
-                    (concat (tree-seq-multi-depth n1 n2-var-value) (rest s))
+                    (concat (tree-seq-multi-depth-leaves n1 n2-var-value) (rest s))
                     frame)))
               ;NO value for n2 variable in frame (n1 is not a variable): extend frame for n2 var with n1 value
               ;n1 can still be an expression (not a variable) that depends on n2, hence depends-on? check
@@ -159,14 +159,14 @@ by the equal? clause of unify-match."
   ([p1 p2 frame]
     (letfn 
       [(nomatch? 
-         [[n1 n2 _]] 
-         (and (is-leaf n1) (not (variable? n1)) (not (equal? n1 n2))))
-       ;frame can be 'failed if depends-on? failed
-       (failed? 
-         [[_ _ frame]] 
-         (= frame 'failed))]
+         [[n1 n2 frame]]
+         (or
+           ;if not variable and not equal
+           (and (not (variable? n1)) (not (equal? n1 n2)))
+           ;frame can be 'failed if depends-on? failed
+           (= frame 'failed)))]
       (let [s (unify-match-seq p1 p2 frame)]
-        (if (some (or nomatch? failed?) s)
+        (if (some nomatch? s)
           'failed
           (get (last s) 2)))))
   )
