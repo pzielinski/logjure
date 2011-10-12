@@ -19,3 +19,8 @@
   [frame1 frame2]
   (merge frame1 frame2)
   )
+
+(defn map2frame
+  [map]
+  map
+  )
