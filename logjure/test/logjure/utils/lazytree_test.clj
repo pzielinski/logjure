@@ -336,6 +336,19 @@
                     (tree-conjoin 
                       (seq-tree (deeply-nested 10000 '?x)) 
                       (seq-tree (deeply-nested 10000 :x))))) 10000)))
+    ;test is-leaf
+    (is (= '( [:a1 :b1] 
+              [:a21 :b21]
+              [(:a3) :b3]
+              ) 
+           (map node-get-value
+                (filter
+                  node-is-leaf
+                  (tree-seq-depth 
+                    (tree-conjoin 
+                      (seq-tree '(:a1 (:a21) (:a3) :a4)) 
+                      (seq-tree '(:b1 (:b21 (:b221)) :b3))
+                      ))))))
   )
 
 (run-tests)

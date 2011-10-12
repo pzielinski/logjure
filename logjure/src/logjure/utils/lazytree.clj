@@ -171,7 +171,7 @@ Some nodes may not be leaves."
   (letfn 
     [(node-is-leaf-x 
        [node1 node2] 
-       (and (node-is-leaf node1) (node-is-leaf node2)))
+       (or (node-is-leaf node1) (node-is-leaf node2)))
      (node-get-children-x
        [node1 node2]
        (map 
