@@ -163,8 +163,7 @@ It is possible that one of pat or dat can still be a sequence."
                 (let [n1-resolved (resolve-variables n1 frame)
                       new-frame (extend-frame n2 n1 frame)]
                   (cons
-                    ;lets put n2 variable first and n1 value second, so that nomatch? fn in unify-match works
-                    [n2 n1 new-frame] 
+                    [n1 n2 new-frame] 
                     (lazy-seq
                       (unify-match-seq (rest s) new-frame))
                     ))))
@@ -204,8 +203,8 @@ by the equal? clause of unify-match."
       [(nomatch? 
          [[n1 n2 frame]]
          (or
-           ;if not variable and not equal
-           (and (not (variable? n1)) (not (equal? n1 n2)))
+           ;if both are not variables and not equal
+           (and (not (variable? n1)) (not (variable? n2)) (not (equal? n1 n2)))
            ;frame can be 'failed if depends-on? failed
            (= frame 'failed)))]
       (let [s (unify-match-seq p1 p2 frame)]

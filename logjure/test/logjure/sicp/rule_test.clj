@@ -50,7 +50,7 @@
          (unify-match-seq :x :x (make-empty-frame)) ))
   (is (= (list ['?x :x (map2frame {'?x :x})]) 
          (unify-match-seq '?x :x (make-empty-frame))))
-  (is (= (list ['?x :x (map2frame {'?x :x})]) 
+  (is (= (list [:x '?x (map2frame {'?x :x})]) 
          (unify-match-seq :x '?x (make-empty-frame))))
   (is (= (list ['?x '(?y) (map2frame {'?x '(?y)})]) 
          (unify-match-seq '?x '(?y) (make-empty-frame))))
@@ -93,7 +93,7 @@
   (is (= (list ['?x '?x 'failed]) 
          (unify-match-seq '?x '?x (make-empty-frame))))
   ;there is p1 value in frame - match
-  (is (= (list ['?x '?y (map2frame {'?x :a})] ['?y :a (map2frame {'?x :a '?y :a})]) 
+  (is (= (list ['?x '?y (map2frame {'?x :a})] [:a '?y (map2frame {'?x :a '?y :a})]) 
          (unify-match-seq '?x '?y (map2frame {'?x :a}))))
   ;there is p2 value in frame - match - now fully resolved - LESS FRAMES THAN ABOVE!!!
   (is (= (list ['?x '?y (map2frame {'?y :a '?x :a})]) 
@@ -108,8 +108,7 @@
   (is (= '([nil ?x failed]) 
          (unify-match-seq nil '?x (make-empty-frame)) ))
   ;no p2 value in frame & p1 does not depend on p2 variable
-  ;p2 variable is moved to first position!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
-  (is (= (list ['?x :x (map2frame {'?x :x})]) 
+  (is (= (list [:x '?x (map2frame {'?x :x})]) 
          (unify-match-seq :x '?x (make-empty-frame))))
   ;no p2 value in frame & p1 does depend on p2 variable
   (is (= (list ['?x '?x 'failed]) 
