@@ -258,7 +258,7 @@
   (is (= '(:x) (resolve-variables '(?x) (map2frame {'?x :x}))))
   (is (= '((:x)(:x)) (resolve-variables '((?x)(?x)) (map2frame {'?x :x}))))
   (is (= '((:x)(((:x) :x (:y)))) (resolve-variables '((?x)(((?x) ?x (?y)))) (map2frame {'?x :x '?y :y}))))
-  (is (= '((?y)(?y)) (resolve-variables '((?x)(?x)) (map2frame {'?x '?y '?y :y}))))
+  (is (= '((:y)(:y)) (resolve-variables '((?x)(?x)) (map2frame {'?x '?y '?y :y}))))
   ;(is (= :x (last (tree-seq-depth (resolve-variables (deeply-nested 10000 '?x) (map2frame {'?x :x}))))))
   )
 

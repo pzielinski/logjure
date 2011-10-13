@@ -103,7 +103,8 @@ recursive tree walk in which we substitute for the values of variables whenever 
   :scalar
   (if (variable? x)
     (if-let [value (get-value-in-frame x frame)]
-      value ;should resolve value as well!!!
+      ;could cause StackOverflow if: ?x resolves to ?y resolves to ?z resolves to ... (1000 deep) :x
+      (resolve-variables value frame)
       x)
     x)
   )
