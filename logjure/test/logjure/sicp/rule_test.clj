@@ -260,6 +260,18 @@
   (is (= '((:x)(((:x) :x (:y)))) (resolve-variables '((?x)(((?x) ?x (?y)))) (map2frame {'?x :x '?y :y}))))
   (is (= '((:y)(:y)) (resolve-variables '((?x)(?x)) (map2frame {'?x '?y '?y :y}))))
   ;(is (= :x (last (tree-seq-depth (resolve-variables (deeply-nested 10000 '?x) (map2frame {'?x :x}))))))
+  (let 
+    ;{... ?x9 ?x10, ?x10 ?x11, ?x5 ?x6, ?x6 ?x7, ?x7 ?x8, ?x8 ?x9, ?x4 ?x5, ?x3 ?x4, ?x2 ?x3, ?x1 ?x2}
+    [frame 
+     (map2frame 
+       (assoc 
+         (apply 
+           assoc 
+           {} 
+           (apply concat (take 10000 (partition 2 1 (map #(symbol (str '?x %)) (iterate inc 1))))))
+         '?x10000
+         :x))]
+    (is (= :x (resolve-variables '?x1 frame))))
   )
 
 (run-tests)
