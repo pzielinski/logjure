@@ -135,7 +135,8 @@ It is possible that one of pat or dat can still be a sequence."
               ;n2 expr depends on n1 variable - stop & FAIL the whole thing
               (list [n1 n2 'failed])
               ;n2 expr does not depend on n1 variable - can safely extend frame
-              (let [new-frame (extend-frame n1 n2 frame)]
+              (let [n2-resolved (resolve-variables n2 frame)
+                    new-frame (extend-frame n1 n2-resolved frame)]
                 (cons
                   [n1 n2 new-frame]
                   (lazy-seq
@@ -159,7 +160,8 @@ It is possible that one of pat or dat can still be a sequence."
                 ;n1 expr depends on n2 variable - stop & FAIL the whole thing
                 (list [n1 n2 'failed])
                 ;n1 expr does not depend on n2 variable - can safely extend frame
-                (let [new-frame (extend-frame n2 n1 frame)]
+                (let [n1-resolved (resolve-variables n1 frame)
+                      new-frame (extend-frame n2 n1 frame)]
                   (cons
                     ;lets put n2 variable first and n1 value second, so that nomatch? fn in unify-match works
                     [n2 n1 new-frame] 

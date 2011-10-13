@@ -95,8 +95,8 @@
   ;there is p1 value in frame - match
   (is (= (list ['?x '?y (map2frame {'?x :a})] ['?y :a (map2frame {'?x :a '?y :a})]) 
          (unify-match-seq '?x '?y (map2frame {'?x :a}))))
-  ;there is p2 value in frame - match - THIS IS DIFFERENT FRAME STYLE!!!!!!!!!!!!!!!!!
-  (is (= (list ['?x '?y (map2frame {'?y :a '?x '?y})]) 
+  ;there is p2 value in frame - match - now fully resolved - LESS FRAMES THAN ABOVE!!!
+  (is (= (list ['?x '?y (map2frame {'?y :a '?x :a})]) 
          (unify-match-seq '?x '?y (map2frame {'?y :a}))))
   )
 
