@@ -67,6 +67,20 @@ recursive tree walk in which we substitute for the values of variables whenever 
   (if (some (fn [[_ depends-on _]] depends-on) (depends-on-seq exp the-var frame)) true false)
   )
 
+(defn- coll-or-scalar [x & _] (if (coll? x) :collection :scalar)
+  )
+(defmulti replace-symbol coll-or-scalar
+  )
+(defmethod replace-symbol :collection [coll oldsym newsym]
+  (lazy-seq
+    (when (seq coll)
+      (cons (replace-symbol (first coll) oldsym newsym)
+            (replace-symbol (rest coll) oldsym newsym))))
+  )
+(defmethod replace-symbol :scalar [obj oldsym newsym]
+  (if (= obj oldsym) newsym obj)
+  )
+
 (defn- unify-match-seq
   "Using tree-seq-multi-depth only quarantees that pat & dat can not both be a sequences. 
 It is possible that one of pat or dat can still be a sequence."

@@ -247,4 +247,9 @@
   ;(is (= 'b (get-value-in-frame '?x (unify-match (deeply-nested 10000 '?x) (deeply-nested 10000 'b) (make-empty-frame)))))
 )
 
+(deftest test-replace-symbol
+  (is (= :bottom (last (tree-seq-depth (deeply-nested 10000)))))
+  (is (= :deepest (last (tree-seq-depth (replace-symbol (deeply-nested 10000) :bottom :deepest)))))
+  )
+
 (run-tests)
