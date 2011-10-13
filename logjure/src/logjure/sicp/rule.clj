@@ -1,5 +1,6 @@
 (ns logjure.sicp.rule
-  (:use 
+  (:use
+    logjure.utils.defmultimethod
     logjure.utils.treenode
     logjure.utils.treeseq
     logjure.sicp.table
@@ -67,18 +68,44 @@ recursive tree walk in which we substitute for the values of variables whenever 
   (if (some (fn [[_ depends-on _]] depends-on) (depends-on-seq exp the-var frame)) true false)
   )
 
-(defn- coll-or-scalar [x & _] (if (coll? x) :collection :scalar)
-  )
-(defmulti replace-symbol coll-or-scalar
-  )
-(defmethod replace-symbol :collection [coll oldsym newsym]
+(defmultimethod replace-symbol 
+  [x oldsym newsym]
+  (fn [x oldsym newsym] (if (coll? x) :collection :scalar))
+  :collection 
   (lazy-seq
-    (when (seq coll)
-      (cons (replace-symbol (first coll) oldsym newsym)
-            (replace-symbol (rest coll) oldsym newsym))))
+    (when (seq x)
+      (cons (replace-symbol (first x) oldsym newsym)
+            (replace-symbol (rest x) oldsym newsym))))
+  :scalar
+  (if (= x oldsym) newsym x)  
   )
-(defmethod replace-symbol :scalar [obj oldsym newsym]
-  (if (= obj oldsym) newsym obj)
+
+(defmultimethod replace-symbol 
+  [x oldsym newsym]
+  (fn [x oldsym newsym] (if (coll? x) :collection :scalar))
+  :collection 
+  (lazy-seq
+    (when (seq x)
+      (cons (replace-symbol (first x) oldsym newsym)
+            (replace-symbol (rest x) oldsym newsym))))
+  :scalar
+  (if (= x oldsym) newsym x)  
+  )
+
+(defmultimethod resolve-variables 
+  [x frame]
+  (fn [x frame] (if (coll? x) :collection :scalar))
+  :collection 
+  (lazy-seq
+    (when (seq x)
+      (cons (resolve-variables (first x) frame)
+            (resolve-variables (rest x) frame))))
+  :scalar
+  (if (variable? x)
+    (if-let [value (get-value-in-frame x frame)]
+      value ;should resolve value as well!!!
+      x)
+    x)
   )
 
 (defn- unify-match-seq
