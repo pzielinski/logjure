@@ -98,6 +98,9 @@
   ;there is p2 value in frame - match - now fully resolved - LESS FRAMES THAN ABOVE!!!
   (is (= (list ['?x '?y (map2frame {'?y :a '?x :a})]) 
          (unify-match-seq '?x '?y (map2frame {'?y :a}))))
+  ;there is p1 value in frame - p2 is expr = ?x is bound to expr that is not fully resolved
+  (is (= '([?x (?y :a) {?x (:b ?z)}] [:b ?y {?y :b, ?x (:b ?z)}] [?z :a {?z :a, ?y :b, ?x (:b ?z)}]) 
+         (unify-match-seq '?x '(?y :a) (map2frame {'?x '(:b ?z)}))))
   )
 
 (deftest test-unify-match-seq-p2-is-variable-and-p1-is-not
