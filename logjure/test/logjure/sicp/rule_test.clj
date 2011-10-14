@@ -98,8 +98,8 @@
   ;there is p2 value in frame - match - now fully resolved - LESS FRAMES THAN ABOVE!!!
   (is (= (list ['?x '?y (map2frame {'?y :a '?x :a})]) 
          (unify-match-seq '?x '?y (map2frame {'?y :a}))))
-  ;there is p1 value in frame - p2 is expr = ?x is bound to expr that is not fully resolved
-  (is (= '([?x (?y :a) {?x (:b ?z)}] [:b ?y {?y :b, ?x (:b ?z)}] [?z :a {?z :a, ?y :b, ?x (:b ?z)}]) 
+  ;there is p1 value in frame - p2 is expr - now fully resolved thanks to normalize-frame
+  (is (= '([?x (?y :a) {?x (:b ?z)}] [:b ?y {?y :b, ?x (:b ?z)}] [?z :a {?z :a, ?y :b, ?x (:b :a)}]) 
          (unify-match-seq '?x '(?y :a) (map2frame {'?x '(:b ?z)}))))
   )
 
@@ -235,8 +235,8 @@
 
 ;test with not empty frame
 (deftest test-unify-match-when-frame-has-binding-for-another-variable
-  ;initial frame is not empty, value is a list, match
-  (is (= '(f ?y) (get-value-in-frame '?x (unify-match '?x '(f b) (extend-frame '?x '(f ?y) (make-empty-frame))))))
+  ;initial frame is not empty, value is a list, match - now fully resolved by normalize-frame
+  (is (= '(f b) (get-value-in-frame '?x (unify-match '?x '(f b) (extend-frame '?x '(f ?y) (make-empty-frame))))))
   (is (= 'b (get-value-in-frame '?y (unify-match '?x '(f b) (extend-frame '?x '(f ?y) (make-empty-frame))))))
   ;initial frame is not empty, value is a list, no match, 
   ;because ?y is already bound to 'c and can not be bound to 'b

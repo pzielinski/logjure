@@ -138,7 +138,9 @@ It is possible that one of pat or dat can still be a sequence."
     ;already failed - stop
     (if (or (equal? frame 'failed) (not pat) (not dat))
       (list [pat dat 'failed])
-      (unify-match-seq (tree-seq-multi-depth-leaves pat dat) frame)))
+      (unify-match-seq 
+        (tree-seq-multi-depth-leaves pat dat) 
+        (normalize-frame-fully frame))))
   ([s frame]
     (when (seq s)
       (let [[n1 n2] (first s)]
@@ -159,11 +161,12 @@ It is possible that one of pat or dat can still be a sequence."
               (list [n1 n2 'failed])
               ;n2 expr does not depend on n1 variable - can safely extend frame
               (let [n2-resolved (resolve-variables n2 frame)
-                    new-frame (extend-frame n1 n2-resolved frame)]
+                    new-frame (extend-frame n1 n2-resolved frame)
+                    new-frame-normalized (normalize-frame new-frame)]
                 (cons
-                  [n1 n2 new-frame]
+                  [n1 n2 new-frame-normalized]
                   (lazy-seq
-                    (unify-match-seq (rest s) new-frame))
+                    (unify-match-seq (rest s) new-frame-normalized))
                   ))
               ))
           ;n1 is not a variable - check if n2 is variable
@@ -184,11 +187,12 @@ It is possible that one of pat or dat can still be a sequence."
                 (list [n1 n2 'failed])
                 ;n1 expr does not depend on n2 variable - can safely extend frame
                 (let [n1-resolved (resolve-variables n1 frame)
-                      new-frame (extend-frame n2 n1 frame)]
+                      new-frame (extend-frame n2 n1 frame)
+                      new-frame-normalized (normalize-frame new-frame)]
                   (cons
-                    [n1 n2 new-frame] 
+                    [n1 n2 new-frame-normalized] 
                     (lazy-seq
-                      (unify-match-seq (rest s) new-frame))
+                      (unify-match-seq (rest s) new-frame-normalized))
                     ))))
             ;n2 is not a variable (n1 is not a variable)
             (cons
