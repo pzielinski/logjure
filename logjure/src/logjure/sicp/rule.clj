@@ -92,7 +92,7 @@ recursive tree walk in which we substitute for the values of variables whenever 
   (if (= x oldsym) newsym x)  
   )
 
-(defmultimethod resolve-variables 
+(defmultimethod resolve-variables
   [x frame]
   (fn [x frame] (if (coll? x) :collection :scalar))
   :collection 
@@ -106,6 +106,29 @@ recursive tree walk in which we substitute for the values of variables whenever 
       (recur value frame)
       x)
     x)
+  )
+
+(defn normalize-frame
+  "resolve-variables fn could be smarter, and also return a flag indicating if any variable was changed."
+  ([frame]
+    (normalize-frame frame (get-frame-variables frame)))
+  ([frame variables-to-resolve]
+    (if-let [variable (first variables-to-resolve)]
+      (let [value (get-value-in-frame variable frame)
+            resolved-value (resolve-variables value frame)] 
+        (recur (extend-frame variable resolved-value frame) (rest variables-to-resolve)))
+      frame))
+  )
+
+(defn normalize-frame-fully
+  "Resolve frame variables. Use resove-variables on each variable value in frame, 
+and for each variable check the value before and after it was resolved. 
+If at least one variable was resolved in frame then the whole frame has to be normalized again."
+  [frame]
+  (let [normalized-frame (normalize-frame frame)]
+    (if (equal? frame normalized-frame)
+      frame
+      (recur normalized-frame)))
   )
 
 (defn- unify-match-seq

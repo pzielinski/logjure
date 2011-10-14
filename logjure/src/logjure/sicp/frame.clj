@@ -24,3 +24,8 @@
   [map]
   map
   )
+
+(defn get-frame-variables
+  [frame]
+  (keys frame)
+  )

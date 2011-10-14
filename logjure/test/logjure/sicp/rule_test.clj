@@ -276,4 +276,34 @@
     (is (= :x (resolve-variables '?x1 frame))))
   )
 
+(deftest test-normalize-frame
+  (is (= (map2frame {'?x :b '?y :b}) 
+         (normalize-frame (map2frame {'?x '?y '?y :b}))))
+  (is (= (map2frame {'?z :a '?y :b '?x '(:b :a)}) 
+         (normalize-frame (map2frame {'?z :a '?y :b '?x '(:b ?z)}))))
+  ;even in one pass of normalize-frame ?x is resolved to :b because of recur in resolve-variables
+  (is (= (map2frame {'?x :b '?z :b '?y :b}) 
+         (normalize-frame (map2frame {'?x '?z '?z '?y '?y :b}))))
+  ;it also works here
+  (is (= (map2frame {'?x '(:b :c) '?z :b '?y :b}) 
+         (normalize-frame (map2frame {'?x '(?z :c) '?z '?y '?y :b}))))
+  ;no so here (need normalize-frame-fully)
+  (is (= (map2frame {'?x '((?y :d) :c) '?z '(:b :d) '?y :b}) 
+         (normalize-frame (map2frame {'?x '(?z :c) '?z '(?y :d) '?y :b}))))
+  )
+
+(deftest test-normalize-frame-fully
+  (is (= (map2frame {'?x :b '?y :b}) 
+         (normalize-frame-fully (map2frame {'?x '?y '?y :b}))))
+  (is (= (map2frame {'?z :a '?y :b '?x '(:b :a)}) 
+         (normalize-frame-fully (map2frame {'?z :a '?y :b '?x '(:b ?z)}))))
+  (is (= (map2frame {'?x :b '?z :b '?y :b}) 
+         (normalize-frame-fully (map2frame {'?x '?z '?z '?y '?y :b}))))
+  (is (= (map2frame {'?x '(:b :c) '?z :b '?y :b}) 
+         (normalize-frame-fully (map2frame {'?x '(?z :c) '?z '?y '?y :b}))))
+  ;normalize-frame-fully works
+  (is (= (map2frame {'?x '((:b :d) :c) '?z '(:b :d) '?y :b}) 
+         (normalize-frame-fully (map2frame {'?x '(?z :c) '?z '(?y :d) '?y :b}))))
+  )
+
 (run-tests)
