@@ -1,5 +1,5 @@
 (ns logjure.utils.defmultimethod-test
-  (:use logjure.utils.defmultimethod clojure.contrib.test-is))
+  (:use logjure.utils.defmultimethod clojure.test))
 
 (derive ::logjure.utils.defmultimethod-test/Savings ::logjure.utils.defmultimethod-test/Account)
 (derive ::logjure.utils.defmultimethod-test/Checking ::logjure.utils.defmultimethod-test/Account)

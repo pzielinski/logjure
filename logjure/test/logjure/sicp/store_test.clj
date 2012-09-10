@@ -4,7 +4,7 @@
     logjure.sicp.table
     logjure.sicp.store
     logjure.utils.testing
-    clojure.contrib.test-is
+    clojure.test
     )
   )
 

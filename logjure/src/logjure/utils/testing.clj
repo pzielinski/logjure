@@ -28,6 +28,7 @@ produces result:
         f-recording# (fn [x#] (do (record-fn# x#)) (~replacement-fn x#))
         ]
     (binding [~original-fn f-recording#]
-      [~@test-fn @records#]
+      (let [result# ~@test-fn]
+        [result# @records#])
     ))
   )

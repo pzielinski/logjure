@@ -1,7 +1,7 @@
 (ns logjure.sicp.table-test
   (:use 
     logjure.sicp.table
-    clojure.contrib.test-is
+    clojure.test
     )
   )
 

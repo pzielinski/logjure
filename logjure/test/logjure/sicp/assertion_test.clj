@@ -8,7 +8,7 @@
     logjure.sicp.assertion
     logjure.utils.treeseq
     logjure.utils.testing
-    clojure.contrib.test-is
+    clojure.test
     )
   )
 

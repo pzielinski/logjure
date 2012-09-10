@@ -2,7 +2,7 @@
   (:use 
     logjure.utils.sequtil
     logjure.utils.testing 
-    clojure.contrib.test-is
+    clojure.test
     )
 )
 

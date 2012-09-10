@@ -2,7 +2,7 @@
   (:use 
     logjure.sicp.pair
     logjure.sicp.stream
-    clojure.contrib.test-is
+    clojure.test
     )
   )
 

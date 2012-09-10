@@ -40,8 +40,16 @@
   :default (clojure.inspector/is-leaf node)
   )
 
+(comment
 (defmultimethod get-children [node] #(satisfies? TreeNode %)
   true (node-get-children node)
   :default (get-child-seq node)
   )
+)
+
+(defmulti ^:dynamic get-children #(satisfies? TreeNode %))
+(defmethod get-children true [node]
+ (node-get-children node))
+(defmethod get-children :default [node]
+  (get-child-seq node))
 

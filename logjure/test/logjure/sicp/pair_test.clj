@@ -1,7 +1,7 @@
 (ns logjure.sicp.pair-test
   (:use 
     logjure.sicp.pair
-    clojure.contrib.test-is
+    clojure.test
     )
   )
 

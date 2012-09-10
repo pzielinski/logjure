@@ -5,20 +5,39 @@
     logjure.utils.lazytree
     logjure.utils.treeseq
     logjure.utils.treestream
-    logjure.utils.treeseq-test 
     logjure.utils.testing 
-    clojure.contrib.test-is
+    clojure.test
     )
-  (:import 
-    logjure.utils.lazytree.TreeNodeX
-    )
+  )
+
+;duplicated from treeseq_test.clj
+(defn do-base-test-tree-seq-breadth 
+  []
+  (is (= '(:a) (doall (tree-seq-breadth :a))))
+  (is (= '(()) (doall (tree-seq-breadth '()))))
+  (is (= '((:a) :a) (doall (tree-seq-breadth '(:a)))))
+  (is (= '((:a :b :c) :a :b :c) (doall (tree-seq-breadth '(:a :b :c)))))
+  (is (= '((:a (:b) :c) :a (:b) :c :b) (doall (tree-seq-breadth '(:a (:b) :c)))))
+  (is (= '((:a :b (:c)) :a :b (:c) :c) (doall (tree-seq-breadth '(:a :b (:c))))))
+  (is (= '((:a (:b (:x)) :c) :a (:b (:x)) :c :b (:x) :x) (doall (tree-seq-breadth '(:a (:b (:x)) :c)))))
+  (is (= '((:a ((:x) :b) :c) :a ((:x) :b) :c (:x) :b :x) (doall (tree-seq-breadth '(:a ((:x) :b) :c)))))
+  (is (= '((:a ((:x) :b) ((:y) :c) :d) :a ((:x) :b) ((:y) :c) :d (:x) :b (:y) :c :x :y) 
+         (doall (tree-seq-breadth '(:a ((:x) :b) ((:y) :c) :d)))))
+  (is (= '(:a :c :b :x) (doall (filter is-leaf (tree-seq-breadth '(:a ((:x) :b) :c))))))
+  (is (= '(
+            (:a ((:x) :b) :c ((:y) :d) :e)
+            :a ((:x) :b) :c ((:y) :d) :e
+            (:x) :b (:y) :d
+            :x :y
+            ) 
+         (doall (tree-seq-breadth '(:a ((:x) :b) :c ((:y) :d) :e)))))
+  (is (= '(:a :c :e :b :d :x :y) (doall (filter is-leaf (tree-seq-breadth '(:a ((:x) :b) :c ((:y) :d) :e))))))
   )
 
 (deftest test-tree-stream-breadth
   (binding 
     [tree-seq-breadth tree-stream-breadth-seq]
-    (do-base-test-tree-seq-breadth)
-  )
+    (do-base-test-tree-seq-breadth))
   ;test that no stack overflow; passes 100000
   (is (= '(:bottom) (doall (filter is-leaf (tree-stream-breadth-seq (deeply-nested 10000))))))
   ;test laziness

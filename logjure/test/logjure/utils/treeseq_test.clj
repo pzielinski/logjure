@@ -5,7 +5,7 @@
     logjure.utils.lazytree
     logjure.utils.treeseq
     logjure.utils.testing 
-    clojure.contrib.test-is
+    clojure.test
     )
   (:import 
     logjure.utils.lazytree.TreeNodeX
@@ -14,7 +14,7 @@
 
 (defn finalize-tree-node-dynamic-do-nothing [tree-node-dynamic])
 
-(def *finalize-tree-node-dynamic-fn* (atom finalize-tree-node-dynamic-do-nothing))
+(def ^:dynamic *finalize-tree-node-dynamic-fn* (atom finalize-tree-node-dynamic-do-nothing))
 
 (deftype TreeNodeDynamic [child-value-seq]
   Cloneable
@@ -121,6 +121,9 @@
   ;fails - because vector is stripped
   ;(is (= '([:y :y {?x :x, ?y :y}]) (doall (lazy-list-merge '() '([:y :y {?x :x, ?y :y}])))))
 )
+
+(defn ^:dynamic inc
+  [x] (clojure.core/inc x))
 
 (deftest test-lazy-list-merge-vs-apply-concat
   ;TEST LAZINESS
