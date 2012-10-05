@@ -288,7 +288,7 @@
   (is (= (map2frame {'?x '(:b :c) '?z :b '?y :b}) 
          (normalize-frame (map2frame {'?x '(?z :c) '?z '?y '?y :b}))))
   ;no so here (need normalize-frame-fully)
-  (is (= (map2frame {'?x '((?y :d) :c) '?z '(:b :d) '?y :b}) 
+  (is (= (map2frame {'?x '((:b :d) :c) '?z '(:b :d) '?y :b}) 
          (normalize-frame (map2frame {'?x '(?z :c) '?z '(?y :d) '?y :b}))))
   )
 

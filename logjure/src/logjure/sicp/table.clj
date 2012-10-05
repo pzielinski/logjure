@@ -1,19 +1,19 @@
 (ns logjure.sicp.table
   )
 
-(def *store* (atom {}))
+(def store (atom {}))
 
 (defn get-from-table 
   [ & the-keys ]
-  (get @*store* the-keys)
+  (get @store the-keys)
   )
 
 (defn put 
   [value & the-keys]
-  (swap! *store* assoc the-keys value)
+  (swap! store assoc the-keys value)
   )
 
 (defn clear-table
   []
-  (reset! *store* {})
+  (reset! store {})
   )
