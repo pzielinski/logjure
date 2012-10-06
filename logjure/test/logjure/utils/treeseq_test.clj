@@ -139,9 +139,16 @@
   (is (= [3 [1 2 3]] (recorder inc #(+ % 1) (nth (lazy-list-merge (map list (iterate inc 1))) 2))))
   (is (= [4 [1 2 3 4]] (recorder inc #(+ % 1) (nth (lazy-list-merge (map list (iterate inc 1))) 3))))
   (is (= [5 [1 2 3 4 5]] (recorder inc #(+ % 1) (nth (lazy-list-merge (map list (iterate inc 1))) 4))))
+  ;"lazy-list-merge-x" is the most lazy of all, does not even call inc on current arg
+  (is (= [1 []] (recorder inc #(+ % 1) (nth (lazy-list-merge-x (map list (iterate inc 1))) 0))))
+  (is (= [2 [1]] (recorder inc #(+ % 1) (nth (lazy-list-merge-x (map list (iterate inc 1))) 1))))
+  (is (= [3 [1 2]] (recorder inc #(+ % 1) (nth (lazy-list-merge-x (map list (iterate inc 1))) 2))))
+  (is (= [4 [1 2 3]] (recorder inc #(+ % 1) (nth (lazy-list-merge-x (map list (iterate inc 1))) 3))))
+  (is (= [5 [1 2 3 4]] (recorder inc #(+ % 1) (nth (lazy-list-merge-x (map list (iterate inc 1))) 4))))
   ;TEST StackOverflow
   (is (= 10001 (nth (apply concat (map list (iterate inc 1))) 10000)))
   (is (= 10001 (nth (lazy-list-merge (map list (iterate inc 1))) 10000)))
+  (is (= 10001 (nth (lazy-list-merge-x (map list (iterate inc 1))) 10000)))
 )
 
 ;CHECK WHY THE GET-CHILD-SEQ IS CALLED ON NODES THAT ARE NOT BRANCH NODES !!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!!
