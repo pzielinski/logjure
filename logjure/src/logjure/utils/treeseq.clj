@@ -21,12 +21,13 @@
   (let [cat 
         (fn cat [col cols]
           (lazy-seq
-            (let [s (seq col)]
+            (let [s (seq col) ss (seq cols)]
               (if s
                 (cons (first s) (cat (rest s) cols))
-                (when cols
-                  (cat (first cols) (next cols)))))))] 
-    (cat (first cols) (next cols)))
+                  (let [x 1]
+                    (when ss
+                      (cat (first ss) (rest ss))))))))] 
+    (cat (first cols) (rest cols)))
   )
 
 (defn lazy-list-merge-x
@@ -51,11 +52,12 @@
      (let [walk 
            (fn walk 
              [branch? get-children parent-nodes]
-             (cons parent-nodes
-                   (when (seq parent-nodes)
+             (lazy-seq 
+               (cons parent-nodes
                      (lazy-seq 
-                       (let [child-nodes (lazy-list-merge (map get-children parent-nodes))]
-                         (walk branch? get-children child-nodes))))))]
+                       (when (seq parent-nodes)
+                         (let [child-nodes (lazy-list-merge (map get-children parent-nodes))]
+                           (walk branch? get-children child-nodes)))))))]
        (walk branch? get-children (list root)))
      )
    ([root] 
