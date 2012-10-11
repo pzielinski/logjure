@@ -16,6 +16,22 @@
    [root]
    (tree-seq #(not (is-leaf %)) get-children root))
 
+(defn deep-equal?
+  "Compares s forms."
+  [expr1 expr2]
+  (every? 
+    #(apply = %) 
+    (map 
+      node-get-value 
+      (filter 
+        is-leaf 
+        (tree-seq-depth 
+          (tree-disjoin 
+            (seq-tree expr1) 
+            (seq-tree expr2) 
+            :not-found)))))
+  )
+
 (defn lazy-list-merge
   [cols]
   (let [cat 
