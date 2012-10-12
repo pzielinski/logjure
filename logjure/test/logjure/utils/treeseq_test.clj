@@ -141,6 +141,18 @@
   (is (= '[((:y) :d)
            [(:a ((:x) :b) :c ((:y) :d) :e) ((:x) :b) (:x) ((:y) :d)]] 
          (recorder get-children get-child-seq (nth (tree-seq-depth '(:a ((:x) :b) :c ((:y) :d) :e)) 7 :not-found))))
+  (is (= '[(:y)
+           [(:a ((:x) :b) :c ((:y) :d) :e) ((:x) :b) (:x) ((:y) :d) (:y)]] 
+         (recorder get-children get-child-seq (nth (tree-seq-depth '(:a ((:x) :b) :c ((:y) :d) :e)) 8 :not-found))))
+  (is (= '[:y
+           [(:a ((:x) :b) :c ((:y) :d) :e) ((:x) :b) (:x) ((:y) :d) (:y)]] 
+         (recorder get-children get-child-seq (nth (tree-seq-depth '(:a ((:x) :b) :c ((:y) :d) :e)) 9 :not-found))))
+  (is (= '[:d
+           [(:a ((:x) :b) :c ((:y) :d) :e) ((:x) :b) (:x) ((:y) :d) (:y)]] 
+         (recorder get-children get-child-seq (nth (tree-seq-depth '(:a ((:x) :b) :c ((:y) :d) :e)) 10 :not-found))))
+  (is (= '[:e
+           [(:a ((:x) :b) :c ((:y) :d) :e) ((:x) :b) (:x) ((:y) :d) (:y)]] 
+         (recorder get-children get-child-seq (nth (tree-seq-depth '(:a ((:x) :b) :c ((:y) :d) :e)) 11 :not-found))))
   )
 
   (deftest test-lazy-list-merge
