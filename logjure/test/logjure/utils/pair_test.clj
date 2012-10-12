@@ -1,6 +1,6 @@
-(ns logjure.sicp.pair-test
+(ns logjure.utils.pair-test
   (:use 
-    logjure.sicp.pair
+    logjure.utils.pair
     clojure.test
     )
   )

@@ -1,7 +1,7 @@
-(ns logjure.sicp.stream-test
+(ns logjure.utils.stream-test
   (:use 
-    logjure.sicp.pair
-    logjure.sicp.stream
+    logjure.utils.pair
+    logjure.utils.stream
     clojure.test
     )
   )

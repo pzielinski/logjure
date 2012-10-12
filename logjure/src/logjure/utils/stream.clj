@@ -1,5 +1,5 @@
-(ns logjure.sicp.stream
-  (:use logjure.sicp.pair)
+(ns logjure.utils.stream
+  (:use logjure.utils.pair)
   )
 
 (def the-empty-stream nil)

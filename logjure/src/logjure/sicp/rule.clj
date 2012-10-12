@@ -12,10 +12,10 @@
 
 ; MATCH RULES
 
-(def *rule-counter* (atom 0))
+(def global-rule-counter (atom 0))
 
 (defn new-rule-application-id []
-  (swap! *rule-counter* inc)
+  (swap! global-rule-counter inc)
   )
 
 (defn make-new-variable [variable rule-application-id]

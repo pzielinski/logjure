@@ -1,6 +1,6 @@
 (ns logjure.utils.treestream-test
   (:use 
-    logjure.sicp.stream
+    logjure.utils.stream
     logjure.utils.treenode
     logjure.utils.lazytree
     logjure.utils.treeseq
@@ -96,30 +96,33 @@
   )
 
 (deftest test-tree-stream-interleave
-  (is (= '(:a) (doall (tree-stream-interleave-seq :a))))
-  (is (= '(()) (doall (tree-stream-interleave-seq '()))))
-  (is (= '((:a) :a) (doall (tree-stream-interleave-seq '(:a)))))
-  (is (= '((:a :b :c) :a :b :c) (doall (tree-stream-interleave-seq '(:a :b :c)))))
-  (is (= '((:a (:b) :c) :a :b (:b) :c) (doall (tree-stream-interleave-seq '(:a (:b) :c)))))
-  (is (= '((:a :b (:c)) :a :c :b (:c)) (doall (tree-stream-interleave-seq '(:a :b (:c))))))
-  (is (= '((:a (:b (:x)) :c) :a :b (:b (:x)) :x :c (:x)) (doall (tree-stream-interleave-seq '(:a (:b (:x)) :c)))))
-  (is (= '((:a ((:x) :b) :c) :a (:x) ((:x) :b) :x :c :b) (doall (tree-stream-interleave-seq '(:a ((:x) :b) :c)))))
-  (is (= '((:a ((:x) :b) ((:y) :c) :d) :a (:x) ((:x) :b) :x ((:y) :c) (:y) :d :y :b :c) 
-         (doall (tree-stream-interleave-seq '(:a ((:x) :b) ((:y) :c) :d)))))
-  (is (= '(:a :x :c :b) (doall (filter is-leaf (tree-stream-interleave-seq '(:a ((:x) :b) :c))))))
-  (is (= '((:a ((:x) :b) :c ((:y) :d) :e) :a (:x) ((:x) :b) :x :c (:y) ((:y) :d) :y :e :b :d) 
-         (doall (tree-stream-interleave-seq '(:a ((:x) :b) :c ((:y) :d) :e)))))
-  (is (= '(:a :x :c :y :e :b :d) (doall (filter is-leaf (tree-stream-interleave-seq '(:a ((:x) :b) :c ((:y) :d) :e))))))
-  ;test that no stack overflow; passes 100000
-  (is (= '(:bottom) (doall (filter is-leaf (tree-stream-interleave-seq (deeply-nested 10000))))))
-  ;test laziness
-  ;level 0 (root)
-  (is (= '[(:a ((:x) :b) :c ((:y) :d) :e) [(:a ((:x) :b) :c ((:y) :d) :e)]] 
-         (recorder get-children get-child-seq (nth (tree-stream-interleave-seq '(:a ((:x) :b) :c ((:y) :d) :e)) 0 :not-found))))
+  (let [tree-stream-interleave-seq (comp stream-to-seq tree-stream-interleave)]
+    (is (= '(:a) (doall (tree-stream-interleave-seq :a))))
+    (is (= '(()) (doall (tree-stream-interleave-seq '()))))
+    (is (= '((:a) :a) (doall (tree-stream-interleave-seq '(:a)))))
+    (is (= '((:a :b :c) :a :b :c) (doall (tree-stream-interleave-seq '(:a :b :c)))))
+    (is (= '((:a (:b) :c) :a :b (:b) :c) (doall (tree-stream-interleave-seq '(:a (:b) :c)))))
+    (is (= '((:a :b (:c)) :a :c :b (:c)) (doall (tree-stream-interleave-seq '(:a :b (:c))))))
+    (is (= '((:a (:b (:x)) :c) :a :b (:b (:x)) :x :c (:x)) (doall (tree-stream-interleave-seq '(:a (:b (:x)) :c)))))
+    (is (= '((:a ((:x) :b) :c) :a (:x) ((:x) :b) :x :c :b) (doall (tree-stream-interleave-seq '(:a ((:x) :b) :c)))))
+    (is (= '((:a ((:x) :b) ((:y) :c) :d) :a (:x) ((:x) :b) :x ((:y) :c) (:y) :d :y :b :c) 
+           (doall (tree-stream-interleave-seq '(:a ((:x) :b) ((:y) :c) :d)))))
+    (is (= '(:a :x :c :b) (doall (filter is-leaf (tree-stream-interleave-seq '(:a ((:x) :b) :c))))))
+    (is (= '((:a ((:x) :b) :c ((:y) :d) :e) :a (:x) ((:x) :b) :x :c (:y) ((:y) :d) :y :e :b :d) 
+           (doall (tree-stream-interleave-seq '(:a ((:x) :b) :c ((:y) :d) :e)))))
+    (is (= '(:a :x :c :y :e :b :d) (doall (filter is-leaf (tree-stream-interleave-seq '(:a ((:x) :b) :c ((:y) :d) :e))))))
+    ;test that no stack overflow; passes 100000
+    (is (= '(:bottom) (doall (filter is-leaf (tree-stream-interleave-seq (deeply-nested 10000))))))
+    ;test laziness
+    ;level 0 (root)
+    (is (= '[(:a ((:x) :b) :c ((:y) :d) :e) [(:a ((:x) :b) :c ((:y) :d) :e)]] 
+           (recorder get-children get-child-seq (nth (tree-stream-interleave-seq '(:a ((:x) :b) :c ((:y) :d) :e)) 0 :not-found))))
+    )
   )
 
 (deftest test-tree-stream-interleave-infinite-tree
-  (let [s (tree-stream-interleave-seq (create-infinite-tree))]
+  (let [tree-stream-interleave-seq (comp stream-to-seq tree-stream-interleave)
+        s (tree-stream-interleave-seq (create-infinite-tree))]
     (is (= [1] (node-get-value (nth s 0))))
     (is (= [1 1] (node-get-value (nth s 1))))
     (is (= [1 1 1] (node-get-value (nth s 2))))

@@ -2,8 +2,8 @@
   (:use 
     logjure.utils.treenode
     logjure.utils.treeseq
-    logjure.sicp.pair
-    logjure.sicp.stream
+    logjure.utils.pair
+    logjure.utils.stream
     logjure.sicp.table
     logjure.sicp.syntax
     logjure.sicp.frame

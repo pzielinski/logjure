@@ -1,5 +1,6 @@
 (ns logjure.utils.lazytree-test
   (:use 
+    logjure.utils.stream
     logjure.utils.treenode
     logjure.utils.lazytree
     logjure.utils.treeseq
@@ -13,7 +14,8 @@
   )
 
 (deftest test-create-infinite-tree
-  (let [s (tree-stream-interleave-seq (create-infinite-tree))]
+  (let [tree-stream-interleave-seq (comp stream-to-seq tree-stream-interleave)
+        s (tree-stream-interleave-seq (create-infinite-tree))]
     (is (= [1] (node-get-value (nth s 0))))
     (is (= [1 1] (node-get-value (nth s 1))))
     (is (= [1 1 1] (node-get-value (nth s 2))))
@@ -57,7 +59,8 @@
   )
 
 (deftest test-tree-map
-  (let [s (tree-stream-interleave-seq (tree-map identity (create-infinite-tree)))]
+  (let [tree-stream-interleave-seq (comp stream-to-seq tree-stream-interleave)
+        s (tree-stream-interleave-seq (tree-map identity (create-infinite-tree)))]
     (is (= [1] (node-get-value (nth s 0))))
     (is (= [1 2 626] (node-get-value (nth s 10006))))
     (is (= [1 5004] (node-get-value (nth s 10007))))
@@ -65,7 +68,8 @@
   )
 
 (deftest test-tree-map-reduce
-  (let [s (tree-stream-interleave-seq 
+  (let [tree-stream-interleave-seq (comp stream-to-seq tree-stream-interleave)
+        s (tree-stream-interleave-seq 
             (tree-map-reduce 
               (fn [parent node]
                 (let [depth (if parent (inc (:depth parent)) 1)]
@@ -141,6 +145,7 @@
    )
   ;test with infinite tree
   (let [mapping-fn (fn mapping-fn [vect] (conj vect :a))
+        tree-stream-interleave-seq (comp stream-to-seq tree-stream-interleave)
         s (tree-stream-interleave-seq (tree-map-value mapping-fn (create-infinite-tree)))]
     (is (= [1 :a] (node-get-value (nth s 0))))
     (is (= [1 1 :a] (node-get-value (nth s 1))))
@@ -165,7 +170,8 @@
 )
 
 (deftest test-tree-map-value-id
-  (let [s (tree-stream-interleave-seq (tree-map-value-id (create-infinite-tree)))]
+  (let [tree-stream-interleave-seq (comp stream-to-seq tree-stream-interleave)
+        s (tree-stream-interleave-seq (tree-map-value-id (create-infinite-tree)))]
     (is (= {:id [1] :value [1]} (node-get-value (nth s 0))))
     (is (= {:id [1 1] :value [1 1]} (node-get-value (nth s 1))))
     (is (= {:id [1 1 1] :value [1 1 1]} (node-get-value (nth s 2))))
@@ -189,7 +195,8 @@
   )
 
 (deftest test-tree-map-id
-  (let [s (tree-stream-interleave-seq (tree-map-id (create-infinite-tree)))]
+  (let [tree-stream-interleave-seq (comp stream-to-seq tree-stream-interleave)
+        s (tree-stream-interleave-seq (tree-map-id (create-infinite-tree)))]
     (is (= (:id (nth s 0)) (node-get-value (nth s 0))))
     (is (= (:id (nth s 10000)) (node-get-value (nth s 10000))))
     )

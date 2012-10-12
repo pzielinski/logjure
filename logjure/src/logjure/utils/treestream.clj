@@ -1,12 +1,12 @@
 (ns logjure.utils.treestream
   (:use 
     logjure.utils.treenode
-    logjure.sicp.stream
+    logjure.utils.stream
     )
   )
 
 (defn tree-stream-breadth
-  "Will get stuck if node has infinite children."
+  "Tree to stream, breadth first. Will get stuck if node has infinite children."
    ([branch? get-children root]
      (let [walk 
            (fn walk 
@@ -25,7 +25,7 @@
 )
 
 (defn tree-stream-interleave
-  "The only tree-seq capable of sequencing infinite tree, where each node has infinite children."
+  "Tree to stream. The only tree-seq capable of sequencing infinite tree, where each node has infinite children."
    ([branch? get-children root]
      (let [walk 
            (fn walk 
@@ -41,13 +41,4 @@
    ([root] 
      (tree-stream-interleave #(not (is-leaf %)) get-children root)
      )
-)
-
-(defn tree-stream-interleave-seq
-  "Converts to sequence, makes it more greedy."
-   ([branch? get-children root]
-     (stream-to-seq (tree-stream-interleave branch? get-children root)))
-   ([root]
-     (stream-to-seq (tree-stream-interleave root)))
-)
-
+   )

@@ -1,4 +1,4 @@
-(ns logjure.sicp.pair
+(ns logjure.utils.pair
   )
 
 (defn cons-pair [a b]

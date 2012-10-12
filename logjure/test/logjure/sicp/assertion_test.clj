@@ -1,6 +1,6 @@
 (ns logjure.sicp.assertion-test
   (:use 
-    logjure.sicp.stream
+    logjure.utils.stream
     logjure.sicp.syntax
     logjure.sicp.table
     logjure.sicp.frame
