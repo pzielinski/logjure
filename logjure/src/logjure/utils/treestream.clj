@@ -24,14 +24,6 @@
      )
 )
 
-(defn tree-stream-breadth-seq
-  "Converts to sequence, makes it more greedy."
-   ([branch? get-children root]
-     (stream-to-seq (tree-stream-breadth branch? get-children root)))
-   ([root]
-     (stream-to-seq (tree-stream-breadth root)))
-)
-
 (defn tree-stream-interleave
   "The only tree-seq capable of sequencing infinite tree, where each node has infinite children."
    ([branch? get-children root]

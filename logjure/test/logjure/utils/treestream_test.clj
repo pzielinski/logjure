@@ -11,35 +11,34 @@
   )
 
 ;duplicated from treeseq_test.clj
-(defn do-base-test-tree-seq-breadth 
+(defn test-tree-stream-breadth 
   []
-  (is (= '(:a) (doall (tree-seq-breadth :a))))
-  (is (= '(()) (doall (tree-seq-breadth '()))))
-  (is (= '((:a) :a) (doall (tree-seq-breadth '(:a)))))
-  (is (= '((:a :b :c) :a :b :c) (doall (tree-seq-breadth '(:a :b :c)))))
-  (is (= '((:a (:b) :c) :a (:b) :c :b) (doall (tree-seq-breadth '(:a (:b) :c)))))
-  (is (= '((:a :b (:c)) :a :b (:c) :c) (doall (tree-seq-breadth '(:a :b (:c))))))
-  (is (= '((:a (:b (:x)) :c) :a (:b (:x)) :c :b (:x) :x) (doall (tree-seq-breadth '(:a (:b (:x)) :c)))))
-  (is (= '((:a ((:x) :b) :c) :a ((:x) :b) :c (:x) :b :x) (doall (tree-seq-breadth '(:a ((:x) :b) :c)))))
-  (is (= '((:a ((:x) :b) ((:y) :c) :d) :a ((:x) :b) ((:y) :c) :d (:x) :b (:y) :c :x :y) 
-         (doall (tree-seq-breadth '(:a ((:x) :b) ((:y) :c) :d)))))
-  (is (= '(:a :c :b :x) (doall (filter is-leaf (tree-seq-breadth '(:a ((:x) :b) :c))))))
-  (is (= '(
-            (:a ((:x) :b) :c ((:y) :d) :e)
-            :a ((:x) :b) :c ((:y) :d) :e
-            (:x) :b (:y) :d
-            :x :y
-            ) 
-         (doall (tree-seq-breadth '(:a ((:x) :b) :c ((:y) :d) :e)))))
-  (is (= '(:a :c :e :b :d :x :y) (doall (filter is-leaf (tree-seq-breadth '(:a ((:x) :b) :c ((:y) :d) :e))))))
+  (let [tree-stream-breadth-seq (comp stream-to-seq tree-stream-breadth)]
+    (is (= '(:a) (doall (tree-stream-breadth-seq :a))))
+    (is (= '(()) (doall (tree-stream-breadth-seq '()))))
+    (is (= '((:a) :a) (doall (tree-stream-breadth-seq '(:a)))))
+    (is (= '((:a :b :c) :a :b :c) (doall (tree-stream-breadth-seq '(:a :b :c)))))
+    (is (= '((:a (:b) :c) :a (:b) :c :b) (doall (tree-stream-breadth-seq '(:a (:b) :c)))))
+    (is (= '((:a :b (:c)) :a :b (:c) :c) (doall (tree-stream-breadth-seq '(:a :b (:c))))))
+    (is (= '((:a (:b (:x)) :c) :a (:b (:x)) :c :b (:x) :x) (doall (tree-stream-breadth-seq '(:a (:b (:x)) :c)))))
+    (is (= '((:a ((:x) :b) :c) :a ((:x) :b) :c (:x) :b :x) (doall (tree-stream-breadth-seq '(:a ((:x) :b) :c)))))
+    (is (= '((:a ((:x) :b) ((:y) :c) :d) :a ((:x) :b) ((:y) :c) :d (:x) :b (:y) :c :x :y) 
+           (doall (tree-stream-breadth-seq '(:a ((:x) :b) ((:y) :c) :d)))))
+    (is (= '(:a :c :b :x) (doall (filter is-leaf (tree-stream-breadth-seq '(:a ((:x) :b) :c))))))
+    (is (= '(
+              (:a ((:x) :b) :c ((:y) :d) :e)
+              :a ((:x) :b) :c ((:y) :d) :e
+              (:x) :b (:y) :d
+              :x :y
+              ) 
+           (doall (tree-stream-breadth-seq '(:a ((:x) :b) :c ((:y) :d) :e)))))
+    (is (= '(:a :c :e :b :d :x :y) (doall (filter is-leaf (tree-stream-breadth-seq '(:a ((:x) :b) :c ((:y) :d) :e))))))
+    ;test that no stack overflow; passes 100000
+    (is (= '(:bottom) (doall (filter is-leaf (tree-stream-breadth-seq (deeply-nested 10000))))))
+    )
   )
 
-(deftest test-tree-stream-breadth
-  (binding 
-    [tree-seq-breadth tree-stream-breadth-seq]
-    (do-base-test-tree-seq-breadth))
-  ;test that no stack overflow; passes 100000
-  (is (= '(:bottom) (doall (filter is-leaf (tree-stream-breadth-seq (deeply-nested 10000))))))
+(deftest test-tree-stream-breadth-lazines
   ;test laziness
   ;level 0 (root)
   (is (= '[(:a ((:x) :b) :c ((:y) :d) :e) 
@@ -93,7 +92,7 @@
             :x :y
             ) 
            [(:a ((:x) :b) :c ((:y) :d) :e) :a ((:x) :b) :c ((:y) :d) :e (:x) :b (:y) :d :x :y]] 
-         (recorder get-children get-child-seq (doall (tree-stream-breadth-seq '(:a ((:x) :b) :c ((:y) :d) :e))))))
+         (recorder get-children get-child-seq (doall (stream-to-seq (tree-stream-breadth '(:a ((:x) :b) :c ((:y) :d) :e)))))))
   )
 
 (deftest test-tree-stream-interleave
