@@ -95,6 +95,20 @@
          (recorder get-children get-child-seq (doall (stream-to-seq (tree-stream-breadth '(:a ((:x) :b) :c ((:y) :d) :e)))))))
   )
 
+(deftest test-tree-stream-depth
+  (let [tree-stream-depth-seq (comp stream-to-seq tree-stream-depth)]
+    (is (= '(:a) (doall (tree-stream-depth-seq :a))))
+    (is (= '(()) (doall (tree-stream-depth-seq '()))))
+    (is (= '((:a) :a) (doall (tree-stream-depth-seq '(:a)))))
+    (is (= '((:a :b :c) :a :b :c) (doall (tree-stream-depth-seq '(:a :b :c)))))
+    (is (= '((:a (:b) :c) :a (:b) :b :c) (doall (tree-stream-depth-seq '(:a (:b) :c)))))
+    (is (= '((:a (:b (:x)) :c) :a (:b (:x)) :b (:x) :x :c) (doall (tree-stream-depth-seq '(:a (:b (:x)) :c)))))
+    (is (= '(:a :b :x :c) (doall (filter is-leaf (tree-stream-depth-seq '(:a (:b (:x)) :c))))))
+    ;test that no stack overflow; passes 100000
+    (is (= '(:bottom) (doall (filter is-leaf (tree-stream-depth-seq (deeply-nested 10000))))))
+    )
+  )
+
 (deftest test-tree-stream-interleave
   (let [tree-stream-interleave-seq (comp stream-to-seq tree-stream-interleave)]
     (is (= '(:a) (doall (tree-stream-interleave-seq :a))))
