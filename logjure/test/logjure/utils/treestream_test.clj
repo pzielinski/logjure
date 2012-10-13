@@ -109,6 +109,52 @@
     )
   )
 
+(deftest test-tree-stream-depth-lazy
+  ;test laziness
+  (is (= '[(:a ((:x) :b) :c ((:y) :d) :e) 
+           []] 
+         (recorder get-children get-child-seq (stream-nth-2 (tree-stream-depth '(:a ((:x) :b) :c ((:y) :d) :e)) 0 :not-found))))
+  (is (= '[:a 
+           [(:a ((:x) :b) :c ((:y) :d) :e)]] 
+         (recorder get-children get-child-seq (stream-nth-2 (tree-stream-depth '(:a ((:x) :b) :c ((:y) :d) :e)) 1 :not-found))))
+  (is (= '[((:x) :b) 
+           [(:a ((:x) :b) :c ((:y) :d) :e) :a]] 
+         (recorder get-children get-child-seq (stream-nth-2 (tree-stream-depth '(:a ((:x) :b) :c ((:y) :d) :e)) 2 :not-found))))
+  (is (= '[(:x)
+           [(:a ((:x) :b) :c ((:y) :d) :e) :a ((:x) :b)]] 
+         (recorder get-children get-child-seq (stream-nth-2 (tree-stream-depth '(:a ((:x) :b) :c ((:y) :d) :e)) 3 :not-found))))
+  (is (= '[:x 
+           [(:a ((:x) :b) :c ((:y) :d) :e) :a ((:x) :b) (:x)]] 
+         (recorder get-children get-child-seq (stream-nth-2 (tree-stream-depth '(:a ((:x) :b) :c ((:y) :d) :e)) 4 :not-found))))
+  (is (= '[:b
+           [(:a ((:x) :b) :c ((:y) :d) :e) :a ((:x) :b) (:x) :x]] 
+         (recorder get-children get-child-seq (stream-nth-2 (tree-stream-depth '(:a ((:x) :b) :c ((:y) :d) :e)) 5 :not-found))))
+  (is (= '[:c
+           [(:a ((:x) :b) :c ((:y) :d) :e) :a ((:x) :b) (:x) :x :b]] 
+         (recorder get-children get-child-seq (stream-nth-2 (tree-stream-depth '(:a ((:x) :b) :c ((:y) :d) :e)) 6 :not-found))))
+  (is (= '[((:y) :d)
+           [(:a ((:x) :b) :c ((:y) :d) :e) :a ((:x) :b) (:x) :x :b :c]] 
+         (recorder get-children get-child-seq (stream-nth-2 (tree-stream-depth '(:a ((:x) :b) :c ((:y) :d) :e)) 7 :not-found))))
+  (is (= '[(:y)
+           [(:a ((:x) :b) :c ((:y) :d) :e) :a ((:x) :b) (:x) :x :b :c ((:y) :d)]] 
+         (recorder get-children get-child-seq (stream-nth-2 (tree-stream-depth '(:a ((:x) :b) :c ((:y) :d) :e)) 8 :not-found))))
+  (is (= '[:y
+           [(:a ((:x) :b) :c ((:y) :d) :e) :a ((:x) :b) (:x) :x :b :c ((:y) :d) (:y)]] 
+         (recorder get-children get-child-seq (stream-nth-2 (tree-stream-depth '(:a ((:x) :b) :c ((:y) :d) :e)) 9 :not-found))))
+  (is (= '[:d
+           [(:a ((:x) :b) :c ((:y) :d) :e) :a ((:x) :b) (:x) :x :b :c ((:y) :d) (:y) :y]] 
+         (recorder get-children get-child-seq (stream-nth-2 (tree-stream-depth '(:a ((:x) :b) :c ((:y) :d) :e)) 10 :not-found))))
+  (is (= '[:e
+           [(:a ((:x) :b) :c ((:y) :d) :e) :a ((:x) :b) (:x) :x :b :c ((:y) :d) (:y) :y :d]] 
+         (recorder get-children get-child-seq (stream-nth-2 (tree-stream-depth '(:a ((:x) :b) :c ((:y) :d) :e)) 11 :not-found))))
+  (is (= '[:not-found
+           [(:a ((:x) :b) :c ((:y) :d) :e) :a ((:x) :b) (:x) :x :b :c ((:y) :d) (:y) :y :d :e]] 
+         (recorder get-children get-child-seq (stream-nth-2 (tree-stream-depth '(:a ((:x) :b) :c ((:y) :d) :e)) 12 :not-found))))
+  (is (= '[((:a ((:x) :b) :c ((:y) :d) :e) :a ((:x) :b) (:x) :x :b :c ((:y) :d) (:y) :y :d :e)
+           [(:a ((:x) :b) :c ((:y) :d) :e) :a ((:x) :b) (:x) :x :b :c ((:y) :d) (:y) :y :d :e]] 
+         (recorder get-children get-child-seq (doall (stream-to-seq (tree-stream-depth '(:a ((:x) :b) :c ((:y) :d) :e)))))))
+  )
+
 (deftest test-tree-stream-interleave
   (let [tree-stream-interleave-seq (comp stream-to-seq tree-stream-interleave)]
     (is (= '(:a) (doall (tree-stream-interleave-seq :a))))
