@@ -24,46 +24,29 @@
      )
 )
 
-(defn tree-stream-depth-1
-  "Tree to stream, depth first. Will get stuck if tree has infinite depth."
-   ([branch? get-children root]
-     (let [walk 
-           (fn walk 
-             [branch? get-children parents]
-             (when (not (stream-null? parents))
-               (let [first-parent (stream-car parents)]
-               (cons-stream 
-                 first-parent
-                 (let [first-parent-children (seq-to-stream (get-children first-parent))
-                       all-the-rest (flatten-stream (cons-stream first-parent-children (stream-cdr parents)))]
-                       (walk branch? get-children all-the-rest))))))]
-       (walk branch? get-children (seq-to-stream (list root))))
-     )
-   ([root] 
-     (tree-stream-breadth #(not (is-leaf %)) get-children root)
-     )
-   )
-
 (defn tree-stream-depth
   "Tree to stream, depth first. Will get stuck if tree has infinite depth."
    ([branch? get-children root]
      (let [walk 
            (fn walk 
              [branch? get-children parents]
-             (when (not (stream-null? parents))
+             ;(println "parents=" parents)
+             (if (stream-null? parents)
+               the-empty-stream
                (let [first-parent (stream-car parents)]
-               (cons-stream 
-                 first-parent
-                 (let [first-parent-children (seq-to-stream (get-children first-parent))]
-                   (if (not (stream-null? first-parent-children))
-                     (cons-stream
-                       (stream-car first-parent-children)
-                       (walk branch? get-children (stream-cdr first-parent-children)))
-                     (walk branch? get-children (stream-cdr parents))))))))]
+                 ;(println "first-parent=" first-parent)
+                 (cons-stream 
+                   first-parent
+                   (let [first-parent-children (seq-to-stream (get-children first-parent))]
+                     ;(println "first-parent-children=" first-parent-children)
+                     (if (stream-null? first-parent-children)
+                       (walk branch? get-children (stream-cdr parents))
+                       (let [all-the-rest (stream-append-delayed first-parent-children (stream-cdr parents))]
+                         (walk branch? get-children all-the-rest))))))))]
        (walk branch? get-children (seq-to-stream (list root))))
      )
    ([root] 
-     (tree-stream-breadth #(not (is-leaf %)) get-children root)
+     (tree-stream-depth #(not (is-leaf %)) get-children root)
      )
    )
 
