@@ -58,6 +58,12 @@
     )
   )
 
+(defn make-children
+  ([env procs mode]
+    {:return nil :env env :procs procs :mode mode}
+    )
+  )
+
 (defn get-result-return
   [result]
     (:return result)
@@ -124,11 +130,6 @@
   (primitive-procedure-impl-map k)
   )
 
-(defn make-begin 
-  [the-sequence] 
-  (cons 'begin the-sequence)
-  )
-
 (defn make-if 
   [predicate consequent alternative]
   (list 'if predicate consequent alternative)
@@ -151,57 +152,6 @@
 (defn apply-primitive-procedure 
   [procedure arguments]
   (apply-in-underlying-interpreter (primitive-implementation procedure) arguments))
-
-(defn assignment-variable 
-  [exp] 
-  (nth exp 1))
-
-(defn assignment-value 
-  [exp] 
-  (nth exp 2))
-
-(defn begin-actions 
-  [exp] 
-  (rest exp))
-
-(defn cond-clauses 
-  [exp] 
-  (rest exp))
-
-(defn cond-clause-actions 
-  [clause] 
-  (rest clause))
-
-(defn cond-clause-predicate 
-  [clause] 
-  (first clause))
-
-(defn cond-else-clause? 
-  [clause] 
-  (= (cond-clause-predicate clause) 'else))
-
-(defn sequence->exp 
-  [the-sequence]
-  (cond 
-    (empty? the-sequence) the-sequence
-    (= (count the-sequence) 1) (first the-sequence)
-    :else (make-begin the-sequence)))
-
-(defn expand-clauses [clauses]
-  (if (empty? clauses)
-    'false
-    (if (cond-else-clause? (first clauses))
-      (if (empty? (rest clauses))
-        (sequence->exp (cond-clause-actions (first clauses)))
-        (error "ELSE clause isn't last -- COND->IF" clauses))
-      (make-if 
-        (cond-clause-predicate (first clauses)) 
-        (sequence->exp (cond-clause-actions (first clauses)))
-        (expand-clauses (rest clauses))))))
-
-(defn cond->if 
-  [exp] 
-  (expand-clauses (cond-clauses exp)))
 
 (defn definition-variable 
   [exp] 
@@ -266,8 +216,10 @@
   [value-delayed-or-not env results] 
   (if (tagged-list? value-delayed-or-not 'delayed-val)
     (let [value-proc (tagged-list-content-1 value-delayed-or-not)
-          value-result (value-proc env results)]
-          value-result)
+          result (get-result value-proc env results)]
+      (if (nil? result)
+          (make-children env (list value-proc) :eval)
+          result))
     (make-result value-delayed-or-not env))
   )
 
@@ -276,8 +228,8 @@
   [exp] 
   (fn [env results] 
     (let [value-delayed-or-not (lookup-variable-value-in-env exp env)
-          value (force-delayed-val value-delayed-or-not env results)]
-      value))
+          result-or-children (force-delayed-val value-delayed-or-not env results)]
+      result-or-children))
   )
 
 (defn analyze-quotation 
@@ -287,32 +239,20 @@
     )
   )
 
-(defn analyze-cond 
-  [exp]
-  (let [condifexp-proc (analyze (cond->if exp))] 
-    (fn [env results]
-      (let [cond-result (condifexp-proc env results)
-            cond-return-val (get-result-return cond-result)]
-        (make-result cond-return-val env);use original env
-        )
-      )
-    )
-  )
-
 (defn analyze-definition-of-variable 
   [exp] 
   (let [variable (definition-variable exp)
         value-proc (analyze (definition-value exp))]
     (fn [env results]
-      (make-result 
-        'ok
         (let [env1 (set-variable-value-in-env variable (list 'delayed-val value-proc) env)
               value-delayed (lookup-variable-value-in-env variable env1)
-              value-result (force-delayed-val value-delayed env1 results)
-              value (get-result-return value-result)
-              env2 (set-variable-value-in-env variable value env1)]
-          env2);pass new env
-        )))
+              result (force-delayed-val value-delayed env1 results)
+              value (get-result-return result)]
+          (if (nil? value)
+            result;children
+            (make-result 'ok (set-variable-value-in-env variable value env1));pass new env
+            )
+          )))
   )
 
 (defn analyze-definition 
@@ -339,57 +279,20 @@
         consequent-proc (analyze (if-consequent exp))
         alternative-proc (analyze (if-alternative exp))]
     (fn [env results]
-      (if (true? (get-result-return (force-it predicate-proc env)))
-        (consequent-proc env)
-        (alternative-proc env))
-      )
-    )
+      (let [predicate-result (get-result predicate-proc env results)]
+        (if (nil? predicate-result)
+          (make-children env (list predicate-proc) :force)
+          (if (true? (get-result-return predicate-result))
+            (let [consequent-result (get-result consequent-proc env results)]
+              (if (nil? consequent-result)
+                (make-children env (list consequent-proc) :eval)
+                consequent-result))
+            (let [alternative-result (get-result alternative-proc env results)]
+              (if (nil? alternative-result)
+                (make-children env (list alternative-proc) :eval)
+                alternative-result))
+            )))))
   )
-
-(defn analyze-sequence 
-  [exps]
-  (cond
-    (empty? exps) 
-    (fn [env results] )
-    (= (count exps) 1) 
-    (let [exp (first exps)
-          exp-proc (analyze exp)]
-      (fn [env results] 
-        (let [exp-result (exp-proc env) 
-              exp-ret (get-result-return exp-result)
-              exp-env (get-result-env exp-result)]
-          (make-result exp-ret exp-env)))
-      )
-    :else
-    (reduce 
-      (fn [fn1 fn2]
-        (fn [env results] 
-          (let [exp1-result (fn1 env) 
-                exp1-ret (get-result-return exp1-result)
-                exp1-env (get-result-env exp1-result)
-                exp2-result (fn2 exp1-env);use env returned by eval of previous exp
-                exp2-ret (get-result-return exp2-result)
-                exp2-env (get-result-env exp2-result)]
-            (make-result exp2-ret exp2-env))))
-      ;create a list of functions fn [env results]
-      (map 
-        (fn [exp] 
-          (let [exp-proc (analyze exp)]
-            (fn [env results] 
-              (let [exp-result (exp-proc env) 
-                    exp-ret (get-result-return exp-result)
-                    exp-env (get-result-env exp-result)]
-                (make-result exp-ret exp-env)));pass new env
-            )) 
-        exps)
-      )
-    )
-  )
-
-(defn analyze-begin
-  [exp]
-  (analyze-sequence (begin-actions exp)) 
-)
 
 (defn analyze-application
   [exp] 
@@ -398,7 +301,7 @@
     (fn [env results] 
       (let [procedure-result (get-result operator-proc env results)];force operator!
         (if (nil? procedure-result)
-          (make-result env (list operator-proc) :force)
+          (make-children env (list operator-proc) :force)
           (let [procedure (get-result-return procedure-result)]
             (cond 
               (primitive-procedure? procedure)
@@ -408,17 +311,17 @@
                   (let [args (map (fn [arg-proc] (get-result arg-proc env results)) arg-procs)]
                     ;(println 'apply-primitive-procedure procedure args)
                     (make-result (apply-primitive-procedure procedure args) env))
-                  (make-result env arg-procs-to-force :force)))
+                  (make-children env arg-procs-to-force :force)))
               (compound-procedure? procedure)
               (let [params (procedure-parameters procedure)
                     arg-procs-delayed (map (fn [arg-proc] (delay-it arg-proc env)) arg-procs)
                     proc-env (procedure-environment procedure)
-                    new-env (extend-environment params arg-procs-delayed proc-env)
+                    body-env (extend-environment params arg-procs-delayed proc-env)
                     body-proc (procedure-body procedure)]
                 ;(println 'apply-compound-procedure 'PROC= procedure 'ARGS= arg-procs-delayed 'END )
-                (let [result (get-result body-proc new-env results)]
+                (let [result (get-result body-proc body-env results)]
                   (if (nil? result)
-                    (make-result new-env body-proc :eval)
+                    (make-children body-env (list body-proc) :eval)
                     result)))
               :else 
               (error "Unknown procedure type -- APPLY" procedure))
@@ -437,10 +340,8 @@
 (def global-analyze-map
   {
    'quote analyze-quotation
-   'cond analyze-cond
    'if analyze-if
    'lambda analyze-lambda
-   'begin analyze-begin
    }
 )
 
@@ -492,16 +393,21 @@
              (let [item (first items)
                    proc (:proc item)
                    env (:env item)
-                   result (force-it proc env results)
+                   mode (:mode item)
+                   result (if (= mode :force) (force-it proc env results) (proc env results))
                    new-env (get-result-env result)
-                   new-procs (get-result-procs result)]
+                   new-procs (get-result-procs result)
+                   new-mode (get-result-mode result)]
                (if (empty? new-procs)
-                 (if (empty? (rest items))
-                   result
-                   (walk (rest items) (set-result proc env result results)))
-                 (let [new-items (map (fn [proc] {:proc proc :env new-env}) new-procs)]
-                   (walk (concat new-items items) results)))))]
-      (walk (list {:proc proc :env env}) {})
+                 (let [rest-items (rest items)]
+                   (if (empty? rest-items)
+                     result
+                     (let [new-results (set-result proc env result results)]
+                       (walk rest-items new-results))))
+                 (let [new-items (map (fn [proc] {:proc proc :env new-env :mode new-mode}) new-procs)
+                       all-items (concat new-items items)]
+                   (walk all-items results)))))]
+      (walk (list {:proc proc :env env :mode :eval}) {})
       )
     )
   )
@@ -544,3 +450,9 @@
       )
     )
   )
+
+  (let [env (setup-environment global-primitive-procedure-impl-map (the-empty-environment))
+        e1 (extend-environment-with-map '{} env)
+        e2 (get-result-env (do-eval '(define x 2) e1))
+        e3 (get-result-env (do-eval '(define y (+ 1 x)) e2))]
+    (print e3))

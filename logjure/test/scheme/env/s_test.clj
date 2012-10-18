@@ -21,7 +21,7 @@
   )
 
 (deftest do-analyze-from-map-test 
-  (is (= 'x (get-result-return ((do-analyze-from-map global-analyze-map '(quote x)) nil))))
+  (is (= 'x (get-result-return ((do-analyze-from-map global-analyze-map '(quote x)) nil {}))))
   )
 
 (def factorial
@@ -72,18 +72,6 @@
       (is (= 5 (get-result-return (do-eval '(add2 3) e2))))
       (is (= 7 (get-result-return (do-eval '((adder 3) 4) e1))))
       )
-    ;begin
-    (let [e1 (get-result-env (do-eval '(begin (define x 2) (set! y (+ x 1))) env))]
-      (is (= 2 (get-result-return (do-eval 'x e1))))
-      (is (= 3 (get-result-return (do-eval 'y e1))))
-      )
-    ;cond
-    (is (= 1 (get-result-return (do-eval '(cond (true 1) (true 2) (else 3)) env))))
-    (is (= 2 (get-result-return (do-eval '(cond (false 1) (true 2) (else 3)) env))))
-    (is (= 3 (get-result-return (do-eval '(cond (false 1) (false 2) (else 3)) env))))
-    (is (= 3 (get-result-return (do-eval '(cond (false 1) (false 2) (true 3) (else 4)) env))))
-    (is (= 2 (get-result-return (do-eval '(cond ((= 1 (+ 1 1)) 1) ((= 2 (+ 1 1)) 2) (else 3)) env))))
-    (is (= 3 (get-result-return (do-eval '(cond (false 1) (false 2) (else (+ 1 2))) env))))
     ;application
     (is (= 2 (get-result-return (do-eval '(* 1 2) env))))
     (is (= 3 (get-result-return (do-eval '((lambda (a b) (+ a b)) 1 2) env))))
