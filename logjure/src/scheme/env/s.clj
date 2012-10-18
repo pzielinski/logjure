@@ -308,7 +308,7 @@
               ;todo: lookup once!
               (let [arg-procs-to-force (filter (fn [arg-proc] (nil? (get-result arg-proc env results))) arg-procs)]
                 (if (empty? arg-procs-to-force)
-                  (let [args (map (fn [arg-proc] (get-result arg-proc env results)) arg-procs)]
+                  (let [args (map (fn [arg-proc] (get-result-return (get-result arg-proc env results))) arg-procs)]
                     ;(println 'apply-primitive-procedure procedure args)
                     (make-result (apply-primitive-procedure procedure args) env))
                   (make-children env arg-procs-to-force :force)))
@@ -321,7 +321,7 @@
                 ;(println 'apply-compound-procedure 'PROC= procedure 'ARGS= arg-procs-delayed 'END )
                 (let [result (get-result body-proc body-env results)]
                   (if (nil? result)
-                    (make-children body-env (list body-proc) :eval)
+                    (make-children body-env (list body-proc) :force)
                     result)))
               :else 
               (error "Unknown procedure type -- APPLY" procedure))
@@ -450,9 +450,3 @@
       )
     )
   )
-
-  (let [env (setup-environment global-primitive-procedure-impl-map (the-empty-environment))
-        e1 (extend-environment-with-map '{} env)
-        e2 (get-result-env (do-eval '(define x 2) e1))
-        e3 (get-result-env (do-eval '(define y (+ 1 x)) e2))]
-    (print e3))
