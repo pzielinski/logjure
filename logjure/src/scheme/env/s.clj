@@ -110,27 +110,19 @@
   (nth obj 2)
   )
 
-;recur!!!!!!!!!!!!!!!!!!!!!!!
 (defn force-it
-  [objx env results]
-  (if (result? objx)
-    (let [obj (get-result-return objx)]
-      (if (not (thunk? obj))
-        objx;was from result - do not eval - return result!
-        (let [new-proc (thunk-proc obj)
-              new-env (thunk-env obj)
-              new-obj (new-proc new-env results)]
-          (force-it new-obj env results))))
-    (let [obj objx]
-      (if (not (thunk? obj))
-        (let [proc obj
-              result (proc env results)];was not result - must be proc - so eval
-          (force-it result env results))
-        (let [new-proc (thunk-proc obj)
-              new-env (thunk-env obj)
-              new-obj (new-proc new-env results)]
-          (force-it new-obj env results)
-        ))));TODO: memoize!
+  [result results]
+  (when (result? result)
+    (let [return (get-result-return result)]
+      (if (nil? return)
+        result
+        (if (not (thunk? return))
+          result
+          (let [thunk return
+                new-proc (thunk-proc thunk)
+                new-env (thunk-env thunk)
+                new-result (new-proc new-env results)]
+            (recur new-result results))))))
   )
 
 (defn primitive-procedure-impl
@@ -402,7 +394,8 @@
                    proc (:proc item)
                    env (:env item)
                    mode (:mode item)
-                   result (if (= mode :force) (force-it proc env results) (proc env results))
+                   preliminary-result (proc env results)
+                   result (if (= mode :force) (force-it preliminary-result results) preliminary-result)
                    new-env (get-result-env result)
                    new-procs (get-result-procs result)
                    new-mode (get-result-mode result)
@@ -421,7 +414,7 @@
            initial-items (list {:proc proc :env env :mode :eval})
            initial-results (empty-results)
            result (walk initial-items initial-results)]
-      (force-it result env initial-results)))
+      (force-it result initial-results)))
   )
 
 (defn user-print 
