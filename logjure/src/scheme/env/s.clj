@@ -38,6 +38,12 @@
   )
 
 (defn 
+  empty-results
+  []
+   {}
+)
+
+(defn 
   set-result
   [proc env result results]
     (assoc results #{proc env} result)
@@ -104,6 +110,7 @@
   (nth obj 2)
   )
 
+;recur!!!!!!!!!!!!!!!!!!!!!!!
 (defn force-it
   [objx env results]
   (if (result? objx)
@@ -116,7 +123,8 @@
           (force-it new-obj env results))))
     (let [obj objx]
       (if (not (thunk? obj))
-        (let [result (obj env results)];was not result - must be proc - so eval
+        (let [proc obj
+              result (proc env results)];was not result - must be proc - so eval
           (force-it result env results))
         (let [new-proc (thunk-proc obj)
               new-env (thunk-env obj)
@@ -321,7 +329,7 @@
                 ;(println 'apply-compound-procedure 'PROC= procedure 'ARGS= arg-procs-delayed 'END )
                 (let [result (get-result body-proc body-env results)]
                   (if (nil? result)
-                    (make-children body-env (list body-proc) :force)
+                    (make-children body-env (list body-proc) :eval)
                     result)))
               :else 
               (error "Unknown procedure type -- APPLY" procedure))
@@ -397,19 +405,23 @@
                    result (if (= mode :force) (force-it proc env results) (proc env results))
                    new-env (get-result-env result)
                    new-procs (get-result-procs result)
-                   new-mode (get-result-mode result)]
-               (if (empty? new-procs)
-                 (let [rest-items (rest items)]
-                   (if (empty? rest-items)
-                     result
-                     (let [new-results (set-result proc env result results)]
-                       (walk rest-items new-results))))
-                 (let [new-items (map (fn [proc] {:proc proc :env new-env :mode new-mode}) new-procs)
-                       all-items (concat new-items items)]
-                   (walk all-items results)))))]
-      (walk (list {:proc proc :env env :mode :eval}) {})
-      )
-    )
+                   new-mode (get-result-mode result)
+                   rest-items (rest items)
+                   all-items (if (empty? new-procs) 
+                               rest-items
+                               (let [new-items 
+                                     (map (fn [proc] {:proc proc :env new-env :mode new-mode}) new-procs)]
+                                 (concat new-items items)))
+                   new-results (if (empty? new-procs) 
+                                 (set-result proc env result results) 
+                                 results)]
+               (if (and (empty? new-procs) (empty? rest-items))
+                 result
+                 (recur all-items new-results))))
+           initial-items (list {:proc proc :env env :mode :eval})
+           initial-results (empty-results)
+           result (walk initial-items initial-results)]
+      (force-it result env initial-results)))
   )
 
 (defn user-print 
@@ -449,4 +461,20 @@
         )
       )
     )
+  )
+
+(def factorial
+  (fn [n]
+    (loop [cnt n acc 1]
+       (if (zero? cnt)
+            acc
+          (recur (dec cnt) (* acc cnt))))))
+
+(let [env (setup-environment global-primitive-procedure-impl-map (the-empty-environment))
+      e1 (get-result-env (do-eval '(define fact (lambda (n x) (if (= n 1) x (fact (- n 1) (* n x))))) env))]
+  (println (= 1 (get-result-return (do-eval '(fact 1 1) e1))))
+  (println (= 2 (get-result-return (do-eval '(fact 2 1) e1))))
+  (println (= 6 (get-result-return (do-eval '(fact 3 1) e1))))
+  (println (= 24 (get-result-return (do-eval '(fact 4 1) e1))))
+  (println (= (factorial 20) (get-result-return (do-eval '(fact 20 1) e1))))
   )
