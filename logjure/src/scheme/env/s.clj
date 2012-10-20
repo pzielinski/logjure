@@ -474,26 +474,3 @@
       )
     )
   )
-
-(comment
-(let [factorial
-      (fn [n]
-        (loop [cnt n acc 1]
-          (if (zero? cnt)
-            acc
-            (recur (dec cnt) (* acc cnt)))))
-      env (setup-environment global-primitive-procedure-impl-map (the-empty-environment))
-      e1 (get-result-env (do-eval '(define fact (lambda (n x) (if (= n 1) x (fact (- n 1) (* n x))))) env))]
-  (time (println "1" (= (factorial 1) (get-result-return (do-eval '(fact 1 1) e1)))))
-  (time (println "2" (= (factorial 2) (get-result-return (do-eval '(fact 2 1) e1)))))
-  (time (println "3" (= (factorial 3) (get-result-return (do-eval '(fact 3 1) e1)))))
-  (time (println "4" (= (factorial 4) (get-result-return (do-eval '(fact 4 1) e1)))))
-  (time (println "5" (= (factorial 5) (get-result-return (do-eval '(fact 5 1) e1)))))
-  (time (println "6" (= (factorial 6) (get-result-return (do-eval '(fact 6 1) e1)))))
-  (time (println "7" (= (factorial 7) (get-result-return (do-eval '(fact 7 1) e1)))))
-  (time (println "8" (= (factorial 8) (get-result-return (do-eval '(fact 8 1) e1)))))
-  (time (println "9" (= (factorial 9) (get-result-return (do-eval '(fact 9 1) e1)))))
-  (time (println "10" (= (factorial 10) (get-result-return (do-eval '(fact 10 1) e1)))))
-  (time (println "20" (= (factorial 20) (get-result-return (do-eval '(fact 20 1) e1)))))
-  )
-)
