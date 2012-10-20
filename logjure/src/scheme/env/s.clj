@@ -71,8 +71,8 @@
   )
 
 (defn make-children-sub
-  ([env procs mode]
-    {:return nil :env env :procs procs :mode mode :sub true}
+  ([env procs mode sub?]
+    {:return nil :env env :procs procs :mode mode :sub sub?}
     )
   )
 
@@ -238,12 +238,12 @@
   )
 
 (defn force-delayed-val 
-  [value-delayed-or-not env results] 
+  [value-delayed-or-not env results sub?] 
   (if (tagged-list? value-delayed-or-not 'delayed-val)
     (let [value-proc (tagged-list-content-1 value-delayed-or-not)
           result (get-result value-proc env results)]
       (if (nil? result)
-          (make-children env (list value-proc) :eval)
+          (make-children-sub env (list value-proc) :eval sub?)
           result))
     (make-result value-delayed-or-not env))
   )
@@ -253,7 +253,7 @@
   [exp] 
   (fn [env results] 
     (let [value-delayed-or-not (lookup-variable-value-in-env exp env)
-          result-or-children (force-delayed-val value-delayed-or-not env results)]
+          result-or-children (force-delayed-val value-delayed-or-not env results true)]
       result-or-children))
   )
 
@@ -271,7 +271,7 @@
     (fn [env results]
         (let [env1 (set-variable-value-in-env variable (list 'delayed-val value-proc) env)
               value-delayed (lookup-variable-value-in-env variable env1)
-              result (force-delayed-val value-delayed env1 results)
+              result (force-delayed-val value-delayed env1 results false)
               value (get-result-return result)]
           (if (nil? value)
             result;children
@@ -346,7 +346,7 @@
                 ;(println 'apply-compound-procedure 'PROC= procedure 'ARGS= arg-procs-delayed 'END )
                 (let [result (get-result body-proc body-env results)]
                   (if (nil? result)
-                    (make-children-sub body-env (list body-proc) :eval)
+                    (make-children-sub body-env (list body-proc) :eval true)
                     result)))
               :else 
               (error "Unknown procedure type -- APPLY" procedure))
@@ -508,7 +508,7 @@
   (let [n 10
         expected (recur-fact n)
         e2 (get-result-env (do-eval (list 'define 'n n) e1))]
-    (time (print n " fact " (= expected (get-result-return (do-eval '(fact n 1) e2))))))
+    (time (print n " fact " (= expected (get-result-return (do-eval '(fact n 1) e2))) " ")))
   )
 
 (let [recur-fibo 
@@ -527,7 +527,7 @@
   (let [n 10
         expected (recur-fibo n)
         e2 (get-result-env (do-eval (list 'define 'n n) e1))]
-    (time (print n " fib " (= expected (get-result-return (do-eval '(fib n) e2))))))
+    (time (print n " fib  " (= expected (get-result-return (do-eval '(fib n) e2))) " ")))
   )
 
 
