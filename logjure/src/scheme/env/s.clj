@@ -409,7 +409,9 @@
                    env (:env item)
                    mode (:mode item)
                    preliminary-result (proc env results)
-                   result (if (= mode :force) (force-it preliminary-result results) preliminary-result)
+                   result (if (= mode :force) 
+                            (force-it preliminary-result results) 
+                            preliminary-result)
                    new-env (get-result-env result)
                    new-procs (get-result-procs result)
                    new-mode (get-result-mode result)
@@ -417,7 +419,9 @@
                    all-items (if (empty? new-procs) 
                                rest-items
                                (let [new-items 
-                                     (map (fn [proc] {:proc proc :env new-env :mode new-mode}) new-procs)]
+                                     (map 
+                                       (fn [proc] {:proc proc :env new-env :mode new-mode}) 
+                                       new-procs)]
                                  (concat new-items items)))
                    new-results (if (empty? new-procs) 
                                  (set-result proc env result results) 
@@ -475,24 +479,23 @@
     )
   )
 
-(comment
-(let [factorial
+;(comment
+
+(let [recur-fact
       (fn [n]
         (loop [cnt n acc 1]
           (if (zero? cnt)
             acc
             (recur (dec cnt) (* acc cnt)))))
       env (setup-environment global-primitive-procedure-impl-map (the-empty-environment))
-      e1 (get-result-env (do-eval '(define fact (lambda (n x) (if (= n 1) x (fact (- n 1) (* n x))))) env))]
-  (time (println "1" (= (factorial 1) (get-result-return (do-eval '(fact 1 1) e1)))))
-  (time (println "2" (= (factorial 2) (get-result-return (do-eval '(fact 2 1) e1)))))
-  (time (println "3" (= (factorial 3) (get-result-return (do-eval '(fact 3 1) e1)))))
-  (time (println "4" (= (factorial 4) (get-result-return (do-eval '(fact 4 1) e1)))))
-  (time (println "5" (= (factorial 5) (get-result-return (do-eval '(fact 5 1) e1)))))
-  (time (println "6" (= (factorial 6) (get-result-return (do-eval '(fact 6 1) e1)))))
-  (time (println "7" (= (factorial 7) (get-result-return (do-eval '(fact 7 1) e1)))))
-  (time (println "8" (= (factorial 8) (get-result-return (do-eval '(fact 8 1) e1)))))
-  (time (println "9" (= (factorial 9) (get-result-return (do-eval '(fact 9 1) e1)))))
+      e1 (get-result-env 
+           (do-eval 
+             '(define fact (lambda (n x) (if (= n 1) x (fact (- n 1) (* n x))))) 
+             env))]
+  (let [n 10
+        expected (recur-fact n)
+        e2 (get-result-env (do-eval (list 'define 'n n) e1))]
+    (time (print n " fact " (= expected (get-result-return (do-eval '(fact n 1) e2))))))
   )
 
 (let [recur-fibo 
@@ -508,11 +511,11 @@
            (do-eval 
              '(define fib (lambda (n) (if (= n 0) 0 (if (= n 1) 1 (+ (fib (- n 1)) (fib (- n 2))))))) 
              env))]
-  (let [n 20
+  (let [n 10
         expected (recur-fibo n)
         e2 (get-result-env (do-eval (list 'define 'n n) e1))]
-    (time (print n (= expected (get-result-return (do-eval '(fib n) e2))))))
+    (time (print n " fib " (= expected (get-result-return (do-eval '(fib n) e2))))))
   )
 
-)
+
 
