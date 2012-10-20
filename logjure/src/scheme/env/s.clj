@@ -57,22 +57,33 @@
 
 (defn make-result
   ([return env]
-    {:return return :env env :procs '() :mode :eval}
+    {:return return :env env :procs '() :mode :eval :sub false}
     )
   ([env procs mode]
-    {:return nil :env env :procs procs :mode mode}
+    {:return nil :env env :procs procs :mode mode :sub false}
     )
   )
 
 (defn make-children
   ([env procs mode]
-    {:return nil :env env :procs procs :mode mode}
+    {:return nil :env env :procs procs :mode mode :sub false}
+    )
+  )
+
+(defn make-children-sub
+  ([env procs mode]
+    {:return nil :env env :procs procs :mode mode :sub true}
     )
   )
 
 (defn get-result-return
   [result]
     (:return result)
+  )
+
+(defn get-result-sub
+  [result]
+    (:sub result)
   )
 
 (defn get-result-env
@@ -335,7 +346,7 @@
                 ;(println 'apply-compound-procedure 'PROC= procedure 'ARGS= arg-procs-delayed 'END )
                 (let [result (get-result body-proc body-env results)]
                   (if (nil? result)
-                    (make-children body-env (list body-proc) :eval)
+                    (make-children-sub body-env (list body-proc) :eval)
                     result)))
               :else 
               (error "Unknown procedure type -- APPLY" procedure))
@@ -415,14 +426,16 @@
                    new-env (get-result-env result)
                    new-procs (get-result-procs result)
                    new-mode (get-result-mode result)
+                   substitute? (get-result-sub result)
                    rest-items (rest items)
                    all-items (if (empty? new-procs) 
                                rest-items
                                (let [new-items 
                                      (map 
                                        (fn [proc] {:proc proc :env new-env :mode new-mode}) 
-                                       new-procs)]
-                                 (concat new-items items)))
+                                       new-procs)
+                                     remaining-items (if substitute? rest-items items)]
+                                 (concat new-items remaining-items)))
                    new-results (if (empty? new-procs) 
                                  (set-result proc env result results) 
                                  results)
