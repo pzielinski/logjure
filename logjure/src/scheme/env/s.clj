@@ -125,6 +125,20 @@
             (recur new-result results))))))
   )
 
+(defn get-thunk-proc-env-mode-force
+  [result results]
+  (when (result? result)
+    (let [return (get-result-return result)]
+      (if (nil? return)
+        result
+        (if (not (thunk? return))
+          result
+          (let [thunk return
+                proc (thunk-proc thunk)
+                env (thunk-env thunk)]
+            {:proc proc :env env :mode :force})))))
+  )
+
 (defn primitive-procedure-impl
   [primitive-procedure-impl-map, k]
   (primitive-procedure-impl-map k)
@@ -407,10 +421,15 @@
                                  (concat new-items items)))
                    new-results (if (empty? new-procs) 
                                  (set-result proc env result results) 
-                                 results)]
-               (if (and (empty? new-procs) (empty? rest-items))
+                                 results)
+                   result-thunk-proc-env (get-thunk-proc-env-mode-force result new-results)
+                   final-result? (= result result-thunk-proc-env)
+                   final-items (if (and (empty? new-procs) (empty? rest-items))
+                                 (list result-thunk-proc-env)
+                                 all-items)]
+               (if (and (empty? new-procs) (empty? rest-items) final-result?)
                  result
-                 (recur all-items new-results))))
+                 (recur final-items new-results))))
            initial-items (list {:proc proc :env env :mode :eval})
            initial-results (empty-results)
            result (walk initial-items initial-results)]
@@ -456,18 +475,25 @@
     )
   )
 
-(def factorial
-  (fn [n]
-    (loop [cnt n acc 1]
-       (if (zero? cnt)
+(comment
+(let [factorial
+      (fn [n]
+        (loop [cnt n acc 1]
+          (if (zero? cnt)
             acc
-          (recur (dec cnt) (* acc cnt))))))
-
-(let [env (setup-environment global-primitive-procedure-impl-map (the-empty-environment))
+            (recur (dec cnt) (* acc cnt)))))
+      env (setup-environment global-primitive-procedure-impl-map (the-empty-environment))
       e1 (get-result-env (do-eval '(define fact (lambda (n x) (if (= n 1) x (fact (- n 1) (* n x))))) env))]
-  (println (= 1 (get-result-return (do-eval '(fact 1 1) e1))))
-  (println (= 2 (get-result-return (do-eval '(fact 2 1) e1))))
-  (println (= 6 (get-result-return (do-eval '(fact 3 1) e1))))
-  (println (= 24 (get-result-return (do-eval '(fact 4 1) e1))))
-  (println (= (factorial 20) (get-result-return (do-eval '(fact 20 1) e1))))
+  (time (println "1" (= (factorial 1) (get-result-return (do-eval '(fact 1 1) e1)))))
+  (time (println "2" (= (factorial 2) (get-result-return (do-eval '(fact 2 1) e1)))))
+  (time (println "3" (= (factorial 3) (get-result-return (do-eval '(fact 3 1) e1)))))
+  (time (println "4" (= (factorial 4) (get-result-return (do-eval '(fact 4 1) e1)))))
+  (time (println "5" (= (factorial 5) (get-result-return (do-eval '(fact 5 1) e1)))))
+  (time (println "6" (= (factorial 6) (get-result-return (do-eval '(fact 6 1) e1)))))
+  (time (println "7" (= (factorial 7) (get-result-return (do-eval '(fact 7 1) e1)))))
+  (time (println "8" (= (factorial 8) (get-result-return (do-eval '(fact 8 1) e1)))))
+  (time (println "9" (= (factorial 9) (get-result-return (do-eval '(fact 9 1) e1)))))
+  (time (println "10" (= (factorial 10) (get-result-return (do-eval '(fact 10 1) e1)))))
+  (time (println "20" (= (factorial 20) (get-result-return (do-eval '(fact 20 1) e1)))))
   )
+)
