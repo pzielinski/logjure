@@ -310,11 +310,11 @@
           (if (true? (get-result-return predicate-result))
             (let [consequent-result (get-result consequent-proc env results)]
               (if (nil? consequent-result)
-                (make-children-sub env (list consequent-proc) :eval true)
+                (make-children env (list consequent-proc) :eval)
                 consequent-result))
             (let [alternative-result (get-result alternative-proc env results)]
               (if (nil? alternative-result)
-                (make-children-sub env (list alternative-proc) :eval true)
+                (make-children env (list alternative-proc) :eval)
                 alternative-result))
             )))))
   )
@@ -506,11 +506,9 @@
              '(define fact (lambda (n x) (if (= n 1) x (fact (- n 1) (* n x))))) 
              env))]
   (let [n 10
-        dummy (println "fact " n)
-        expected (time (recur-fact n))
-        e2 (get-result-env (do-eval (list 'define 'n n) e1))
-        return (time (get-result-return (do-eval '(fact n 1) e2)))]
-    (println (= expected return)))
+        expected (recur-fact n)
+        e2 (get-result-env (do-eval (list 'define 'n n) e1))]
+    (time (print n " fact " (= expected (get-result-return (do-eval '(fact n 1) e2))) " ")))
   )
 
 (let [recur-fibo 
@@ -527,11 +525,9 @@
              '(define fib (lambda (n) (if (= n 0) 0 (if (= n 1) 1 (+ (fib (- n 1)) (fib (- n 2))))))) 
              env))]
   (let [n 10
-        dummy (println "fib  " n)
-        expected (time (recur-fibo n))
-        e2 (get-result-env (do-eval (list 'define 'n n) e1))
-        return (time (get-result-return (do-eval '(fib n) e2)))]
-    (println (= expected return)))
+        expected (recur-fibo n)
+        e2 (get-result-env (do-eval (list 'define 'n n) e1))]
+    (time (print n " fib  " (= expected (get-result-return (do-eval '(fib n) e2))) " ")))
   )
 
 
