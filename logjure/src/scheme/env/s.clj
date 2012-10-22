@@ -50,6 +50,12 @@
 )
 
 (defn 
+  del-result
+  [proc env results]
+    (dissoc results #{proc env})
+)
+
+(defn 
   get-result 
   [proc env results]
     (get results #{proc env})
@@ -241,6 +247,7 @@
 (defn analyze-variable
   [exp] 
   (fn [env results] 
+    (if (get-result "print-debug" {} results) (println "variable" exp))
     (let [value-delayed-or-not (lookup-variable-value-in-env exp env)
           result-or-children (force-delayed-val value-delayed-or-not env results)]
       result-or-children))
@@ -313,6 +320,7 @@
   (let [operator-proc (analyze (operator exp))
         arg-procs (map #(analyze %) (operands exp))]
     (fn [env results] 
+      (if (get-result "print-debug" {} results) (println "application" exp))
       (let [procedure-result (get-result operator-proc env results)];force operator!
         (if (nil? procedure-result)
           (make-children env (list operator-proc) :force)
@@ -435,7 +443,7 @@
                  result
                  (recur final-items new-results))))
            initial-items (list {:proc proc :env env :mode :eval})
-           initial-results (empty-results)
+           initial-results (set-result "print-debug" {} false (empty-results))
            result (walk initial-items initial-results)]
       (force-it result initial-results)))
   )
@@ -478,3 +486,24 @@
       )
     )
   )
+
+(comment
+(let [recur-fact
+      (fn [n]
+        (loop [cnt n acc 1]
+          (if (zero? cnt)
+            acc
+            (recur (dec cnt) (* acc cnt)))))
+      env (setup-environment global-primitive-procedure-impl-map (the-empty-environment))
+      e1 (get-result-env 
+           (do-eval 
+             '(define fact (lambda (n x) (if (= n 1) x (fact (- n 1) (* n x))))) 
+             env))]
+  (let [n 2
+        dummy (println "fact " n)
+        expected (time (recur-fact n))
+        e2 (get-result-env (do-eval (list 'define 'n n) e1))
+        return (time (get-result-return (do-eval '(fact n 1) e2)))]
+    (println (= expected return)))
+  )
+)

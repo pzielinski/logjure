@@ -120,6 +120,8 @@
     )
   )
 
+(run-tests)
+
 (let [recur-fact
       (fn [n]
         (loop [cnt n acc 1]
@@ -160,4 +162,3 @@
     (println (= expected return)))
   )
 
-(run-tests)
