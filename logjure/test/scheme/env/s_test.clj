@@ -134,11 +134,11 @@
              '(define fact (lambda (n x) (if (= n 1) x (fact (- n 1) (* n x))))) 
              env))]
   (let [n 10
-        dummy (println "fact " n)
-        expected (time (recur-fact n))
+        dummy (print "fact " n " ")
+        expected (recur-fact n)
         e2 (get-result-env (do-eval (list 'define 'n n) e1))
         return (time (get-result-return (do-eval '(fact n 1) e2)))]
-    (println (= expected return)))
+    (= expected return))
   )
 
 (let [recur-fibo 
@@ -155,10 +155,10 @@
              '(define fib (lambda (n) (if (= n 0) 0 (if (= n 1) 1 (+ (fib (- n 1)) (fib (- n 2))))))) 
              env))]
   (let [n 10
-        dummy (println "fib  " n)
-        expected (time (recur-fibo n))
+        dummy (print "fib  " n " ")
+        expected (recur-fibo n)
         e2 (get-result-env (do-eval (list 'define 'n n) e1))
         return (time (get-result-return (do-eval '(fib n) e2)))]
-    (println (= expected return)))
+    (= expected return))
   )
 
