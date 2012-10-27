@@ -1,3 +1,4 @@
+;scheme general recursion works, but is very slow, therefore not tested for large recursions 
 (ns scheme.env.s1)
 
 (use 'clojure.test)
@@ -37,22 +38,26 @@
     (map? obj)
   )
 
-(defn empty-results
+(defn 
+  empty-results
   []
    {}
 )
 
-(defn set-result
+(defn 
+  set-result
   [proc env result results]
     (assoc results #{proc env} result)
 )
 
-(defn del-result
+(defn 
+  del-result
   [proc env results]
     (dissoc results #{proc env})
 )
 
-(defn get-result 
+(defn 
+  get-result 
   [proc env results]
     (get results #{proc env})
 )
@@ -90,11 +95,6 @@
 (defn get-result-mode
   [result]
     (:mode result)
-  )
-
-(defn make-item
-  [proc env mode]
-    {:proc proc :env env :mode mode}
   )
 
 (defn delay-it
@@ -320,37 +320,35 @@
   [exp] 
   (let [operator-proc (analyze (operator exp))
         arg-procs (map #(analyze %) (operands exp))]
-    (list 
-      (fn [env results]
-        (force-it (operator-proc env results) results))
-      (fn [env results]
-        (let [procedure (get-result-return (get-result operator-proc env results))]
-          (if (primitive-procedure? procedure)
-            (map
-              (fn [arg-proc]
-                (fn [env results]
-                  (force-it (arg-proc env results) results)
-                  )))
-            )))
-      (fn [env results]
-        (let [procedure (get-result-return (get-result operator-proc env results))]
-          (if (primitive-procedure? procedure)
-            (let [args (map (fn [arg-proc] (get-result-return (get-result arg-proc env results))) arg-procs)]
-              (make-result (apply-primitive-procedure procedure args) env))
-                (let [params (procedure-parameters procedure)
-                      arg-procs-delayed (map (fn [arg-proc] (delay-it arg-proc env)) arg-procs)
-                      proc-env (procedure-environment procedure)
-                      body-env (extend-environment params arg-procs-delayed proc-env)
-                      body-proc (procedure-body procedure)]
-                  (let [result (get-result body-proc body-env results)]
-                    (if (nil? result)
-                      (make-children body-env (list body-proc) :eval)
-                      result)))
-                )
-              )
-          )
-        )
-      )
+    (fn [env results] 
+      (if (get-result "print-debug" {} results) (println "application" exp))
+      (let [procedure-result (get-result operator-proc env results)];force operator!
+        (if (nil? procedure-result)
+          (make-children env (list operator-proc) :force)
+          (let [procedure (get-result-return procedure-result)]
+            (cond 
+              (primitive-procedure? procedure)
+              ;todo: lookup once!
+              (let [arg-procs-to-force (filter (fn [arg-proc] (nil? (get-result arg-proc env results))) arg-procs)]
+                (if (empty? arg-procs-to-force)
+                  (let [args (map (fn [arg-proc] (get-result-return (get-result arg-proc env results))) arg-procs)]
+                    ;(println 'apply-primitive-procedure procedure args)
+                    (make-result (apply-primitive-procedure procedure args) env))
+                  (make-children env arg-procs-to-force :force)))
+              (compound-procedure? procedure)
+              (let [params (procedure-parameters procedure)
+                    arg-procs-delayed (map (fn [arg-proc] (delay-it arg-proc env)) arg-procs)
+                    proc-env (procedure-environment procedure)
+                    body-env (extend-environment params arg-procs-delayed proc-env)
+                    body-proc (procedure-body procedure)]
+                ;(println 'apply-compound-procedure 'PROC= procedure 'ARGS= arg-procs-delayed 'END )
+                (let [result (get-result body-proc body-env results)]
+                  (if (nil? result)
+                    (make-children body-env (list body-proc) :eval)
+                    result)))
+              :else 
+              (error "Unknown procedure type -- APPLY" procedure))
+            )))))
   )
 
 (defn setup-environment
@@ -490,6 +488,7 @@
     )
   )
 
+(comment
 (let [recur-fact
       (fn [n]
         (loop [cnt n acc 1]
@@ -501,10 +500,11 @@
            (do-eval 
              '(define fact (lambda (n x) (if (= n 1) x (fact (- n 1) (* n x))))) 
              env))]
-  (let [n 2
+  (let [n 10
         dummy (println "fact " n)
         expected (time (recur-fact n))
         e2 (get-result-env (do-eval (list 'define 'n n) e1))
         return (time (get-result-return (do-eval '(fact n 1) e2)))]
     (println (= expected return)))
   )
+)
