@@ -1,4 +1,4 @@
-(ns scheme.interpreter.environmental.s-test)
+(ns scheme.env.s-test)
 
 (use 'clojure.test)
 ;(use 'clojure.test.junit)

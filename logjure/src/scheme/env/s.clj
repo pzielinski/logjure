@@ -37,44 +37,9 @@
     (map? obj)
   )
 
-(defn empty-results
-  []
-   {}
-)
-
-(defn set-result
-  [proc env result results]
-    (assoc results #{proc env} result)
-)
-
-(defn del-result
-  [proc env results]
-    (dissoc results #{proc env})
-)
-
-(defn get-result 
-  [proc env results]
-    (get results #{proc env})
-)
-
 (defn make-result
-  ([return env]
-    {:return return :env env :procs '() :mode :eval}
-    )
-  ([env procs mode]
-    {:return nil :env env :procs procs :mode mode}
-    )
-  )
-
-(defn make-children
-  ([env procs mode]
-    {:return nil :env env :procs procs :mode mode}
-    )
-  )
-
-(defn get-result-return
-  [result]
-    (:return result)
+  [env returns]
+    {:env env :returns returns}
   )
 
 (defn get-result-env
@@ -82,19 +47,14 @@
     (:env result)
   )
 
-(defn get-result-procs
+(defn get-result-returns
   [result]
-    (:procs result)
+    (:returns result)
   )
 
-(defn get-result-mode
+(defn get-result-return
   [result]
-    (:mode result)
-  )
-
-(defn make-item
-  [proc env mode]
-    {:proc proc :env env :mode mode}
+    (first (get-result-returns result))
   )
 
 (defn delay-it
@@ -117,33 +77,22 @@
   (nth obj 2)
   )
 
+;todo: when thunk is forced replace it in env!!!
 (defn force-it
-  [result results]
-  (when (result? result)
-    (let [return (get-result-return result)]
-      (if (nil? return)
+  [result]
+  (if (result? result)
+    (let [returns (get-result-returns result)
+          return (first returns)
+          rest-returns (rest returns)]
+      result
+      (if (not (thunk? return))
         result
-        (if (not (thunk? return))
-          result
-          (let [thunk return
-                new-proc (thunk-proc thunk)
-                new-env (thunk-env thunk)
-                new-result (new-proc new-env results)]
-            (recur new-result results))))))
-  )
-
-(defn get-thunk-proc-env-mode-force
-  [result results]
-  (when (result? result)
-    (let [return (get-result-return result)]
-      (if (nil? return)
-        result
-        (if (not (thunk? return))
-          result
-          (let [thunk return
-                proc (thunk-proc thunk)
-                env (thunk-env thunk)]
-            {:proc proc :env env :mode :force})))))
+        (let [thunk return
+              new-proc (thunk-proc thunk)
+              new-env (thunk-env thunk)
+              new-result (new-proc new-env rest-returns)];remove trunk from returns
+          (recur new-result))))
+    result)
   )
 
 (defn primitive-procedure-impl
@@ -228,36 +177,30 @@
 
 (defn analyze-self-evaluating 
   [exp] 
-  (fn [env results]
-    (make-result exp env)
+  (fn [env returns]
+    (make-result env (cons exp returns))
     )
-  )
-
-(defn force-delayed-val 
-  [value-delayed-or-not env results] 
-  (if (tagged-list? value-delayed-or-not 'delayed-val)
-    (let [value-proc (tagged-list-content-1 value-delayed-or-not)
-          result (get-result value-proc env results)]
-      (if (nil? result)
-          (make-children env (list value-proc) :eval)
-          result))
-    (make-result value-delayed-or-not env))
   )
 
 ;variable lookup
 (defn analyze-variable
   [exp] 
-  (fn [env results] 
-    (if (get-result "print-debug" {} results) (println "variable" exp))
-    (let [value-delayed-or-not (lookup-variable-value-in-env exp env)
-          result-or-children (force-delayed-val value-delayed-or-not env results)]
-      result-or-children))
+  (fn [env returns] 
+    (let [value-delayed-or-not (lookup-variable-value-in-env exp env)]
+      (if (tagged-list? value-delayed-or-not 'delayed-val)
+        (let [value-proc (tagged-list-content-1 value-delayed-or-not)]
+          (list
+            (fn [env returns]
+              (value-proc env returns)))
+          )
+        (let [value value-delayed-or-not]
+          (make-result env (cons value returns))))))
   )
 
 (defn analyze-quotation 
   [exp]
-  (fn [env results]
-    (make-result (text-of-quotation exp) env)
+  (fn [env returns]
+    (make-result env (cons (text-of-quotation exp) returns))
     )
   )
 
@@ -265,16 +208,17 @@
   [exp] 
   (let [variable (definition-variable exp)
         value-proc (analyze (definition-value exp))]
-    (fn [env results]
-        (let [env1 (set-variable-value-in-env variable (list 'delayed-val value-proc) env)
-              value-delayed (lookup-variable-value-in-env variable env1)
-              result (force-delayed-val value-delayed env1 results)
-              value (get-result-return result)]
-          (if (nil? value)
-            result;children
-            (make-result 'ok (set-variable-value-in-env variable value env1));pass new env
-            )
-          )))
+    (fn [env returns00]
+        (let [env1 (set-variable-value-in-env variable (list 'delayed-val value-proc) env)]
+          (list
+            (fn [env returns]
+              (value-proc env1 returns)
+              )
+            (fn [env returns]
+              (let [value (first returns)]
+                (make-result (set-variable-value-in-env variable value env1) returns00);pass new env
+                ))
+            ))))
   )
 
 (defn analyze-definition 
@@ -290,8 +234,8 @@
   (let [params (lambda-parameters exp)
         body-proc (analyze (lambda-body exp));single expression only, use begin!
         ]
-    (fn [env results]
-      (make-result (make-procedure params body-proc env) env)
+    (fn [env returns]
+      (make-result env (cons (make-procedure params body-proc env) returns))
       ))
   )
 
@@ -300,19 +244,22 @@
   (let [predicate-proc (analyze (if-predicate exp))
         consequent-proc (analyze (if-consequent exp))
         alternative-proc (analyze (if-alternative exp))]
-    (fn [env results]
-      (let [predicate-result (get-result predicate-proc env results)]
-        (if (nil? predicate-result)
-          (make-children env (list predicate-proc) :force)
-          (if (true? (get-result-return predicate-result))
-            (let [consequent-result (get-result consequent-proc env results)]
-              (if (nil? consequent-result)
-                (make-children env (list consequent-proc) :eval)
-                consequent-result))
-            (let [alternative-result (get-result alternative-proc env results)]
-              (if (nil? alternative-result)
-                (make-children env (list alternative-proc) :eval)
-                alternative-result))
+    (fn [env00 returns00]
+      (list
+        (fn [env01 returns]
+          (force-it (predicate-proc env01 returns)))
+        (fn [env01 returns]
+          (let [predicate (first returns)]
+            (list
+              ;restore env after force-it
+              (fn [env02 returns]
+                (make-result env00 returns00))
+              (if (true? predicate)
+                (fn [env02 returns]
+                  (consequent-proc env00 returns00))
+                (fn [env02 returns]
+                  (alternative-proc env00 returns00)))
+            )
             )))))
   )
 
@@ -320,37 +267,56 @@
   [exp] 
   (let [operator-proc (analyze (operator exp))
         arg-procs (map #(analyze %) (operands exp))]
-    (list 
-      (fn [env results]
-        (force-it (operator-proc env results) results))
-      (fn [env results]
-        (let [procedure (get-result-return (get-result operator-proc env results))]
-          (if (primitive-procedure? procedure)
-            (map
-              (fn [arg-proc]
-                (fn [env results]
-                  (force-it (arg-proc env results) results)
-                  )))
-            )))
-      (fn [env results]
-        (let [procedure (get-result-return (get-result operator-proc env results))]
-          (if (primitive-procedure? procedure)
-            (let [args (map (fn [arg-proc] (get-result-return (get-result arg-proc env results))) arg-procs)]
-              (make-result (apply-primitive-procedure procedure args) env))
-                (let [params (procedure-parameters procedure)
-                      arg-procs-delayed (map (fn [arg-proc] (delay-it arg-proc env)) arg-procs)
-                      proc-env (procedure-environment procedure)
-                      body-env (extend-environment params arg-procs-delayed proc-env)
-                      body-proc (procedure-body procedure)]
-                  (let [result (get-result body-proc body-env results)]
-                    (if (nil? result)
-                      (make-children body-env (list body-proc) :eval)
-                      result)))
-                )
-              )
-          )
-        )
-      )
+    (fn [env00 returns00]
+      (list 
+        (fn [env01 returns]
+          (force-it (operator-proc env01 returns)))
+        ;restore env after force-it
+        (fn [env01 returns]
+          (make-result env00 returns))
+        (fn [env01 returns]
+          (let [procedure (first returns)]
+            (if (primitive-procedure? procedure)
+              ;primitive proc
+              ;todo: do not return list of lists, flatten it!!!
+              (lazy-cat
+                (map
+                  (fn [arg-proc]
+                    (fn [env02 returns]
+                      (list
+                        (fn [env03 returns]
+                          (force-it (arg-proc env03 returns)))
+                        ;restore env after force-it
+                        (fn [env03 returns]
+                          (make-result env02 returns))
+                      )))
+                  arg-procs)
+                (list
+                  (fn [env02 returns]
+                    (let [arg-count (count arg-procs)
+                          args-reversed (take arg-count returns)
+                          args (reverse args-reversed)]
+                      (make-result env00 (cons (apply-primitive-procedure procedure args) returns00))))
+                  ))
+              ;compound proc
+              (let [params (procedure-parameters procedure)
+                    arg-procs-delayed (map (fn [arg-proc] (delay-it arg-proc env01)) arg-procs)
+                    proc-env (procedure-environment procedure)
+                    body-env (extend-environment params arg-procs-delayed proc-env)
+                    body-proc (procedure-body procedure)]
+                (list
+                  ;set env for proc body
+                  (fn [env02 returns]
+                    (make-result body-env returns00))
+                  ;run proc body with new env
+                  (fn [env02 returns]
+                    (body-proc env02 returns))
+                  ;restore original env
+                  (fn [env02 returns]
+                    (make-result env00 returns))
+                  )
+              ))))
+      )))
   )
 
 (defn setup-environment
@@ -413,42 +379,32 @@
   [exp env]
   (let [proc (analyze exp)]
     (let [walk 
-           (fn walk 
-             [items results]
-             (let [item (first items)
-                   proc (:proc item)
-                   env (:env item)
-                   mode (:mode item)
-                   preliminary-result (proc env results)
-                   result (if (= mode :force) 
-                            (force-it preliminary-result results) 
-                            preliminary-result)
-                   new-env (get-result-env result)
-                   new-procs (get-result-procs result)
-                   new-mode (get-result-mode result)
-                   rest-items (rest items)
-                   all-items (if (empty? new-procs) 
-                               rest-items
-                               (let [new-items 
-                                     (map 
-                                       (fn [proc] {:proc proc :env new-env :mode new-mode}) 
-                                       new-procs)]
-                                 (concat new-items items)))
-                   new-results (if (empty? new-procs) 
-                                 (set-result proc env result results) 
-                                 results)
-                   result-thunk-proc-env (get-thunk-proc-env-mode-force result new-results)
-                   final-result? (= result result-thunk-proc-env)
-                   final-items (if (and (empty? new-procs) (empty? rest-items))
-                                 (list result-thunk-proc-env)
-                                 all-items)]
-               (if (and (empty? new-procs) (empty? rest-items) final-result?)
-                 result
-                 (recur final-items new-results))))
-           initial-items (list {:proc proc :env env :mode :eval})
-           initial-results (set-result "print-debug" {} false (empty-results))
-           result (walk initial-items initial-results)]
-      (force-it result initial-results)))
+          (fn walk 
+            [procs env returns]
+            (let [proc (first procs)
+                  rest-procs (rest procs)
+                  result (proc env returns)
+                  new-env (if (result? result) (get-result-env result) env)
+                  new-returns (if (result? result) (get-result-returns result) returns)
+                  new-procs (if (result? result) rest-procs (lazy-cat result rest-procs))
+                  ]
+              (if (empty? new-procs)
+                (let [returns (get-result-returns result)
+                      return (first returns)
+                      rest-returns (rest returns)]
+                  (if (not (thunk? return))
+                    result
+                    (let [thunk return
+                          new-proc (thunk-proc thunk)
+                          new-procs (list new-proc)
+                          new-env (thunk-env thunk)]
+                      (recur new-procs new-env rest-returns))));remove trunk from returns
+                (recur new-procs new-env new-returns)
+                )))
+          procs (list proc)
+          returns '()
+          result (walk procs env returns)]
+      result))
   )
 
 (defn user-print 
@@ -477,12 +433,12 @@
         (println "exit requested by user")
         (if (nil? input)
           (recur env)
-          (let [output-result (do-eval input env {})
-                output-value (get-result-return output-result)
-                output-env (get-result-env output-result)]
+          (let [result (do-eval input env)
+                value (get-result-return result)
+                env (get-result-env result)]
             (print output-prompt)
-            (user-print output-value)
-            (recur output-env)
+            (user-print value)
+            (recur env)
             )
           )
         )
