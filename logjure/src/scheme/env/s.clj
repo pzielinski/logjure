@@ -1,4 +1,10 @@
-;trying to speed up
+;scheme interpreter that supports general case of self recursion without blowing the stack (s1)
+;to speed it up, each node is replaced by its children and never visited again
+;ideas:
+;always pass env except after the force and compound proc, restore the one emmediately before it
+;todo:
+;get rid of returns, use one return, and clojures?
+;fixe definition
 (ns scheme.env.s)
 
 (use 'clojure.test)
@@ -77,22 +83,22 @@
   (nth obj 2)
   )
 
-;todo: when thunk is forced replace it in env!!!
+;todo: when thunk is forced replace it in env!!! check if in env then don't do it
 (defn force-it
-  [result]
-  (if (result? result)
-    (let [returns (get-result-returns result)
-          return (first returns)
-          rest-returns (rest returns)]
-      result
-      (if (not (thunk? return))
+  [proc env returns]
+  (let [result (proc env returns)]
+    (if (result? result)
+      (let [returns (get-result-returns result)
+            return (first returns)
+            rest-returns (rest returns)]
         result
-        (let [thunk return
-              new-proc (thunk-proc thunk)
-              new-env (thunk-env thunk)
-              new-result (new-proc new-env rest-returns)];remove trunk from returns
-          (recur new-result))))
-    result)
+        (if (not (thunk? return))
+          result
+          (let [thunk return
+                new-proc (thunk-proc thunk)
+                new-env (thunk-env thunk)]
+            (recur new-proc new-env rest-returns))));remove trunk from returns
+      result))
   )
 
 (defn primitive-procedure-impl
@@ -247,11 +253,11 @@
     (fn [env00 returns00]
       (list
         (fn [env01 returns]
-          (force-it (predicate-proc env01 returns)))
+          (force-it predicate-proc env01 returns))
         (fn [env01 returns]
           (let [predicate (first returns)]
             (list
-              ;restore env after force-it
+              ;restore env after force
               (fn [env02 returns]
                 (make-result env00 returns00))
               (if (true? predicate)
@@ -270,8 +276,8 @@
     (fn [env00 returns00]
       (list 
         (fn [env01 returns]
-          (force-it (operator-proc env01 returns)))
-        ;restore env after force-it
+          (force-it operator-proc env01 returns))
+        ;restore env after force
         (fn [env01 returns]
           (make-result env00 returns))
         (fn [env01 returns]
@@ -285,8 +291,8 @@
                     (fn [env02 returns]
                       (list
                         (fn [env03 returns]
-                          (force-it (arg-proc env03 returns)))
-                        ;restore env after force-it
+                          (force-it arg-proc env03 returns))
+                        ;restore env after force
                         (fn [env03 returns]
                           (make-result env02 returns))
                       )))
@@ -458,16 +464,16 @@
            (do-eval 
              '(define fact (lambda (n x) (if (= n 1) x (fact (- n 1) (* n x))))) 
              env))]
-  (let [n 10
+  (let [n 2
         dummy (println "fact " n)
         expected (time (recur-fact n))
         e2 (get-result-env (do-eval (list 'define 'n n) e1))
         return (time (get-result-return (do-eval '(fact n 1) e2)))]
     (println (= expected return)))
   )
+)
 
-;)
-
+(comment
 (let [recur-fibo 
       (fn [n]
         (letfn [(fib
@@ -488,5 +494,4 @@
         return (time (get-result-return (do-eval '(fib n) e2)))]
     (println (= expected return)))
   )
-
 )
