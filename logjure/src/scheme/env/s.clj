@@ -465,4 +465,28 @@
         return (time (get-result-return (do-eval '(fact n 1) e2)))]
     (println (= expected return)))
   )
+
+;)
+
+(let [recur-fibo 
+      (fn [n]
+        (letfn [(fib
+                  [current next n]
+                  (if (zero? n)
+                    current
+                    (recur next (+ current next) (dec n))))]
+               (fib 0N 1N n)))
+      env (setup-environment global-primitive-procedure-impl-map (the-empty-environment))
+      e1 (get-result-env 
+           (do-eval 
+             '(define fib (lambda (n) (if (= n 0) 0 (if (= n 1) 1 (+ (fib (- n 1)) (fib (- n 2))))))) 
+             env))]
+  (let [n 10
+        dummy (println "fib  " n " ")
+        expected (time (recur-fibo n))
+        e2 (get-result-env (do-eval (list 'define 'n n) e1))
+        return (time (get-result-return (do-eval '(fib n) e2)))]
+    (println (= expected return)))
+  )
+
 )
