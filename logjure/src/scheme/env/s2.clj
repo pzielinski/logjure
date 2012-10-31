@@ -448,6 +448,21 @@
   )
 
 (comment
+(let [env (setup-environment global-primitive-procedure-impl-map (the-empty-environment))
+      e1 (get-result-env 
+           (do-eval 
+             '(define arithmetic-s (lambda (n sum) (if (= n 0) sum (arithmetic-s (- n 1) (+ n sum))))) 
+             env))]
+  (let [n 1000
+        dummy (println "arithmetic series " n)
+        expected (time (* (/ (+ n 1) 2) n))
+        e2 (get-result-env (do-eval (list 'define 'n n) e1))
+        return (time (get-result-return (do-eval '(arithmetic-s n 0) e2)))]
+    (println (= expected return)))
+  )
+)
+
+(comment
 (let [recur-fact
       (fn [n]
         (loop [cnt n acc 1]
@@ -466,9 +481,9 @@
         return (time (get-result-return (do-eval '(fact n 1) e2)))]
     (println (= expected return)))
   )
+)
 
-;)
-
+(comment
 (let [recur-fibo 
       (fn [n]
         (letfn [(fib
@@ -489,5 +504,4 @@
         return (time (get-result-return (do-eval '(fib n) e2)))]
     (println (= expected return)))
   )
-
 )
