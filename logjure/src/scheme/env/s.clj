@@ -96,7 +96,9 @@
           result
           (let [thunk return
                 new-proc (thunk-proc thunk)
-                new-env (thunk-env thunk)]
+                new-env (thunk-env thunk)
+                ;dummy (println " env# " (hash env) " proc " proc " thunk-env# " (hash env) "thunk-proc " new-proc)
+                ]
             (recur new-proc new-env rest-returns))));remove trunk from returns
       result))
   )
@@ -453,6 +455,21 @@
   )
 
 (comment
+(let [env (setup-environment global-primitive-procedure-impl-map (the-empty-environment))
+      e1 (get-result-env 
+           (do-eval 
+             '(define arithmetic-s (lambda (n sum) (if (= n 0) sum (arithmetic-s (- n 1) (+ n sum))))) 
+             env))]
+  (let [n 10
+        dummy (println "arithmetic series " n)
+        expected (time (* (/ (+ n 1) 2) n))
+        e2 (get-result-env (do-eval (list 'define 'n n) e1))
+        return (time (get-result-return (do-eval '(arithmetic-s n 0) e2)))]
+    (println (= expected return)))
+  )
+)
+
+(comment
 (let [recur-fact
       (fn [n]
         (loop [cnt n acc 1]
@@ -464,7 +481,7 @@
            (do-eval 
              '(define fact (lambda (n x) (if (= n 1) x (fact (- n 1) (* n x))))) 
              env))]
-  (let [n 2
+  (let [n 10
         dummy (println "fact " n)
         expected (time (recur-fact n))
         e2 (get-result-env (do-eval (list 'define 'n n) e1))
