@@ -170,31 +170,6 @@
     )
   )
 
-(defn eval-walk 
-  [procs env returns mode]
-  (let [proc (first procs)
-        rest-procs (rest procs)
-        result (proc env returns mode)
-        new-env (get-result-env result)
-        new-returns (get-result-returns result)
-        new-procs-temp (get-result-procs result)
-        new-procs (lazy-cat new-procs-temp rest-procs)
-        ]
-    (if (empty? new-procs)
-      (let [returns (get-result-returns result)
-            return (first returns)
-            rest-returns (rest returns)]
-        (if (not (thunk? return))
-          result
-          (let [thunk return
-                new-proc (thunk-proc thunk)
-                new-procs (list new-proc)
-                new-env (thunk-env thunk)]
-            (recur new-procs new-env rest-returns mode))));remove trunk from returns
-      (recur new-procs new-env new-returns mode)
-      ))
-  )
-
 (defn force-it
   [result]
   (let [procs (get-result-procs result)]
@@ -421,9 +396,33 @@
 (defn do-eval 
   [exp env]
   (let [proc (analyze exp)]
-    (let [procs (list proc)
+    (let [walk 
+          (fn walk 
+            [procs env returns mode]
+            (let [proc (first procs)
+                  rest-procs (rest procs)
+                  result (proc env returns mode)
+                  new-env (get-result-env result)
+                  new-returns (get-result-returns result)
+                  new-procs-temp (get-result-procs result)
+                  new-procs (lazy-cat new-procs-temp rest-procs)
+                  ]
+              (if (empty? new-procs)
+                (let [returns (get-result-returns result)
+                      return (first returns)
+                      rest-returns (rest returns)]
+                  (if (not (thunk? return))
+                    result
+                    (let [thunk return
+                          new-proc (thunk-proc thunk)
+                          new-procs (list new-proc)
+                          new-env (thunk-env thunk)]
+                      (recur new-procs new-env rest-returns mode))));remove trunk from returns
+                (recur new-procs new-env new-returns mode)
+                )))
+          procs (list proc)
           returns '()
-          result (eval-walk procs env returns :eval)]
+          result (walk procs env returns :eval)]
       result))
   )
 
@@ -472,7 +471,7 @@
            (do-eval 
              '(define arithmetic-s (lambda (n sum) (if (= n 0) sum (arithmetic-s (- n 1) (+ n sum))))) 
              env))]
-  (let [n 10
+  (let [n 10000
         dummy (println "arithmetic series " n)
         expected (time (* (/ (+ n 1) 2) n))
         e2 (get-result-env (do-eval (list 'define 'n n) e1))
