@@ -170,24 +170,6 @@
     )
   )
 
-(defn force-it
-  [result]
-  (let [procs (get-result-procs result)]
-    (if (nil? procs)
-      (let [returns (get-result-returns result)
-            return (first returns)
-            rest-returns (rest returns)]
-        (if (not (thunk? return))
-          result
-          (let [thunk return
-                new-proc (thunk-proc thunk)
-                new-env (thunk-env thunk)
-                ;dummy (println " thunk-env# " (hash new-env) "thunk-proc " new-proc)
-                new-result (new-proc new-env rest-returns :force)];remove trunk from returns
-            new-result)))
-      result))
-  )
-
 ;variable lookup
 (defn analyze-variable
   [exp] 
@@ -196,30 +178,35 @@
       (if (tagged-list? value-delayed-or-not 'delayed-val)
         (let [value-proc (tagged-list-content-1 value-delayed-or-not)]
           (value-proc env00 returns00 mode00))
-        (let [value value-delayed-or-not
-              result (make-result env00 (cons value returns00) nil)
-              new-result (if (= :force mode00) (force-it result) result)]
-          (if (= new-result result)
-            result
-            (let [new-procs (get-result-procs new-result)]
-              (if (nil? new-procs)
-                (let [new-value (get-result-return new-result)
-                      new-env (set-variable-value-in-env exp new-value env00)
-                      new-returns (cons new-value returns00)]
-                  (make-result new-env new-returns nil))
-                ;needs more eval
-                (let [force-env (get-result-env new-result)
-                      force-returns (get-result-returns new-result)
-                      after-force-proc (fn [env01 returns01 mode01]
-                                         (let [new-value (first returns01)
-                                               new-env (set-variable-value-in-env exp new-value env00)
-                                               new-returns (cons new-value returns00)]
-                                           (make-result new-env new-returns nil))
-                                         )
-                      after-force-procs (list after-force-proc)
-                      all-procs (lazy-cat new-procs after-force-procs)]
-                  (make-result force-env force-returns all-procs))
-                )))))))
+        (if (not (thunk? value-delayed-or-not))
+          ;not thunk
+          (make-result env00 (cons value-delayed-or-not returns00) nil)
+          ;thunk - so force-it
+          (let [thunk value-delayed-or-not
+                new-proc (thunk-proc thunk)
+                new-env (thunk-env thunk)
+                ;dummy (println " thunk-env# " (hash new-env) "thunk-proc " new-proc)
+                new-result (new-proc new-env returns00 :force)
+                new-procs (get-result-procs new-result)]
+            (if (nil? new-procs)
+              ;force returned simple value 
+              (let [new-value (get-result-return new-result)
+                    new-env (set-variable-value-in-env exp new-value env00)
+                    new-returns (cons new-value returns00)]
+                (make-result new-env new-returns nil))
+              ;force returned more procs
+              (let [force-env (get-result-env new-result)
+                    force-returns (get-result-returns new-result)
+                    after-force-proc (fn [env01 returns01 mode01]
+                                       (let [new-value (first returns01)
+                                             new-env (set-variable-value-in-env exp new-value env00)
+                                             new-returns (cons new-value returns00)]
+                                         (make-result new-env new-returns nil))
+                                       )
+                    after-force-procs (list after-force-proc)
+                    all-procs (lazy-cat new-procs after-force-procs)]
+                (make-result force-env force-returns all-procs))
+              ))))))
   )
 
 (defn analyze-quotation 
@@ -471,7 +458,7 @@
            (do-eval 
              '(define arithmetic-s (lambda (n sum) (if (= n 0) sum (arithmetic-s (- n 1) (+ n sum))))) 
              env))]
-  (let [n 10000
+  (let [n 10
         dummy (println "arithmetic series " n)
         expected (time (* (/ (+ n 1) 2) n))
         e2 (get-result-env (do-eval (list 'define 'n n) e1))
