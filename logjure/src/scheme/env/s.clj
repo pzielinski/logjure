@@ -207,7 +207,7 @@
           (let [thunk return
                 new-proc (thunk-proc thunk)
                 new-env (thunk-env thunk)
-                dummy (println " thunk-env# " (hash new-env) "thunk-proc " new-proc)
+                ;dummy (println " thunk-env# " (hash new-env) "thunk-proc " new-proc)
                 new-procs (list new-proc)
                 new-result (eval-walk new-procs new-env rest-returns :force)];remove trunk from returns
             new-result)))
@@ -221,12 +221,7 @@
     (let [value-delayed-or-not (lookup-variable-value-in-env exp env00)]
       (if (tagged-list? value-delayed-or-not 'delayed-val)
         (let [value-proc (tagged-list-content-1 value-delayed-or-not)]
-          (make-result
-            env00
-            returns
-            (list
-              (fn [env returns mode]
-                (value-proc env returns mode00)))))
+          (value-proc env00 returns mode00))
         (let [value value-delayed-or-not
               result (make-result env00 (cons value returns) nil)
               new-result (if (= :force mode00) (force-it result) result)]
