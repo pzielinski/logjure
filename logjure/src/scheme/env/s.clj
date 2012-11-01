@@ -247,17 +247,17 @@
   [exp] 
   (let [variable (definition-variable exp)
         value-proc (analyze (definition-value exp))]
-    (fn [env returns00 mode00]
-        (let [env1 (set-variable-value-in-env variable (list 'delayed-val value-proc) env)]
+    (fn [env00 returns00 mode00]
+        (let [envX (set-variable-value-in-env variable (list 'delayed-val value-proc) env00)]
           (make-result
-            env
+            env00
             returns00
             (list
               (fn [env returns mode]
-                (value-proc env1 returns mode00))
+                (value-proc envX returns mode00))
               (fn [env returns mode]
                 (let [value (first returns)]
-                  (make-result (set-variable-value-in-env variable value env1) returns00 nil)));pass new env
+                  (make-result (set-variable-value-in-env variable value envX) returns00 nil)));pass new env
             )))))
   )
 
@@ -294,8 +294,8 @@
           (fn [env01 returns mode]
             (let [predicate (first returns)]
               (if (true? predicate)
-                (consequent-proc env00 returns00 mode00)
-                (alternative-proc env00 returns00 mode00))
+                (consequent-proc env01 returns00 mode00)
+                (alternative-proc env01 returns00 mode00))
               ))))))
   )
 
@@ -316,7 +316,7 @@
                 ;primitive proc
                 (make-result
                   env01
-                  returns00;discard procedure from returns
+                  returns00
                   (lazy-cat
                     (map
                       (fn [arg-proc]
@@ -328,7 +328,7 @@
                         (let [arg-count (count arg-procs)
                               args-reversed (take arg-count returns)
                               args (reverse args-reversed)]
-                          (make-result env00 (cons (apply-primitive-procedure procedure args) returns00) nil)))
+                          (make-result env02 (cons (apply-primitive-procedure procedure args) returns00) nil)));pass env!!!
                       )))
                 ;compound proc
                 (let [params (procedure-parameters procedure)
