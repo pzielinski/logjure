@@ -208,8 +208,7 @@
                 new-proc (thunk-proc thunk)
                 new-env (thunk-env thunk)
                 ;dummy (println " thunk-env# " (hash new-env) "thunk-proc " new-proc)
-                new-procs (list new-proc)
-                new-result (eval-walk new-procs new-env rest-returns :force)];remove trunk from returns
+                new-result (new-proc new-env rest-returns :force)];remove trunk from returns
             new-result)))
       result))
   )
@@ -217,13 +216,13 @@
 ;variable lookup
 (defn analyze-variable
   [exp] 
-  (fn [env00 returns mode00] 
+  (fn [env00 returns00 mode00] 
     (let [value-delayed-or-not (lookup-variable-value-in-env exp env00)]
       (if (tagged-list? value-delayed-or-not 'delayed-val)
         (let [value-proc (tagged-list-content-1 value-delayed-or-not)]
-          (value-proc env00 returns mode00))
+          (value-proc env00 returns00 mode00))
         (let [value value-delayed-or-not
-              result (make-result env00 (cons value returns) nil)
+              result (make-result env00 (cons value returns00) nil)
               new-result (if (= :force mode00) (force-it result) result)]
           (if (= new-result result)
             result
@@ -231,8 +230,20 @@
               (if (nil? new-procs)
                 (let [new-value (get-result-return new-result)
                       new-env (set-variable-value-in-env exp new-value env00)
-                      new-returns (cons new-value returns)]
+                      new-returns (cons new-value returns00)]
                   (make-result new-env new-returns nil))
+                ;needs more eval
+                (let [force-env (get-result-env new-result)
+                      force-returns (get-result-returns new-result)
+                      after-force-proc (fn [env01 returns01 mode01]
+                                         (let [new-value (first returns01)
+                                               new-env (set-variable-value-in-env exp new-value env00)
+                                               new-returns (cons new-value returns00)]
+                                           (make-result new-env new-returns nil))
+                                         )
+                      after-force-procs (list after-force-proc)
+                      all-procs (lazy-cat new-procs after-force-procs)]
+                  (make-result force-env force-returns all-procs))
                 )))))))
   )
 
