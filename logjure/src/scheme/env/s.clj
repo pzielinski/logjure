@@ -343,9 +343,9 @@
                       ;run proc body with new env
                       (fn [env02 returns mode]
                         (body-proc body-env returns00 mode00));original mode
-                      ;restore original env
+                      ;restore env
                       (fn [env02 returns mode]
-                        (make-result env00 returns nil))
+                        (make-result env01 returns nil))
                       ))
                   ))))
           ))))
