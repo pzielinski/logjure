@@ -230,7 +230,7 @@
                 (value-proc envX returns mode00))
               (fn [env returns mode]
                 (let [value (first returns)]
-                  (make-result (set-variable-value-in-env variable value envX) returns00 nil)));pass new env
+                  (make-result (set-variable-value-in-env variable value env00) returns00 nil)));pass new env
             )))))
   )
 
@@ -380,6 +380,37 @@
     :else (error "Unknown expression type -- EVAL" exp))
   )
 
+(defn debug
+  [env new-env]
+  (let [keys-old (keys env)
+        keys-new (keys new-env)
+        keys-added (apply disj (set keys-new) keys-old)
+        keys-removed (apply disj (set keys-old) keys-new)
+        keys-carried (apply disj (set keys-new) keys-added)
+        keys-changed (filter 
+                       (fn[key] 
+                         (let[value-old (get env key)
+                              value-new (get new-env key)]
+                           (not (= value-old value-new)))) 
+                       keys-carried)
+        changed (map 
+                  (fn[key]
+                    (let[value-old (get env key)
+                         value-new (get new-env key)
+                         value-old-real (if (thunk? value-old) (hash value-old) value-old)
+                         value-new-real (if (thunk? value-new) (hash value-new) value-new)]
+                      {:key key :value-old value-old-real :value-new value-new-real})) 
+                  keys-changed)
+        ]
+        (println "size00=" (count env) " hash00=" (hash env) 
+                 "size01=" (count new-env) 
+                 " hash01=" (hash new-env) 
+                 " ADDED=" keys-added 
+                 " REMOVED=" keys-removed 
+                 " CHANGED=" changed)
+        )
+  )
+
 (defn do-eval 
   [exp env]
   (let [proc (analyze exp)]
@@ -390,6 +421,7 @@
                   rest-procs (rest procs)
                   result (proc env returns mode)
                   new-env (get-result-env result)
+                  ;dbg (debug env new-env)
                   new-returns (get-result-returns result)
                   new-procs-temp (get-result-procs result)
                   new-procs (lazy-cat new-procs-temp rest-procs)
