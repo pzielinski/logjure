@@ -1,10 +1,7 @@
-;scheme interpreter that supports general case of self recursion without blowing the stack (s1)
-;to speed it up, each node is replaced by its children and never visited again
-;ideas:
-;always pass env except after the force and compound proc, restore the one emmediately before it
-;todo:
-;get rid of returns, use one return, and clojures?
-;fixe definition
+;s1 - scheme interpreter that supports general case of self recursion without blowing the stack
+;s2 - based on s1, each node is replaced by its children and never visited again
+;s3 - based on s2, force-it only done when get variable from env, then update env with forced value
+;s4 - based on s3, delay compound proc arg only if arg proc not self-evaluating, and not var-lookup with non delayed value   
 (ns scheme.env.s)
 
 (use 'clojure.test)
@@ -66,6 +63,13 @@
 (defn delay-it
   [proc env]
   (list 'thunk proc env)
+  )
+
+(defn delay-or-eval
+  [proc env returns]
+  (if (proc env nil :delayable?)
+    (list 'thunk proc env)
+    (get-result-return (proc env returns :force)))
   )
 
 (defn thunk?
@@ -166,54 +170,61 @@
 (defn analyze-self-evaluating 
   [exp] 
   (fn [env returns mode]
-    (make-result env (cons exp returns) nil)
-    )
+    (if (= mode :delayable?)
+      false
+      (make-result env (cons exp returns) nil)))
   )
 
 ;variable lookup
 (defn analyze-variable
   [exp] 
   (fn [env00 returns00 mode00] 
-    (let [value-delayed-or-not (lookup-variable-value-in-env exp env00)]
-      (if (tagged-list? value-delayed-or-not 'delayed-val)
-        (let [value-proc (tagged-list-content-1 value-delayed-or-not)]
-          (value-proc env00 returns00 mode00))
-        (if (not (thunk? value-delayed-or-not))
-          ;not thunk
-          (make-result env00 (cons value-delayed-or-not returns00) nil)
-          ;thunk - so force-it
-          (let [thunk value-delayed-or-not
-                new-proc (thunk-proc thunk)
-                new-env (thunk-env thunk)
-                ;dummy (println " thunk-env# " (hash new-env) "thunk-proc " new-proc)
-                new-result (new-proc new-env returns00 :force)
-                new-procs (get-result-procs new-result)]
-            (if (nil? new-procs)
-              ;force returned simple value 
-              (let [new-value (get-result-return new-result)
-                    new-env (set-variable-value-in-env exp new-value env00)
-                    new-returns (cons new-value returns00)]
-                (make-result new-env new-returns nil))
-              ;force returned more procs
-              (let [force-env (get-result-env new-result)
-                    force-returns (get-result-returns new-result)
-                    after-force-proc (fn [env01 returns01 mode01]
-                                       (let [new-value (first returns01)
-                                             new-env (set-variable-value-in-env exp new-value env00)
-                                             new-returns (cons new-value returns00)]
-                                         (make-result new-env new-returns nil))
-                                       )
-                    after-force-procs (list after-force-proc)
-                    all-procs (lazy-cat new-procs after-force-procs)]
-                (make-result force-env force-returns all-procs))
-              ))))))
+    (if (= mode00 :delayable?)
+      (let [value-delayed-or-not (lookup-variable-value-in-env exp env00)
+            def-delayed? (tagged-list? value-delayed-or-not 'delayed-val)
+            delayed? (thunk? value-delayed-or-not)]
+        (or def-delayed? delayed?));do not delay if real value is already in env
+      (let [value-delayed-or-not (lookup-variable-value-in-env exp env00)]
+        (if (tagged-list? value-delayed-or-not 'delayed-val)
+          (let [value-proc (tagged-list-content-1 value-delayed-or-not)]
+            (value-proc env00 returns00 mode00))
+          (if (not (thunk? value-delayed-or-not))
+            ;not thunk
+            (make-result env00 (cons value-delayed-or-not returns00) nil)
+            ;thunk - so force-it
+            (let [thunk value-delayed-or-not
+                  new-proc (thunk-proc thunk)
+                  new-env (thunk-env thunk)
+                  ;dummy (println " thunk-env# " (hash new-env) "thunk-proc " new-proc)
+                  new-result (new-proc new-env returns00 :force)
+                  new-procs (get-result-procs new-result)]
+              (if (nil? new-procs)
+                ;force returned simple value 
+                (let [new-value (get-result-return new-result)
+                      new-env (set-variable-value-in-env exp new-value env00)
+                      new-returns (cons new-value returns00)]
+                  (make-result new-env new-returns nil))
+                ;force returned more procs
+                (let [force-env (get-result-env new-result)
+                      force-returns (get-result-returns new-result)
+                      after-force-proc (fn [env01 returns01 mode01]
+                                         (let [new-value (first returns01)
+                                               new-env (set-variable-value-in-env exp new-value env00)
+                                               new-returns (cons new-value returns00)]
+                                           (make-result new-env new-returns nil))
+                                         )
+                      after-force-procs (list after-force-proc)
+                      all-procs (lazy-cat new-procs after-force-procs)]
+                  (make-result force-env force-returns all-procs))
+                )))))))
   )
 
 (defn analyze-quotation 
   [exp]
   (fn [env returns mode]
-    (make-result env (cons (text-of-quotation exp) returns) nil)
-    )
+    (if (= mode :delayable?)
+      false
+      (make-result env (cons (text-of-quotation exp) returns) nil)))
   )
 
 (defn analyze-definition-of-variable 
@@ -221,6 +232,8 @@
   (let [variable (definition-variable exp)
         value-proc (analyze (definition-value exp))]
     (fn [env00 returns00 mode00]
+      (if (= mode00 :delayable?)
+        true
         (let [envX (set-variable-value-in-env variable (list 'delayed-val value-proc) env00)]
           (make-result
             env00
@@ -231,7 +244,7 @@
               (fn [env returns mode]
                 (let [value (first returns)]
                   (make-result (set-variable-value-in-env variable value env00) returns00 nil)));pass new env
-            )))))
+              ))))))
   )
 
 (defn analyze-definition 
@@ -248,8 +261,9 @@
         body-proc (analyze (lambda-body exp));single expression only, use begin!
         ]
     (fn [env returns mode]
-      (make-result env (cons (make-procedure params body-proc env) returns) nil)
-      ))
+      (if (= mode :delayable?)
+        false
+        (make-result env (cons (make-procedure params body-proc env) returns) nil))))
   )
 
 (defn analyze-if 
@@ -258,18 +272,20 @@
         consequent-proc (analyze (if-consequent exp))
         alternative-proc (analyze (if-alternative exp))]
     (fn [env00 returns00 mode00]
-      (make-result
-        env00
-        returns00
-        (list
-          (fn [env01 returns mode]
-            (predicate-proc env01 returns :force))
-          (fn [env01 returns mode]
-            (let [predicate (first returns)]
-              (if (true? predicate)
-                (consequent-proc env01 returns00 mode00)
-                (alternative-proc env01 returns00 mode00))
-              ))))))
+      (if (= mode00 :delayable?)
+        true
+        (make-result
+          env00
+          returns00
+          (list
+            (fn [env01 returns mode]
+              (predicate-proc env01 returns :force))
+            (fn [env01 returns mode]
+              (let [predicate (first returns)]
+                (if (true? predicate)
+                  (consequent-proc env01 returns00 mode00)
+                  (alternative-proc env01 returns00 mode00))
+                )))))))
   )
 
 (defn analyze-application
@@ -277,51 +293,53 @@
   (let [operator-proc (analyze (operator exp))
         arg-procs (map #(analyze %) (operands exp))]
     (fn [env00 returns00 mode00]
-      (make-result
-        env00
-        returns00
-        (list 
-          (fn [env01 returns mode]
-            (operator-proc env01 returns :force))
-          (fn [env01 returns mode]
-            (let [procedure (first returns)]
-              (if (primitive-procedure? procedure)
-                ;primitive proc
-                (make-result
-                  env01
-                  returns00
-                  (lazy-cat
-                    (map
-                      (fn [arg-proc]
-                        (fn [env02 returns mode]
-                          (arg-proc env02 returns :force)))
-                      arg-procs)
-                    (list
-                      (fn [env02 returns mode]
-                        (let [arg-count (count arg-procs)
-                              args-reversed (take arg-count returns)
-                              args (reverse args-reversed)]
-                          (make-result env02 (cons (apply-primitive-procedure procedure args) returns00) nil)));pass env!!!
-                      )))
-                ;compound proc
-                (let [params (procedure-parameters procedure)
-                      arg-procs-delayed (map (fn [arg-proc] (delay-it arg-proc env01)) arg-procs)
-                      proc-env (procedure-environment procedure)
-                      body-env (extend-environment params arg-procs-delayed proc-env)
-                      body-proc (procedure-body procedure)]
+      (if (= mode00 :delayable?)
+        true
+        (make-result
+          env00
+          returns00
+          (list 
+            (fn [env01 returns mode]
+              (operator-proc env01 returns :force))
+            (fn [env01 returns mode]
+              (let [procedure (first returns)]
+                (if (primitive-procedure? procedure)
+                  ;primitive proc
                   (make-result
                     env01
                     returns00
-                    (list
-                      ;run proc body with new env
-                      (fn [env02 returns mode]
-                        (body-proc body-env returns00 mode00));original mode
-                      ;restore env
-                      (fn [env02 returns mode]
-                        (make-result env01 returns nil))
-                      ))
-                  ))))
-          ))))
+                    (lazy-cat
+                      (map
+                        (fn [arg-proc]
+                          (fn [env02 returns mode]
+                            (arg-proc env02 returns :force)))
+                        arg-procs)
+                      (list
+                        (fn [env02 returns mode]
+                          (let [arg-count (count arg-procs)
+                                args-reversed (take arg-count returns)
+                                args (reverse args-reversed)]
+                            (make-result env02 (cons (apply-primitive-procedure procedure args) returns00) nil)));pass env!!!
+                        )))
+                  ;compound proc
+                  (let [params (procedure-parameters procedure)
+                        arg-procs-delayed (map (fn [arg-proc] (delay-or-eval arg-proc env01 returns)) arg-procs)
+                        proc-env (procedure-environment procedure)
+                        body-env (extend-environment params arg-procs-delayed proc-env)
+                        body-proc (procedure-body procedure)]
+                    (make-result
+                      env01
+                      returns00
+                      (list
+                        ;run proc body with new env
+                        (fn [env02 returns mode]
+                          (body-proc body-env returns00 mode00));original mode
+                        ;restore env
+                        (fn [env02 returns mode]
+                          (make-result env01 returns nil))
+                        ))
+                    ))))
+            )))))
   )
 
 (defn setup-environment
@@ -362,7 +380,7 @@
     (= 'set! (first exp)))
   )
 
-(defn do-analyze-from-map 
+(defn analyze-from-map 
   [the-map exp]
   (let [proc (the-map (first exp))]
     ;each proc returns fn[env] that returns map
@@ -374,7 +392,7 @@
   (cond 
     (self-evaluating? exp) (analyze-self-evaluating exp)
     (variable? exp) (analyze-variable exp)
-    (can-analyze-from-map? global-analyze-map exp) (do-analyze-from-map global-analyze-map exp)
+    (can-analyze-from-map? global-analyze-map exp) (analyze-from-map global-analyze-map exp)
     (define? exp) (analyze-definition exp)
     (application? exp) (analyze-application exp)
     :else (error "Unknown expression type -- EVAL" exp))
@@ -399,7 +417,7 @@
                          value-new (get new-env key)
                          value-old-real (if (thunk? value-old) (hash value-old) value-old)
                          value-new-real (if (thunk? value-new) (hash value-new) value-new)]
-                      {:key key :value-old value-old-real :value-new value-new-real})) 
+                      {:key key :old value-old-real :new value-new-real})) 
                   keys-changed)
         ]
         (println "size00=" (count env) " hash00=" (hash env) 
@@ -421,7 +439,7 @@
                   rest-procs (rest procs)
                   result (proc env returns mode)
                   new-env (get-result-env result)
-                  ;dbg (debug env new-env)
+                  dbg (debug env new-env)
                   new-returns (get-result-returns result)
                   new-procs-temp (get-result-procs result)
                   new-procs (lazy-cat new-procs-temp rest-procs)

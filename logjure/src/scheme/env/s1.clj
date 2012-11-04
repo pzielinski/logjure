@@ -1,4 +1,4 @@
-;scheme general recursion works, but is very slow, therefore not tested for large recursions 
+;s1 - scheme interpreter that supports general case of self recursion without blowing the stack
 (ns scheme.env.s1)
 
 (use 'clojure.test)
@@ -389,7 +389,7 @@
     (= 'set! (first exp)))
   )
 
-(defn do-analyze-from-map 
+(defn analyze-from-map 
   [the-map exp]
   (let [proc (the-map (first exp))]
     ;each proc returns fn[env] that returns map
@@ -401,7 +401,7 @@
   (cond 
     (self-evaluating? exp) (analyze-self-evaluating exp)
     (variable? exp) (analyze-variable exp)
-    (can-analyze-from-map? global-analyze-map exp) (do-analyze-from-map global-analyze-map exp)
+    (can-analyze-from-map? global-analyze-map exp) (analyze-from-map global-analyze-map exp)
     (define? exp) (analyze-definition exp)
     (application? exp) (analyze-application exp)
     :else (error "Unknown expression type -- EVAL" exp))
