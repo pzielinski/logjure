@@ -1,7 +1,7 @@
 ;s1 - scheme interpreter that supports general case of self recursion without blowing the stack
 ;s2 - based on s1, each node is replaced by its children and never visited again
 ;s3 - based on s2, force-it only done when get variable from env, then update env with forced value
-;s4 - based on s3, delay compound proc arg only if arg proc not self-evaluating, and not var-lookup with non delayed value   
+;s4 - based on s3, delay compound proc arg only if arg proc not self-evaluating, and not var-lookup with non delayed value, ARITHMETIC-SUM on INTERVAL shows improvement   
 (ns scheme.env.s)
 
 (use 'clojure.test)
@@ -411,21 +411,32 @@
                               value-new (get new-env key)]
                            (not (= value-old value-new)))) 
                        keys-carried)
+        added (map 
+                  (fn[key]
+                    (let[value-new (get new-env key)
+                         value-new-real (if (thunk? value-new) (hash value-new) value-new)]
+                      {:KEY key :NEW-VAL value-new-real})) 
+                  keys-added)
+        removed (map 
+                  (fn[key]
+                    (let[value-old (get env key)
+                         value-old-real (if (thunk? value-old) (hash value-old) value-old)]
+                      {:KEY key :OLD-VAL value-old-real})) 
+                  keys-removed)
         changed (map 
                   (fn[key]
                     (let[value-old (get env key)
                          value-new (get new-env key)
                          value-old-real (if (thunk? value-old) (hash value-old) value-old)
                          value-new-real (if (thunk? value-new) (hash value-new) value-new)]
-                      {:key key :old value-old-real :new value-new-real})) 
+                      {:KEY key :OLD-VAL value-old-real :NEW-VAL value-new-real})) 
                   keys-changed)
         ]
-        (println "size00=" (count env) " hash00=" (hash env) 
-                 "size01=" (count new-env) 
-                 " hash01=" (hash new-env) 
-                 " ADDED=" keys-added 
-                 " REMOVED=" keys-removed 
-                 " CHANGED=" changed)
+        (println " _OLD=" (hash env) " / " (count env) 
+                 " _NEW=" (hash new-env) " / " (count new-env) 
+                 " _ADDED=" added 
+                 " _REMOVED=" removed 
+                 " _CHANGED=" changed)
         )
   )
 
@@ -439,7 +450,7 @@
                   rest-procs (rest procs)
                   result (proc env returns mode)
                   new-env (get-result-env result)
-                  dbg (debug env new-env)
+                  ;dbg (debug env new-env)
                   new-returns (get-result-returns result)
                   new-procs-temp (get-result-procs result)
                   new-procs (lazy-cat new-procs-temp rest-procs)
@@ -514,6 +525,21 @@
         e2 (get-result-env (do-eval (list 'define 'n n) e1))
         return (time (get-result-return (do-eval '(arithmetic-s n 0) e2)))]
     (println (= expected return)))
+  )
+)
+
+(comment
+(let [env (setup-environment global-primitive-procedure-impl-map (the-empty-environment))
+      e1 (get-result-env 
+           (do-eval 
+             '(define int-arithmetic-s (lambda (start stop sum) (if (> start stop) sum (int-arithmetic-s (+ start 1) stop (+ start sum))))) 
+             env))]
+  (let [n 10
+        dummy (println "interval arithmetic series " n)
+        expected (time (* (/ (+ n 1) 2) n))
+        e2 (get-result-env (do-eval (list 'define 'n n) e1))
+        return (time (get-result-return (do-eval '(int-arithmetic-s 1 n 0) e2)))]
+    (println expected return (= expected return)))
   )
 )
 

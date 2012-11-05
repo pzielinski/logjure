@@ -85,6 +85,20 @@
             e2 (get-result-env (do-eval (list 'define 'n n) e1))]
         (is (= sum (get-result-return (do-eval '(arithmetic-s n 0) e2)))))
       )
+    ;ARITHMETIC-SUM on INTERVAL
+    (let [e1 (get-result-env 
+               (do-eval 
+                 '(define int-arithmetic-s (lambda (start stop sum) (if (> start stop) sum (int-arithmetic-s (+ start 1) stop (+ start sum))))) 
+                 env))]
+      (is (= 1 (get-result-return (do-eval '(int-arithmetic-s 1 1 0) e1))))
+      (is (= 3 (get-result-return (do-eval '(int-arithmetic-s 1 2 0) e1))))
+      (is (= 6 (get-result-return (do-eval '(int-arithmetic-s 1 3 0) e1))))
+      (is (= 10 (get-result-return (do-eval '(int-arithmetic-s 1 4 0) e1))))
+      (let [n 10
+            sum (* (/ (+ n 1) 2) n)
+            e2 (get-result-env (do-eval (list 'define 'n n) e1))]
+        (is (= sum (get-result-return (do-eval '(int-arithmetic-s 1 n 0) e2)))))
+      )
     ;FACTORIAL
     (let [recur-fact
           (fn [n]
