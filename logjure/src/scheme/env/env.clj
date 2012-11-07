@@ -27,7 +27,12 @@
   (if (and (empty? variables) (empty? values))
     env
     (if (and (not (empty? variables)) (not (empty? values)))
-      (extend-environment (rest variables) (rest values) (set-variable-value-in-env (first variables) (first values) env))
+      (let [first-variable (first variables)
+            first-value (first values)
+            rest-variables (rest variables)
+            rest-values (rest values)
+            new-env (set-variable-value-in-env first-variable first-value env)]
+      (recur rest-variables rest-values new-env))
       (error "Variables/values counts do not match!" (list variables values))
       )
     )

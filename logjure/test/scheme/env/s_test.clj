@@ -70,7 +70,7 @@
     (is (= 3 (get-result-return (do-eval '((lambda (a b) (+ a b)) 1 2) env))))
     (is (= 5 (get-result-return (do-eval '((lambda (a b) (+ a b)) (+ 1 2) 2) env))))
     (is (= 10 (get-result-return (do-eval '((lambda (a b) (+ a b)) (+ 1 2) ((lambda (a b) (+ a b)) 3 4)) env))))
-    ;recursion
+    ;self recursion
     ;ARITHMETIC-SUM
     (let [e1 (get-result-env 
                (do-eval 
@@ -137,6 +137,24 @@
             expected (recur-fibo n)
             e2 (get-result-env (do-eval (list 'define 'n n) e1))
             return (get-result-return (do-eval '(fib n) e2))]
+        (is (= expected return)))
+      )
+    ;mutual recursion
+    ;EVEN-ODD
+    (let [;env (setup-environment global-primitive-procedure-impl-map (the-empty-environment))
+          e0 (get-result-env 
+               (do-eval 
+                 '(define odd? (lambda (n) (if (= n 0) false (even? (- n 1))))) 
+                 env))
+          e1 (get-result-env 
+               (do-eval 
+                 '(define even? (lambda (n) (if (= n 0) true (odd? (- n 1))))) 
+                 e0))]
+      (let [n 10
+            ;dummy (println "even-odd " n)
+            expected (odd? n)
+            e2 (get-result-env (do-eval (list 'define 'n n) e1))
+            return (get-result-return (do-eval '(odd? n) e2))]
         (is (= expected return)))
       )
     )
