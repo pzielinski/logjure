@@ -26,13 +26,9 @@
   [variables values env] 
   (if (and (empty? variables) (empty? values))
     env
-    (if (and (not (empty? variables)) (not (empty? values)))
-      (let [first-variable (first variables)
-            first-value (first values)
-            rest-variables (rest variables)
-            rest-values (rest values)
-            new-env (set-variable-value-in-env first-variable first-value env)]
-      (recur rest-variables rest-values new-env))
+    (if (= (count variables) (count values))
+      (let [kvs (interleave variables values)]
+      (apply assoc env kvs))
       (error "Variables/values counts do not match!" (list variables values))
       )
     )
