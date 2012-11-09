@@ -202,27 +202,29 @@
   [exp] 
   (fn [env00 returns00 mode00] 
     (if (= mode00 :delayable?)
-      (let [value-delayed-or-not (lookup-variable-value-in-env exp env00)
-            def-delayed? (tagged-list? value-delayed-or-not 'delayed-def)
-            delayed? (thunk? value-delayed-or-not)]
+      (let [value (lookup-variable-value-in-env exp env00)
+            def-delayed? (tagged-list? value 'delayed-def)
+            delayed? (thunk? value)]
         (or def-delayed? delayed?));do not delay if real value is already in env
-      (let [value-delayed-or-not (lookup-variable-value-in-env exp env00)]
-        (if (tagged-list? value-delayed-or-not 'delayed-def)
+      (let [value (lookup-variable-value-in-env exp env00)]
+        (cond 
           ;delayed definition
-          (let [value-proc (tagged-list-content-1 value-delayed-or-not)
+          (tagged-list? value 'delayed-def)
+          (let [value-proc (tagged-list-content-1 value)
                 new-result (value-proc env00 returns00 mode00)]
             (eval-variable-lookup-handle-result exp new-result env00 returns00))
+          ;delayed (compound proc) arg
+          (thunk? value)
+          (let [thunk value
+                new-proc (thunk-proc thunk)
+                new-env (thunk-env thunk)
+                ;dummy (println " thunk-env# " (hash new-env) "thunk-proc " new-proc)
+                new-result (new-proc new-env returns00 :force)];force-it
+            (eval-variable-lookup-handle-result exp new-result env00 returns00))
           ;regular variable
-          (if (not (thunk? value-delayed-or-not))
-            ;not thunk
-            (make-result env00 (cons value-delayed-or-not returns00) nil)
-            ;thunk - so force-it
-            (let [thunk value-delayed-or-not
-                  new-proc (thunk-proc thunk)
-                  new-env (thunk-env thunk)
-                  ;dummy (println " thunk-env# " (hash new-env) "thunk-proc " new-proc)
-                  new-result (new-proc new-env returns00 :force)]
-              (eval-variable-lookup-handle-result exp new-result env00 returns00)))))))
+          :else
+          (make-result env00 (cons value returns00) nil)
+          ))))
   )
 
 (defn analyze-quotation 
