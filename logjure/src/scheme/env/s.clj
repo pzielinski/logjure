@@ -203,23 +203,15 @@
   (fn [env00 returns00 mode00] 
     (if (= mode00 :delayable?)
       (let [value-delayed-or-not (lookup-variable-value-in-env exp env00)
-            def-delayed? (tagged-list? value-delayed-or-not 'delayed-val)
+            def-delayed? (tagged-list? value-delayed-or-not 'delayed-def)
             delayed? (thunk? value-delayed-or-not)]
         (or def-delayed? delayed?));do not delay if real value is already in env
       (let [value-delayed-or-not (lookup-variable-value-in-env exp env00)]
-        (if (tagged-list? value-delayed-or-not 'delayed-val)
+        (if (tagged-list? value-delayed-or-not 'delayed-def)
           ;delayed definition
           (let [value-proc (tagged-list-content-1 value-delayed-or-not)
-                new-result (value-proc env00 returns00 mode00)
-                new-procs (get-result-procs new-result)]
-            (if (nil? new-procs)
-              ;simple value 
-              (let [new-value (get-result-return new-result)
-                    new-env (set-variable-value-in-env exp new-value env00)
-                    new-returns (cons new-value returns00)]
-                (make-result new-env new-returns nil))
-              ;procs
-              new-result))
+                new-result (value-proc env00 returns00 mode00)]
+            (eval-variable-lookup-handle-result exp new-result env00 returns00))
           ;regular variable
           (if (not (thunk? value-delayed-or-not))
             ;not thunk
@@ -229,8 +221,7 @@
                   new-proc (thunk-proc thunk)
                   new-env (thunk-env thunk)
                   ;dummy (println " thunk-env# " (hash new-env) "thunk-proc " new-proc)
-                  new-result (new-proc new-env returns00 :force)
-                  new-procs (get-result-procs new-result)]
+                  new-result (new-proc new-env returns00 :force)]
               (eval-variable-lookup-handle-result exp new-result env00 returns00)))))))
   )
 
@@ -251,7 +242,7 @@
         true
         (if (value-proc env00 nil :delayable?)
           ;delay lambda, eval when reading variable
-          (make-result (set-variable-value-in-env variable (list 'delayed-val value-proc) env00) returns00 nil);pass new env
+          (make-result (set-variable-value-in-env variable (list 'delayed-def value-proc) env00) returns00 nil);pass new env
           ;do not delay self evaluating etc
           (make-result
               env00
