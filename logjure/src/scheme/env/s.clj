@@ -175,6 +175,28 @@
       (make-result env (cons exp returns) nil)))
   )
 
+(defn eval-variable-lookup-handle-result
+  [variable new-result env00 returns00]
+  (let [new-procs (get-result-procs new-result)]
+    (if (nil? new-procs)
+      ;simple value 
+      (let [value (get-result-return new-result)
+            env (set-variable-value-in-env variable value env00)
+            returns (cons value returns00)]
+        (make-result env returns nil))
+      ;more procs
+      (let [new-env (get-result-env new-result)
+            new-returns (get-result-returns new-result)
+            after-proc (fn [env01 returns01 mode01]
+                         (let [value (first returns01)
+                               env (set-variable-value-in-env variable value env00)
+                               returns (cons value returns00)]
+                           (make-result env returns nil)))
+            all-procs (lazy-cat new-procs (list after-proc))]
+        (make-result new-env new-returns all-procs))
+      ))
+  )
+
 ;variable lookup
 (defn analyze-variable
   [exp] 
@@ -209,25 +231,7 @@
                   ;dummy (println " thunk-env# " (hash new-env) "thunk-proc " new-proc)
                   new-result (new-proc new-env returns00 :force)
                   new-procs (get-result-procs new-result)]
-              (if (nil? new-procs)
-                ;simple value 
-                (let [new-value (get-result-return new-result)
-                      new-env (set-variable-value-in-env exp new-value env00)
-                      new-returns (cons new-value returns00)]
-                  (make-result new-env new-returns nil))
-                ;more procs
-                (let [force-env (get-result-env new-result)
-                      force-returns (get-result-returns new-result)
-                      after-force-proc (fn [env01 returns01 mode01]
-                                         (let [new-value (first returns01)
-                                               new-env (set-variable-value-in-env exp new-value env00)
-                                               new-returns (cons new-value returns00)]
-                                           (make-result new-env new-returns nil))
-                                         )
-                      after-force-procs (list after-force-proc)
-                      all-procs (lazy-cat new-procs after-force-procs)]
-                  (make-result force-env force-returns all-procs))
-                )))))))
+              (eval-variable-lookup-handle-result exp new-result env00 returns00)))))))
   )
 
 (defn analyze-quotation 
