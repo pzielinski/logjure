@@ -197,34 +197,48 @@
       ))
   )
 
+(defn eval-variable-lookup-handle-delayed-def
+  [variable value env00 returns00 mode00]
+  (let [value-proc (tagged-list-content-1 value)
+        new-result (value-proc env00 returns00 mode00)]
+    (eval-variable-lookup-handle-result variable new-result env00 returns00))
+  )
+
+(defn eval-variable-lookup-handle-lookup
+  [variable env00 returns00 mode00]
+  (let [value (lookup-variable-value-in-env variable env00)]
+    (cond 
+      ;delayed definition
+      (tagged-list? value 'delayed-def)
+      (eval-variable-lookup-handle-delayed-def variable value env00 returns00 mode00)
+      ;delayed (compound proc) arg
+      (thunk? value)
+      (let [thunk value
+            new-proc (thunk-proc thunk)
+            new-env (thunk-env thunk)
+            ;dummy (println " thunk-env# " (hash new-env) "thunk-proc " new-proc)
+            new-result (new-proc new-env returns00 :force)];force-it
+        (eval-variable-lookup-handle-result variable new-result env00 returns00))
+      ;regular variable
+      :else
+      (make-result env00 (cons value returns00) nil)
+      ))  
+  )
+
 ;variable lookup
 (defn analyze-variable
   [exp] 
   (fn [env00 returns00 mode00] 
-    (if (= mode00 :delayable?)
+    (cond
+      ;check if evaluating looked up variable proc should be delayed
+      (= mode00 :delayable?)
       (let [value (lookup-variable-value-in-env exp env00)
             def-delayed? (tagged-list? value 'delayed-def)
             delayed? (thunk? value)]
         (or def-delayed? delayed?));do not delay if real value is already in env
-      (let [value (lookup-variable-value-in-env exp env00)]
-        (cond 
-          ;delayed definition
-          (tagged-list? value 'delayed-def)
-          (let [value-proc (tagged-list-content-1 value)
-                new-result (value-proc env00 returns00 mode00)]
-            (eval-variable-lookup-handle-result exp new-result env00 returns00))
-          ;delayed (compound proc) arg
-          (thunk? value)
-          (let [thunk value
-                new-proc (thunk-proc thunk)
-                new-env (thunk-env thunk)
-                ;dummy (println " thunk-env# " (hash new-env) "thunk-proc " new-proc)
-                new-result (new-proc new-env returns00 :force)];force-it
-            (eval-variable-lookup-handle-result exp new-result env00 returns00))
-          ;regular variable
-          :else
-          (make-result env00 (cons value returns00) nil)
-          ))))
+      ;lookup variable
+      :else
+      (eval-variable-lookup-handle-lookup exp env00 returns00 mode00)))
   )
 
 (defn analyze-quotation 
