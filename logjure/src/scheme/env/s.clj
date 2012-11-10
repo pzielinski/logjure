@@ -225,38 +225,25 @@
       ))  
   )
 
+(defn eval-variable-lookup 
+  [variable env00 returns00 mode00] 
+  (cond
+    ;check if evaluating looked up variable proc should be delayed
+    (= mode00 :delayable?)
+    (let [value (lookup-variable-value-in-env variable env00)
+          def-delayed? (tagged-list? value 'delayed-def)
+          delayed? (thunk? value)]
+      (or def-delayed? delayed?));do not delay if real value is already in env
+    ;lookup variable
+    :else
+    (eval-variable-lookup-handle-lookup variable env00 returns00 mode00))
+  )
+
 ;variable lookup
 (defn analyze-variable
   [exp] 
   (fn [env00 returns00 mode00] 
-    (cond
-      ;check if evaluating looked up variable proc should be delayed
-      (= mode00 :delayable?)
-      (let [value (lookup-variable-value-in-env exp env00)
-            def-delayed? (tagged-list? value 'delayed-def)
-            delayed? (thunk? value)]
-        (or def-delayed? delayed?));do not delay if real value is already in env
-      ;eval delayed definitions
-      (not (lookup-variable-value-in-env :delayed-def-evaluated env00))
-      (let [vars (get-variable-names env00)
-            var-val-vects (map (fn [var] [var (lookup-variable-value-in-env var env00)]) vars)
-            define-var-val-vects (filter (fn [[var val]] (tagged-list? val 'delayed-def)) var-val-vects)
-            ;functions to eval delayed defs
-            define-fns (map 
-                         (fn [[var val]] 
-                           (fn [env returns mode] 
-                             (eval-variable-lookup-handle-delayed-def var val env returns mode00))) 
-                         define-var-val-vects)
-            ;function to do lookup afterwards
-            var-lookup-fn (fn [env returns mode] (eval-variable-lookup-handle-lookup exp env returns mode))
-            all-fns (lazy-cat define-fns (list var-lookup-fn))]
-        (make-result
-          (set-variable-value-in-env :delayed-def-evaluated true env00)
-          returns00;skip returns
-          all-fns))
-      ;lookup variable
-      :else
-      (eval-variable-lookup-handle-lookup exp env00 returns00 mode00)))
+    (eval-variable-lookup exp env00 returns00 mode00))
   )
 
 (defn analyze-quotation 
