@@ -4,23 +4,31 @@
 
 (defn the-empty-environment 
   [] 
-  '{})
+  '{}
+  )
 
 (defn empty-environment? 
   [env] 
-  (empty? env))
+  (empty? env)
+  )
+
+(defn 
+  get-variable-names
+  [env]
+  (keys env)
+  )
 
 (defn 
   set-variable-value-in-env 
   [variable value env]
-    (assoc env variable value)
-)
+  (assoc env variable value)
+  )
 
 (defn 
   lookup-variable-value-in-env
   [variable env]
-    (get env variable)
-)
+  (get env variable)
+  )
 
 (defn extend-environment 
   [variables values env] 
@@ -28,10 +36,8 @@
     env
     (if (= (count variables) (count values))
       (let [kvs (interleave variables values)]
-      (apply assoc env kvs))
-      (error "Variables/values counts do not match!" (list variables values))
-      )
-    )
+        (apply assoc env kvs))
+      (error "Variables/values counts do not match!" (list variables values))))
   )
 
 (defn extend-environment-with-map 
