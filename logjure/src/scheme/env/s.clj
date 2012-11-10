@@ -526,6 +526,14 @@
 
 (def output-prompt "=>")
 
+(defn eval-seq
+  [exps env]
+  (reduce 
+    (fn [result exp] (do-eval exp (get-result-env result)))
+    (make-result env nil nil) 
+    exps)
+  )
+
 (defn repl
   []
   (loop [env (setup-environment global-primitive-procedure-impl-map (the-empty-environment))]
@@ -541,11 +549,7 @@
             (print output-prompt)
             (user-print value)
             (recur env)
-            )
-          )
-        )
-      )
-    )
+            )))))
   )
 
 (comment
