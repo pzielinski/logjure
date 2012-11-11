@@ -509,6 +509,34 @@
       result))
   )
 
+(defn eval-seq
+  ([exps env]
+    (reduce 
+      (fn [result exp] (do-eval exp (get-result-env result)))
+      (make-result env nil nil) 
+      exps))
+  ([exps]
+    (eval-seq exps (setup-environment global-primitive-procedure-impl-map (the-empty-environment))))
+  )
+
+(defn exps-from-str
+  [s]
+  (let [s1 (clojure.string/replace s #"\r?\n" "");remove new lines
+        ;s2 (clojure.string/replace s #"\s" "");remove white spaces
+        s2 (clojure.string/replace s1 #"\(" ";(")
+        s3 (clojure.string/replace s2 #"\)" ");")
+        strs (clojure.string/split s3 #";")
+        trimmed-strs (map #(clojure.string/trim %) strs)
+        non-empty-strs (filter #(not (empty? %)) trimmed-strs)
+        exps (map #(read-string %) non-empty-strs)]
+    exps)
+  )
+
+(defn eval-str
+  [s]
+  (eval-seq (exps-from-str s))
+  )
+
 (defn user-print 
   [object]
   (if (compound-procedure? object)
@@ -525,14 +553,6 @@
 (def input-prompt "in:")
 
 (def output-prompt "=>")
-
-(defn eval-seq
-  [exps env]
-  (reduce 
-    (fn [result exp] (do-eval exp (get-result-env result)))
-    (make-result env nil nil) 
-    exps)
-  )
 
 (defn repl
   []
