@@ -254,27 +254,24 @@
       (make-result env (cons (text-of-quotation exp) returns) nil)))
   )
 
-(defn analyze-definition-of-function 
-  [exp] 
-  (let [variable (definition-variable exp)
-        function-name (first variable)
-        params (rest variable)
-        body-proc (analyze (definition-value exp))];single expression only, use begin!!!
-    (fn [env00 returns00 mode00]
-      (if (= mode00 :delayable?)
-        true
-        (make-result 
-          (set-variable-value-in-env function-name (make-procedure params body-proc env00) env00) 
-          returns00 
-          nil);pass new env
-        )))
+(defn eval-lambda 
+  [env returns mode params body-proc] 
+  (if (= mode :delayable?)
+    true
+    (make-result env (cons (make-procedure params body-proc env) returns) nil))
   )
 
-(defn analyze-definition-of-variable 
+(defn analyze-lambda 
   [exp] 
-  (let [variable (definition-variable exp)
-        value-proc (analyze (definition-value exp))]
-    (fn [env00 returns00 mode00]
+  (let [params (lambda-parameters exp)
+        body-proc (analyze (lambda-body exp));single expression only, use begin!
+        ]
+    (fn [env returns mode]
+      (eval-lambda env returns mode params body-proc)))
+  )
+
+(defn eval-definition-of-variable 
+  [env00 returns00 mode00 variable value-proc]
       (if (= mode00 :delayable?)
         true
         (if (value-proc env00 nil :delayable?)
@@ -291,7 +288,25 @@
                   (let [value (first returns)]
                     (make-result (set-variable-value-in-env variable value env00) returns00 nil)));pass new env
                 ))
-          ))))
+          )))
+
+(defn analyze-definition-of-function 
+  [exp] 
+  (let [variable (definition-variable exp)
+        function-name (first variable)
+        params (rest variable)
+        body-proc (analyze (definition-value exp))]
+    (fn [env returns mode]
+      (let [value-proc (fn [env returns mode] (eval-lambda env returns mode params body-proc))]
+      (eval-definition-of-variable env returns mode function-name value-proc))))
+  )
+
+(defn analyze-definition-of-variable 
+  [exp] 
+  (let [variable (definition-variable exp)
+        value-proc (analyze (definition-value exp))]
+    (fn [env returns mode]
+      (eval-definition-of-variable env returns mode variable value-proc)))
   )
 
 (defn analyze-definition 
@@ -300,17 +315,6 @@
     (if (variable? variable)
       (analyze-definition-of-variable exp)
       (analyze-definition-of-function exp)))
-  )
-
-(defn analyze-lambda 
-  [exp] 
-  (let [params (lambda-parameters exp)
-        body-proc (analyze (lambda-body exp));single expression only, use begin!
-        ]
-    (fn [env returns mode]
-      (if (= mode :delayable?)
-        true
-        (make-result env (cons (make-procedure params body-proc env) returns) nil))))
   )
 
 (defn analyze-if 

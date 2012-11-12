@@ -237,8 +237,32 @@
                    (odd? n)"
                    )) 
                  env)))))
-    ;definition function
+    ;DEFINE FUNCTION
+    ;simple
     (is (= 6 (get-result-return (eval-seq (exps-from-str "(define (doubler x) (+ x x)) (doubler 3)") env))))
+    ;self recursion
+    (let [n 10] 
+      (is (= (* (/ (+ n 1) 2) n) 
+             (get-result-return 
+               (eval-seq 
+                 (exps-from-str (str " 
+                   (define n "n") 
+                   (define (arithmetic-s n sum) (if (= n 0) sum (arithmetic-s (- n 1) (+ n sum)))) 
+                   (arithmetic-s n 0)"
+                   ))
+                 env)))))
+    ;mutual recursion
+    (let [n 10] 
+      (is (= (odd? n) 
+             (get-result-return 
+               (eval-seq 
+                 (exps-from-str (str "
+                   (define n "n") 
+                   (define (odd? n) (if (= n 0) false (even? (- n 1))))
+                   (define (even? n) (if (= n 0) true (odd? (- n 1))))
+                   (odd? n)"
+                   )) 
+                 env)))))
     )
   )
 
