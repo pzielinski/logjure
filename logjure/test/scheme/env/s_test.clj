@@ -200,4 +200,44 @@
     )
   )
 
+(deftest eval-seq-exps-from-str-test 
+  (let [env (setup-environment global-primitive-procedure-impl-map (the-empty-environment))]
+    ;primitive
+    (is (= false (get-result-return (eval-seq (exps-from-str "false") env))))
+    ;self-evaluating
+    (is (= 1 (get-result-return (eval-seq (exps-from-str "1") env))))
+    ;variable
+    (is (= 1 (get-result-return (eval-seq (exps-from-str "v") (extend-environment-with-map {'v 1} env)))))
+    ;definition
+    (is (= 2 (get-result-return (eval-seq (exps-from-str "(define x 2) x") env))))
+    (is (= 3 (get-result-return (eval-seq (exps-from-str "(define x 2) (define y (+ 1 x)) y") env))))
+    (is (= 5 (get-result-return (eval-seq (exps-from-str "(define x 2) (define y (+ 1 x)) (define z (+ x y)) z") env))))
+    ;aplication
+    (is (= 6 (get-result-return (eval-seq (exps-from-str "(define doubler (lambda (x) (+ x x))) (doubler 3)") env))))
+    ;self recursion
+    (let [n 10] 
+      (is (= (* (/ (+ n 1) 2) n) 
+             (get-result-return 
+               (eval-seq 
+                 (exps-from-str (str " 
+                   (define n "n") 
+                   (define arithmetic-s (lambda (n sum) (if (= n 0) sum (arithmetic-s (- n 1) (+ n sum))))) 
+                   (arithmetic-s n 0)"
+                   ))
+                 env)))))
+    ;mutual recursion
+    (let [n 10] 
+      (is (= (odd? n) 
+             (get-result-return 
+               (eval-seq 
+                 (exps-from-str (str "
+                   (define n "n") 
+                   (define odd? (lambda (n) (if (= n 0) false (even? (- n 1)))))
+                   (define even? (lambda (n) (if (= n 0) true (odd? (- n 1)))))
+                   (odd? n)"
+                   )) 
+                 env)))))
+    )
+  )
+
 (run-tests)

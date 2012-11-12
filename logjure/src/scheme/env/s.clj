@@ -519,17 +519,12 @@
     (eval-seq exps (setup-environment global-primitive-procedure-impl-map (the-empty-environment))))
   )
 
+
 (defn exps-from-str
   [s]
-  (let [s1 (clojure.string/replace s #"\r?\n" "");remove new lines
-        ;s2 (clojure.string/replace s #"\s" "");remove white spaces
-        s2 (clojure.string/replace s1 #"\(" ";(")
-        s3 (clojure.string/replace s2 #"\)" ");")
-        strs (clojure.string/split s3 #";")
-        trimmed-strs (map #(clojure.string/trim %) strs)
-        non-empty-strs (filter #(not (empty? %)) trimmed-strs)
-        exps (map #(read-string %) non-empty-strs)]
-    exps)
+  (let [s1 (clojure.string/replace s #"\r?\n" "")];remove new lines
+    (read-string (str \( s1 \)))
+    )
   )
 
 (defn eval-str
