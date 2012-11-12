@@ -254,6 +254,22 @@
       (make-result env (cons (text-of-quotation exp) returns) nil)))
   )
 
+(defn analyze-definition-of-function 
+  [exp] 
+  (let [variable (definition-variable exp)
+        function-name (first variable)
+        params (rest variable)
+        body-proc (analyze (definition-value exp))];single expression only, use begin!!!
+    (fn [env00 returns00 mode00]
+      (if (= mode00 :delayable?)
+        true
+        (make-result 
+          (set-variable-value-in-env function-name (make-procedure params body-proc env00) env00) 
+          returns00 
+          nil);pass new env
+        )))
+  )
+
 (defn analyze-definition-of-variable 
   [exp] 
   (let [variable (definition-variable exp)
@@ -281,9 +297,9 @@
 (defn analyze-definition 
   [exp] 
   (let [variable (definition-variable exp)]
-    (when (variable? variable)
-      (analyze-definition-of-variable exp))
-    )
+    (if (variable? variable)
+      (analyze-definition-of-variable exp)
+      (analyze-definition-of-function exp)))
   )
 
 (defn analyze-lambda 

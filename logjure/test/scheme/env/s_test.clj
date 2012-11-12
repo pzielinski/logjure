@@ -237,6 +237,8 @@
                    (odd? n)"
                    )) 
                  env)))))
+    ;definition function
+    (is (= 6 (get-result-return (eval-seq (exps-from-str "(define (doubler x) (+ x x)) (doubler 3)") env))))
     )
   )
 
