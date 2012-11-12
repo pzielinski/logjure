@@ -527,6 +527,12 @@
     )
   )
 
+(defn exps-from-file
+  [filename]
+  (let [s (slurp (clojure.java.io/resource filename))]
+    (exps-from-str s))
+  )
+
 (defn eval-str
   [s]
   (eval-seq (exps-from-str s))
