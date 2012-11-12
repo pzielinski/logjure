@@ -243,7 +243,7 @@
 (deftest eval-seq-exps-from-file-test 
   (let [env (setup-environment global-primitive-procedure-impl-map (the-empty-environment))]
     ;primitive application
-    (is (= 3 (get-result-return (eval-seq (exps-from-file "scheme/env/test01.scj") env))))
+    (is (= 3 (get-result-return (eval-seq (exps-from-file "scheme/env/test01.scm") env))))
     )
   )
 
