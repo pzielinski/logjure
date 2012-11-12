@@ -17,6 +17,7 @@
 (def global-primitive-procedure-impl-map
   {
    '* *
+   '/ /
    '+ +
    '- -
    '> >
