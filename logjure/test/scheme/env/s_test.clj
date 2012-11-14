@@ -21,7 +21,7 @@
   )
 
 (deftest analyze-from-map-test 
-  (is (= 'x (get-result-return ((analyze-from-map global-analyze-map '(quote x)) {} '() :eval))))
+  (is (= 'x (get-result-return ((analyze-from-map global-analyze-map '(quote x)) {} {} '() :eval))))
   )
 
 (deftest do-eval-test 
