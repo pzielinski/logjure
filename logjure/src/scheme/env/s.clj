@@ -116,6 +116,10 @@
   [procedure arguments]
   (apply-in-underlying-interpreter (primitive-implementation procedure) arguments))
 
+(defn begin-actions 
+  [exp] 
+  (rest exp))
+
 (defn definition-variable 
   [exp] 
   (nth exp 1))
@@ -398,6 +402,27 @@
             )))))
   )
 
+(defn analyze-sequence 
+  [exps]
+  (fn [env00 returns00 mode00]
+    (if (= mode00 :delayable?)
+      true
+      (make-result
+        env00
+        returns00
+        (map 
+          (fn [exp] 
+            (let [proc (analyze exp)]
+              (fn [env returns mode] 
+                (proc env returns mode)))) 
+          exps))))
+  )
+
+(defn analyze-begin
+  [exp]
+  (analyze-sequence (begin-actions exp)) 
+)
+
 (defn setup-environment
   [primitive-procedure-impl-map env]
   (let [primitives-map (make-primitives-map primitive-procedure-impl-map)
@@ -412,6 +437,7 @@
    'quote analyze-quotation
    'if analyze-if
    'lambda analyze-lambda
+   'begin analyze-begin
    }
 )
 
