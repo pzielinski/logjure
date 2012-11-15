@@ -70,96 +70,10 @@
     (is (= 3 (get-result-return (do-eval '((lambda (a b) (+ a b)) 1 2) env))))
     (is (= 5 (get-result-return (do-eval '((lambda (a b) (+ a b)) (+ 1 2) 2) env))))
     (is (= 10 (get-result-return (do-eval '((lambda (a b) (+ a b)) (+ 1 2) ((lambda (a b) (+ a b)) 3 4)) env))))
-    ;self recursion
-    ;ARITHMETIC-SUM
-    (let [e1 (get-result-env 
-               (do-eval 
-                 '(define arithmetic-s (lambda (n sum) (if (= n 0) sum (arithmetic-s (- n 1) (+ n sum))))) 
-                 env))]
-      (is (= 1 (get-result-return (do-eval '(arithmetic-s 1 0) e1))))
-      (is (= 3 (get-result-return (do-eval '(arithmetic-s 2 0) e1))))
-      (is (= 6 (get-result-return (do-eval '(arithmetic-s 3 0) e1))))
-      (is (= 10 (get-result-return (do-eval '(arithmetic-s 4 0) e1))))
-      (let [n 10
-            sum (* (/ (+ n 1) 2) n)
-            e2 (get-result-env (do-eval (list 'define 'n n) e1))]
-        (is (= sum (get-result-return (do-eval '(arithmetic-s n 0) e2)))))
-      )
-    ;ARITHMETIC-SUM on INTERVAL
-    (let [e1 (get-result-env 
-               (do-eval 
-                 '(define int-arithmetic-s (lambda (start stop sum) (if (> start stop) sum (int-arithmetic-s (+ start 1) stop (+ start sum))))) 
-                 env))]
-      (is (= 1 (get-result-return (do-eval '(int-arithmetic-s 1 1 0) e1))))
-      (is (= 3 (get-result-return (do-eval '(int-arithmetic-s 1 2 0) e1))))
-      (is (= 6 (get-result-return (do-eval '(int-arithmetic-s 1 3 0) e1))))
-      (is (= 10 (get-result-return (do-eval '(int-arithmetic-s 1 4 0) e1))))
-      (let [n 10
-            sum (* (/ (+ n 1) 2) n)
-            e2 (get-result-env (do-eval (list 'define 'n n) e1))]
-        (is (= sum (get-result-return (do-eval '(int-arithmetic-s 1 n 0) e2)))))
-      )
-    ;FACTORIAL
-    (let [recur-fact
-          (fn [n]
-            (loop [cnt n acc 1]
-              (if (zero? cnt)
-                acc
-                (recur (dec cnt) (* acc cnt)))))
-          ;env (setup-environment global-primitive-procedure-impl-map (the-empty-environment))
-          e1 (get-result-env 
-               (do-eval 
-                 '(define fact (lambda (n x) (if (= n 1) x (fact (- n 1) (* n x))))) 
-                 env))]
-      (let [n 10
-            ;dummy (println "fact " n)
-            expected (recur-fact n)
-            e2 (get-result-env (do-eval (list 'define 'n n) e1))
-            return (get-result-return (do-eval '(fact n 1) e2))]
-        (is (= expected return)))
-      )
-    ;FIBONACCI
-    (let [recur-fibo 
-          (fn [n]
-            (letfn [(fib
-                      [current next n]
-                      (if (zero? n)
-                        current
-                        (recur next (+ current next) (dec n))))]
-                   (fib 0N 1N n)))
-          ;env (setup-environment global-primitive-procedure-impl-map (the-empty-environment))
-          e1 (get-result-env 
-               (do-eval 
-                 '(define fib (lambda (n) (if (= n 0) 0 (if (= n 1) 1 (+ (fib (- n 1)) (fib (- n 2))))))) 
-                 env))]
-      (let [n 10
-            ;dummy (println "fib " n)
-            expected (recur-fibo n)
-            e2 (get-result-env (do-eval (list 'define 'n n) e1))
-            return (get-result-return (do-eval '(fib n) e2))]
-        (is (= expected return)))
-      )
-    ;mutual recursion
-    ;EVEN-ODD
-    (let [;env (setup-environment global-primitive-procedure-impl-map (the-empty-environment))
-          e0 (get-result-env 
-               (do-eval 
-                 '(define odd? (lambda (n) (if (= n 0) false (even? (- n 1))))) 
-                 env))
-          e1 (get-result-env 
-               (do-eval 
-                 '(define even? (lambda (n) (if (= n 0) true (odd? (- n 1))))) 
-                 e0))]
-      (let [n 10
-            ;dummy (println "even-odd " n)
-            expected (odd? n)
-            e2 (get-result-env (do-eval (list 'define 'n n) e1))
-            return (get-result-return (do-eval '(odd? n) e2))]
-        (is (= expected return)))
-      )
     )
   )
 
+;more advanced tests that need env and defs passing
 (deftest eval-seq-test 
   (let [env (setup-environment global-primitive-procedure-impl-map (the-empty-environment))]
     ;primitive
@@ -175,6 +89,7 @@
     ;aplication
     (is (= 6 (get-result-return (eval-seq (list '(define doubler (lambda (x) (+ x x))) '(doubler 3)) env))))
     ;self recursion
+    ;ARITHMETIC-SUM
     (let [n 10] 
       (is (= (* (/ (+ n 1) 2) n) 
              (get-result-return 
@@ -185,7 +100,55 @@
                    '(arithmetic-s n 0)
                    )
                  env)))))
+    ;ARITHMETIC-SUM on INTERVAL
+    (let [n 10] 
+      (is (= (* (/ (+ n 1) 2) n) 
+             (get-result-return 
+               (eval-seq 
+                 (list 
+                   (list 'define 'n n) 
+                 '(define int-arithmetic-s (lambda (start stop sum) (if (> start stop) sum (int-arithmetic-s (+ start 1) stop (+ start sum))))) 
+                   '(int-arithmetic-s 1 n 0)
+                   )
+                 env)))))
+    ;FACTORIAL
+    (let [n 10
+          recur-fact
+          (fn [n]
+            (loop [cnt n acc 1]
+              (if (zero? cnt)
+                acc
+                (recur (dec cnt) (* acc cnt)))))] 
+      (is (= (recur-fact n) 
+             (get-result-return 
+               (eval-seq 
+                 (list 
+                   (list 'define 'n n) 
+                   '(define fact (lambda (n x) (if (= n 1) x (fact (- n 1) (* n x))))) 
+                   '(fact n 1)
+                   )
+                 env)))))
+    ;FIBONACCI
+    (let [n 10
+          recur-fibo 
+          (fn [n]
+            (letfn [(fib 
+                      [current next n]
+                      (if (zero? n)
+                        current
+                        (recur next (+ current next) (dec n))))]
+                   (fib 0N 1N n)))] 
+      (is (= (recur-fibo n) 
+             (get-result-return 
+               (eval-seq 
+                 (list 
+                   (list 'define 'n n) 
+                   '(define fib (lambda (n) (if (= n 0) 0 (if (= n 1) 1 (+ (fib (- n 1)) (fib (- n 2))))))) 
+                   '(fib n)
+                   )
+                 env)))))
     ;mutual recursion
+    ;EVEN-ODD
     (let [n 10] 
       (is (= (odd? n) 
              (get-result-return 

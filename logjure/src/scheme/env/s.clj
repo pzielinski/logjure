@@ -1,7 +1,8 @@
 ;s1 - scheme interpreter that supports general case of self recursion without blowing the stack
 ;s2 - based on s1, each node is replaced by its children and never visited again
 ;s3 - based on s2, force-it only done when get variable from env, then update env with forced value
-;s4 - based on s3, delay compound proc arg only if arg proc not self-evaluating, and not var-lookup with non delayed value, ARITHMETIC-SUM on INTERVAL shows improvement   
+;s4 - based on s3, delay compound proc arg only if arg proc not self-evaluating, and not var-lookup with non delayed value, ARITHMETIC-SUM on INTERVAL shows improvement
+;s5 - based on s4, introduced defs, another environment just for definitions, defs are no longer delayed, so proc def closes over correct env;
 (ns scheme.env.s)
 
 (use 'clojure.test)
@@ -214,20 +215,12 @@
       ))
   )
 
-(defn eval-variable-lookup-handle-delayed-def
-  [variable value env00 defs00 returns00 mode00]
-  (let [value-proc (tagged-list-content-1 value)
-        new-result (value-proc env00 defs00 returns00 mode00)]
-    (eval-variable-lookup-handle-result variable new-result env00 defs00 returns00))
-  )
-
 (defn eval-variable-lookup-handle-lookup
   [variable env00 defs00 returns00 mode00]
-  (let [value (lookup-variable-value-in-env variable env00)]
+  (let [value-from-env (lookup-variable-value-in-env variable env00)
+        ;get variable value from defs if not found in env
+        value (if (nil? value-from-env) (lookup-variable-value-in-env variable defs00) value-from-env)]
     (cond 
-      ;delayed definition
-      (tagged-list? value 'delayed-def)
-      (eval-variable-lookup-handle-delayed-def variable value env00 defs00 returns00 mode00)
       ;delayed (compound proc) arg
       (thunk? value)
       (let [thunk value
@@ -249,9 +242,8 @@
     ;check if evaluating looked up variable proc should be delayed
     (= mode00 :delayable?)
     (let [value (lookup-variable-value-in-env variable env00)
-          def-delayed? (tagged-list? value 'delayed-def)
           delayed? (thunk? value)]
-      (or def-delayed? delayed?));do not delay if real value is already in env
+      delayed?);do not delay if real value is already in env
     ;lookup variable
     :else
     (eval-variable-lookup-handle-lookup variable env00 defs00 returns00 mode00))
@@ -290,24 +282,22 @@
 
 (defn eval-definition-of-variable 
   [env00 defs00 returns00 mode00 variable value-proc]
-      (if (= mode00 :delayable?)
-        true
-        (if (value-proc env00 defs00 nil :delayable?)
-          ;delay lambda, eval when reading variable
-          (make-result (set-variable-value-in-env variable (list 'delayed-def value-proc) env00) defs00 returns00 nil);pass new env
-          ;do not delay self evaluating etc
-          (make-result
-              env00
-              defs00
-              returns00
-              (list
-                (fn [env defs returns mode]
-                  (value-proc env defs returns mode00))
-                (fn [env defs returns mode]
-                  (let [value (first returns)]
-                    (make-result (set-variable-value-in-env variable value env00) defs returns00 nil)));pass new env
-                ))
-          )))
+  (if (= mode00 :delayable?)
+    true
+    (make-result
+      env00
+      defs00
+      returns00
+      (list
+        (fn [env defs returns mode]
+          (value-proc env defs returns mode00))
+        (fn [env defs returns mode]
+          (let [value (first returns)
+                new-env (set-variable-value-in-env variable value env00)
+                new-defs (set-variable-value-in-env variable value defs)]
+            (make-result new-env new-defs returns00 nil)));pass new env
+        )))
+  )
 
 (defn analyze-definition-of-function 
   [exp] 
@@ -416,7 +406,7 @@
                         ))
                     )
                   :else 
-                  (error "Unknown procedure type -- APPLY" procedure))))
+                  (error "APPLY - unknown procedure type: " procedure))))
             )))))
   )
 
@@ -646,75 +636,83 @@
   )
 
 (comment
-(let [env (setup-environment global-primitive-procedure-impl-map (the-empty-environment))
-      e1 (get-result-env 
-           (do-eval 
-             '(define arithmetic-s (lambda (n sum) (if (= n 0) sum (arithmetic-s (- n 1) (+ n sum))))) 
-             env))]
-  (let [n 10
-        dummy (println "arithmetic series " n)
-        expected (time (* (/ (+ n 1) 2) n))
-        e2 (get-result-env (do-eval (list 'define 'n n) e1))
-        return (time (get-result-return (do-eval '(arithmetic-s n 0) e2)))]
-    (println (= expected return)))
-  )
+  (let [n 10] 
+    (println 
+      (str "arithmetic-s " n)
+      (= 
+        (* (/ (+ n 1) 2) n)
+        (time
+          (get-result-return 
+            (eval-seq 
+              (list 
+                (list 'define 'n n) 
+                '(define arithmetic-s (lambda (n sum) (if (= n 0) sum (arithmetic-s (- n 1) (+ n sum))))) 
+                '(arithmetic-s n 0)
+                )
+              (setup-environment global-primitive-procedure-impl-map (the-empty-environment))))))))
 )
 
 (comment
-(let [env (setup-environment global-primitive-procedure-impl-map (the-empty-environment))
-      e1 (get-result-env 
-           (do-eval 
-             '(define int-arithmetic-s (lambda (start stop sum) (if (> start stop) sum (int-arithmetic-s (+ start 1) stop (+ start sum))))) 
-             env))]
-  (let [n 10
-        dummy (println "interval arithmetic series " n)
-        expected (time (* (/ (+ n 1) 2) n))
-        e2 (get-result-env (do-eval (list 'define 'n n) e1))
-        return (time (get-result-return (do-eval '(int-arithmetic-s 1 n 0) e2)))]
-    (println expected return (= expected return)))
-  )
+  (let [n 10] 
+    (println 
+      (str "int-arithmetic-s " n)
+      (= 
+        (* (/ (+ n 1) 2) n)
+        (time
+          (get-result-return 
+            (eval-seq 
+              (list 
+                (list 'define 'n n) 
+                '(define int-arithmetic-s (lambda (start stop sum) (if (> start stop) sum (int-arithmetic-s (+ start 1) stop (+ start sum))))) 
+                '(int-arithmetic-s 1 n 0)
+                )
+              (setup-environment global-primitive-procedure-impl-map (the-empty-environment))))))))
 )
 
 (comment
-(let [recur-fact
-      (fn [n]
-        (loop [cnt n acc 1]
-          (if (zero? cnt)
-            acc
-            (recur (dec cnt) (* acc cnt)))))
-      env (setup-environment global-primitive-procedure-impl-map (the-empty-environment))
-      e1 (get-result-env 
-           (do-eval 
-             '(define fact (lambda (n x) (if (= n 1) x (fact (- n 1) (* n x))))) 
-             env))]
   (let [n 10
-        dummy (println "fact " n)
-        expected (time (recur-fact n))
-        e2 (get-result-env (do-eval (list 'define 'n n) e1))
-        return (time (get-result-return (do-eval '(fact n 1) e2)))]
-    (println (= expected return)))
-  )
+        recur-fact
+        (fn [n]
+          (loop [cnt n acc 1]
+            (if (zero? cnt)
+              acc
+              (recur (dec cnt) (* acc cnt)))))] 
+    (println 
+      (str "fact " n)
+      (= 
+        (recur-fact n)
+        (time
+          (get-result-return 
+            (eval-seq 
+              (list 
+                (list 'define 'n n) 
+                '(define fact (lambda (n x) (if (= n 1) x (fact (- n 1) (* n x))))) 
+                '(fact n 1)
+                )
+              (setup-environment global-primitive-procedure-impl-map (the-empty-environment))))))))
 )
 
 (comment
-(let [recur-fibo 
-      (fn [n]
-        (letfn [(fib
-                  [current next n]
-                  (if (zero? n)
-                    current
-                    (recur next (+ current next) (dec n))))]
-               (fib 0N 1N n)))
-      env (setup-environment global-primitive-procedure-impl-map (the-empty-environment))
-      e1 (get-result-env 
-           (do-eval 
-             '(define fib (lambda (n) (if (= n 0) 0 (if (= n 1) 1 (+ (fib (- n 1)) (fib (- n 2))))))) 
-             env))]
   (let [n 10
-        dummy (println "fib  " n " ")
-        expected (time (recur-fibo n))
-        e2 (get-result-env (do-eval (list 'define 'n n) e1))
-        return (time (get-result-return (do-eval '(fib n) e2)))]
-    (println (= expected return)))
-  )
+        recur-fib
+        (fn [n]
+          (letfn [(fib
+                    [current next n]
+                    (if (zero? n)
+                      current
+                      (recur next (+ current next) (dec n))))]
+                 (fib 0N 1N n)))] 
+    (println 
+      (str "fib " n)
+      (= 
+        (recur-fib n)
+        (time
+          (get-result-return 
+            (eval-seq 
+              (list 
+                (list 'define 'n n) 
+                '(define fib (lambda (n) (if (= n 0) 0 (if (= n 1) 1 (+ (fib (- n 1)) (fib (- n 2))))))) 
+                '(fib n)
+                )
+              (setup-environment global-primitive-procedure-impl-map (the-empty-environment))))))))
 )
