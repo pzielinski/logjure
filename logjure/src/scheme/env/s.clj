@@ -489,7 +489,7 @@
   )
 
 (defn debug
-  [env new-env]
+  [label env new-env]
   (let [keys-old (keys env)
         keys-new (keys new-env)
         keys-added (apply disj (set keys-new) keys-old)
@@ -522,8 +522,9 @@
                       {:KEY key :OLD-VAL value-old-real :NEW-VAL value-new-real})) 
                   keys-changed)
         ]
-        (println " _OLD=" (hash env) " / " (count env) 
-                 " _NEW=" (hash new-env) " / " (count new-env) 
+        (println label 
+                 " _OLD=" (hash env) "/" (count env) 
+                 " _NEW=" (hash new-env) "/" (count new-env) 
                  " _ADDED=" added 
                  " _REMOVED=" removed 
                  " _CHANGED=" changed)
@@ -541,7 +542,8 @@
                     result (proc env defs returns mode)
                     new-env (get-result-env result)
                     new-defs (get-result-defs result)
-                    ;dbg (debug env new-env)
+                    ;dbg (debug "ENV* " env new-env)
+                    ;dbg (debug "DEF$ " defs new-defs)
                     new-returns (get-result-returns result)
                     new-procs-temp (get-result-procs result)
                     new-procs (lazy-cat new-procs-temp rest-procs)
@@ -645,9 +647,9 @@
           (get-result-return 
             (eval-seq 
               (list 
-                (list 'define 'n n) 
+                (list 'define 'x n) 
                 '(define arithmetic-s (lambda (n sum) (if (= n 0) sum (arithmetic-s (- n 1) (+ n sum))))) 
-                '(arithmetic-s n 0)
+                '(arithmetic-s x 0)
                 )
               (setup-environment global-primitive-procedure-impl-map (the-empty-environment))))))))
 )
