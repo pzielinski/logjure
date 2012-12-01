@@ -36,6 +36,7 @@
     env
     (if (= (count variables) (count values))
       (let [kvs (interleave variables values)]
+        ;(persistent! (apply assoc! (transient env) kvs)))
         (apply assoc env kvs))
       (error "Variables/values counts do not match!" (list variables values))))
   )
