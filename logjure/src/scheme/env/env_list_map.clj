@@ -1,5 +1,5 @@
-;env as map of vars values lists, slower 1.37 times, memory 2.7GB for arithmetic series 1M
-(ns scheme.env.env)
+;env as map of vars values lists, slower 1.37 times then env, memory 2.7GB for arithmetic series 1M
+(ns scheme.env.env-list-map)
 
 (use 'scheme.env.utils)
 
