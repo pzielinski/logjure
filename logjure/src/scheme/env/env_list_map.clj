@@ -14,12 +14,6 @@
   )
 
 (defn 
-  get-variable-names
-  [env]
-  (:variables env)
-  )
-
-(defn 
   set-variable-value-in-env 
   [variable value env]
   {:variables (cons variable (:variables env)) :values (cons value (:values env))}

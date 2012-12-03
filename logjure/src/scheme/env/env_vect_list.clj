@@ -14,12 +14,6 @@
   )
 
 (defn 
-  get-variable-names
-  [env]
-  (map (fn[[var val]] var) env)
-  )
-
-(defn 
   set-variable-value-in-env 
   [variable value env]
   (cons [variable value] env)

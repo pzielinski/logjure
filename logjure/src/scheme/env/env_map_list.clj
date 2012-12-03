@@ -1,34 +1,33 @@
-;env as list of maps/frames of vars values, baseline perf, memory 2.55GB for arithmetic series 1M
-(ns scheme.env.env)
+;env as list of maps/frames of vars values, perf slower 1.04 times, memory 2.45GB for arithmetic series 1M
+(ns scheme.env.env-map-list)
 
 (use 'scheme.env.utils)
 
 (defn the-empty-environment 
   [] 
-  '{}
+  '({})
   )
 
 (defn empty-environment? 
   [env] 
-  (empty? env)
-  )
-
-(defn 
-  get-variable-names
-  [env]
-  (keys env)
+  (empty? (first env))
   )
 
 (defn 
   set-variable-value-in-env 
   [variable value env]
-  (assoc env variable value)
+  (cons (assoc (first env) variable value) (rest env))
   )
 
 (defn 
   lookup-variable-value-in-env
   [variable env]
-  (get env variable)
+  (let [value (get (first env) variable)]
+    (if (not (nil? value)) 
+      value 
+      (if (empty? (rest env)) 
+        nil 
+        (recur variable (rest env)))))
   )
 
 (defn extend-environment 
@@ -37,12 +36,11 @@
     env
     (if (= (count variables) (count values))
       (let [kvs (interleave variables values)]
-        ;(persistent! (apply assoc! (transient env) kvs)))
-        (apply assoc env kvs))
+        (cons (apply assoc {} kvs) env))
       (error "Variables/values counts do not match!" (list variables values))))
   )
 
 (defn extend-environment-with-map 
   [map env]
-  (merge env map)
+  (cons map env)
   )
